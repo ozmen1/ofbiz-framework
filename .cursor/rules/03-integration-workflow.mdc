@@ -1,0 +1,40 @@
+---
+description: Integration workflow rules, Gradle commands, Vite proxy setup, and deployment processes
+globs: "plugins/react-app/**/*"
+---
+# OFBiz & React Integration & Workflow Guidelines
+
+You are an expert developer managing the integration between the Apache OFBiz backend and the Vite/React frontend. Adhere to these workflow rules:
+
+## 1. Project Directory Layout & Flow
+- **React Frontend Code:** Located in `plugins/react-app/frontend`.
+- **OFBiz Webapp Assets:** Located in `plugins/react-app/webapp/react-app`.
+- **Build Output:** The `vite.config.ts` compiles the React project and places the build output directly into `../webapp/react-app`.
+
+## 2. Development Workflow (Local Run)
+- **Starting the Backend:**
+  - Run `./gradlew ofbiz` in the project root to start the Apache OFBiz server (default port: `8080`).
+- **Starting the Frontend (Vibe Dev Mode):**
+  - Change directory to `plugins/react-app/frontend` and run `npm run dev`.
+  - The dev server runs locally (usually port `5173`).
+- **API Proxying during Dev:**
+  - Vite is configured to proxy `/control` requests to `http://localhost:8080`.
+  - When making API calls from React, use relative URLs starting with `/react-app/control/` or `/control/` (e.g., `/react-app/control/getAccountingSummary`).
+
+## 3. Build & Deployment Workflow (Production / OFBiz Integration)
+- Whenever frontend changes are ready for OFBiz to serve directly:
+  1. Go to `plugins/react-app/frontend`.
+  2. Run `npm run build`.
+  3. This compiles the code and places `index.html` and assets under `plugins/react-app/webapp/react-app`.
+- **View Mapping:**
+  - The controller (`plugins/react-app/webapp/react-app/WEB-INF/controller.xml`) maps the `main` view to the built html:
+    `<view-map name="main" type="ftl" page="component://react-app/webapp/react-app/index.html"/>`
+- **Request Registration:**
+  - Any new endpoint/service accessed by the React frontend MUST be registered in `controller.xml` as a `<request-map>` with the correct response mappings to `json` (or another format).
+
+## 4. Troubleshooting Checklist for AI Agents
+- **404 / Unknown Request:** If React gets a 404/500 for a controller request, verify that:
+  - The request map is registered in `controller.xml`.
+  - The service is defined in `servicedef/services.xml`.
+  - The build was compiled using `npm run build` and OFBiz was restarted (or loaded dynamically).
+- **XML Schema Validation Errors:** OFBiz controller and component XMLs must adhere strictly to their respective XSD schemas. Always check schema definitions when editing XML files.

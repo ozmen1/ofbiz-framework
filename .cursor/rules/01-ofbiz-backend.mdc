@@ -1,0 +1,49 @@
+---
+description: Rules and guidelines for Apache OFBiz backend development (Java, Groovy, XML Entity/Service/Controller definitions)
+globs: "**/*.java", "**/*.groovy", "**/*.xml", "**/servicedef/*.xml", "**/entitydef/*.xml", "**/widget/*.xml"
+---
+# Apache OFBiz Backend Development Guidelines
+
+You are an expert Apache OFBiz backend developer. When writing code, modifying configurations, or creating services in this project, adhere strictly to the following rules:
+
+## 1. Core Architecture
+- **Layered Design:** Always respect the separation between Entity Engine (data persistence), Service Engine (business logic), and Controller/View (presentation/routing).
+- **No Direct SQL:** Never write raw SQL queries or JDBC calls. Always use the `Delegator` for database interactions (e.g., `delegator.findOne`, `delegator.findList`, `EntityQuery`).
+- **Service-Oriented:** Write business logic as OFBiz services (defined in XML files under `servicedef/` and implemented in Groovy or Java). Do not run heavy business logic directly in event handlers or controllers.
+
+## 2. Entity Engine (Data Modeling)
+- Define all custom entities or entity extensions in `entitydef/entitymodel.xml`.
+- Use correct field types mapping to OFBiz standards (e.g., `id`, `name`, `description`, `date-time`, `numeric`).
+- Always define proper relations (e.g., `type="one"`, `type="many"`) and foreign key constraints.
+- Do not modify core system entities directly. If needed, use `<extend-entity>` to add fields.
+
+## 3. Service Engine (Business Logic)
+- Define services in `servicedef/services.xml`. Always specify:
+  - `name`: CamelCase starting with a verb (e.g., `createAccountingInvoice`).
+  - `engine`: Use `groovy` for new script-based logic, `java` for complex systems, or `entity-auto` for basic CRUD.
+  - `location`: Specify path to the script or class.
+  - `invoke`: Method name or script name.
+  - `auth`: Set `auth="true"` unless the service must be publicly accessible.
+- **Service Context:** Services receive `dctx` (DispatchContext) and `context` (Map of inputs), and must return a Map containing `responseMessage` (`serviceUtil.returnSuccess()` or `serviceUtil.returnError(...)`).
+- **Groovy Best Practices:**
+  - Write Groovy scripts in `src/main/groovy/` or `groovyScripts/` directories.
+  - Use typed variables where beneficial, but leverage Groovy's map shorthand.
+  - Return errors gracefully: `return ServiceUtil.returnError("Error message")`.
+
+## 4. Controller Layer & Routing
+- Requests must be mapped in the component's `WEB-INF/controller.xml`.
+- **Request Map (`<request-map>`):**
+  - Define `uri` and security preferences (`auth="true"` or `auth="false"`).
+  - Use `<security https="true" auth="true"/>` to enforce authentication.
+  - Map actions using `<event type="service" path="..." invoke="..."/>` or `<event type="groovy" .../>`.
+  - Handle responses using `<response name="success" type="request" value="..."/>` or `type="none"`.
+- Make sure requests that return JSON are mapped to the appropriate JSON handler event or request.
+
+## 5. Security & Context
+- Always validate that the user has the required permissions before performing operations:
+  ```groovy
+  if (!security.hasEntityPermission("ACCOUNTING", "_CREATE", session)) {
+      return ServiceUtil.returnError("Security error: unauthorized access")
+  }
+  ```
+- Use `userLogin` object from the session/context to audit actions.

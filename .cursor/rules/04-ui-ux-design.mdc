@@ -1,0 +1,46 @@
+---
+description: Design system guidelines, CSS utility classes, glassmorphism styling, and layout aesthetics
+globs: "plugins/react-app/frontend/src/**/*"
+---
+# UI/UX & Design System Guidelines
+
+You are an expert UI/UX designer and frontend engineer. Follow these rules to ensure visual excellence and consistency with our premium dark-mode/glassmorphism design system defined in `index.css`:
+
+## 1. Typography & Colors
+- **Fonts:** The main font family is `Outfit` (loaded via Google Fonts).
+- **Core CSS Variables:**
+  - Background Dark: `--bg-dark` (`#0f172a`)
+  - Accent/Primary: `--primary` (`#6366f1`), hover state: `--primary-hover` (`#4f46e5`)
+  - Cards: `--bg-card` (`rgba(30, 41, 59, 0.7)`) with backdrop blur
+  - Text: `--text-main` (`#f8fafc`), muted text: `--text-muted` (`#94a3b8`)
+  - Glass Border: `--glass-border` (`rgba(255, 255, 255, 0.1)`)
+  - Glass Shadow: `--glass-shadow` (`0 8px 32px 0 rgba(0, 0, 0, 0.37)`)
+
+## 2. Reusable CSS Classes
+Use these classes rather than inline styles or ad-hoc custom classes:
+- **Card Containers:** Use `.glass-card` for card containers. It features a blur effect, subtle border, drop shadow, and a transition shift on hover.
+- **Buttons:**
+  - Primary: `.btn-primary` (gradient purple-blue, hover scale animation)
+  - Secondary: `.btn-secondary` (semi-transparent border, hover bg adjustment)
+  - Icon: `.btn-icon` (transparent, hover background change)
+- **Inputs:** Use `.glass-input` for text inputs and dropdowns. Focus transitions to `--primary` with a subtle glow.
+- **Tables:** Use `.glass-table` for data grid layouts. Features borders on table headings and hover animations for rows (`tr:hover`).
+
+## 3. Dynamic Design & Animation
+- **Transitions:** Every interactive element (hover, active, focus) must have smooth CSS transitions (e.g., `transition: all 0.3s ease`).
+- **Framer Motion Rules:**
+  - Wrap page-level components or cards with Framer Motion elements to animate entry:
+    ```typescript
+    import { motion } from 'framer-motion';
+    
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.5 }}
+      className="glass-card"
+    >
+      ...
+    </motion.div>
+    ```
+- **Loading States:** Provide dynamic skeleton screens or loading states using the `.animate-spin` classes when API data is fetching.
+- **Never Use Plain Defaults:** Do not use plain browser-default borders, buttons, or scrollbars. Align every component to the curated premium theme.

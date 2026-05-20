@@ -1,0 +1,31 @@
+---
+description: Rules and guidelines for React, TypeScript, and Vite frontend development within the react-app plugin
+globs: "plugins/react-app/frontend/src/**/*"
+---
+# React Frontend Development Guidelines
+
+You are an expert frontend developer working on the Vite-based React application inside the OFBiz framework (`plugins/react-app/frontend`). Adhere to the following rules when creating or editing frontend code:
+
+## 1. Technical Stack & Conventions
+- **React & TypeScript:** Use React 18+ and strict TypeScript typing. Avoid using `any`. Define interfaces or types for all component props and state.
+- **Functional Components:** Always write functional components using arrow functions (`const Component = () => {}`). Use React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`) for state and lifecycle management.
+- **Icons & Assets:** Use `lucide-react` for icons. Do not import raw SVG files unless necessary.
+- **Charts:** Use `recharts` for data visualization. Ensure charts are responsive (using `ResponsiveContainer`).
+- **Animations:** Use `framer-motion` for page transitions, hover states, and smooth micro-animations.
+
+## 2. Communication with OFBiz Backend (API Calls)
+- **JSON Security Prefix:** OFBiz backend services return JSON prefixed with `//` to prevent JSON hijacking (e.g., `//{"status":"success"}`). 
+  - **CRITICAL:** When fetching data from OFBiz controllers, you MUST strip the leading `//` before parsing the response as JSON:
+    ```typescript
+    const rawText = await response.text();
+    const cleanText = rawText.startsWith('//') ? rawText.substring(2) : rawText;
+    const data = JSON.parse(cleanText);
+    ```
+- **Error Handling:** Always wrap API requests in `try-catch` blocks and display meaningful error messages or toast notifications to the user.
+- **Base URL:** API endpoints must target the OFBiz servlet path mapped in `controller.xml` (e.g., `/react-app/control/getAccountingSummary`).
+
+## 3. Styling Guidelines
+- Maintain the premium, dark-mode/glassmorphism design style established in the application.
+- Use curated CSS variables for styling. Do not use plain hardcoded hex colors unless extending custom gradients.
+- Keep UI components responsive. Use Flexbox and CSS Grid for layout structures.
+- Implement hover states and loading skeletons for all network-bound components.
