@@ -32,7 +32,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Stream;
-
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -55,7 +54,6 @@ import freemarker.core.Environment;
 import freemarker.core.TemplateClassResolver;
 import freemarker.ext.beans.BeanModel;
 import freemarker.ext.beans.BeansWrapper;
-import freemarker.ext.beans.BeansWrapperBuilder;
 import freemarker.template.Configuration;
 import freemarker.template.SimpleHash;
 import freemarker.template.SimpleScalar;
@@ -73,7 +71,7 @@ public final class FreeMarkerWorker {
     /** The template used to retrieved Freemarker transforms from multiple component classpaths. */
     private static final String TRANSFORMS_PROPERTIES = "org/apache/ofbiz/%s/freemarkerTransforms.properties";
     private static final String MODULE = FreeMarkerWorker.class.getName();
-    public static final Version VERSION = Configuration.VERSION_2_3_34;
+    public static final Version VERSION = Configuration.VERSION_2_3_35;
 
     private FreeMarkerWorker() { }
 
@@ -81,11 +79,30 @@ public final class FreeMarkerWorker {
     // or maybe not for performance reasons... hmmm, leave to config file...
     private static final UtilCache<String, Template> CACHED_TEMPLATES =
             UtilCache.createUtilCache("template.ftl.general", 0, 0, false);
-    private static final BeansWrapper DEFAULT_OFBIZ_WRAPPER = new BeansWrapperBuilder(VERSION).build();
+    private static final BeansWrapper DEFAULT_OFBIZ_WRAPPER = new OfbizBeansWrapper(VERSION);
+    private static final TemplateHashModel DEFAULT_STATIC_MODELS =
+            getConfiguredStaticModel(getDefaultOfbizWrapper());
     private static final Configuration DEFAULT_OFBIZ_CONFIG = makeConfiguration(DEFAULT_OFBIZ_WRAPPER);
 
     public static BeansWrapper getDefaultOfbizWrapper() {
         return DEFAULT_OFBIZ_WRAPPER;
+    }
+
+    /**
+     * Returns the configured {@link TemplateHashModel} that backs the
+     * {@code Static} shared variable in every FreeMarker template.
+     *
+     * <p>By default, the whitelist-restricted {@link RestrictedStaticModels} are returned.
+     * If you wish to override this behaviour, set {@code freemarker.use-restricted-static-models}
+     * in security.properties to {@code false}.
+     *
+     * <p>Use this whenever you need to expose the {@code Static} variable to a custom
+     * FreeMarker context, so that the same whitelist restrictions apply uniformly.
+     *
+     * @return the configured {@link TemplateHashModel} instance for the default OFBiz wrapper
+     */
+    public static TemplateHashModel getStaticModels() {
+        return DEFAULT_STATIC_MODELS;
     }
 
     public static Configuration newConfiguration() {
@@ -96,10 +113,10 @@ public final class FreeMarkerWorker {
         Configuration newConfig = newConfiguration();
 
         newConfig.setObjectWrapper(wrapper);
-        TemplateHashModel staticModels = wrapper.getStaticModels();
-        newConfig.setSharedVariable("Static", staticModels);
+        newConfig.setSharedVariable("Static", getConfiguredStaticModel(wrapper));
+        TemplateHashModel rawStaticModels = wrapper.getStaticModels();
         try {
-            newConfig.setSharedVariable("EntityQuery", staticModels.get("org.apache.ofbiz.entity.util.EntityQuery"));
+            newConfig.setSharedVariable("EntityQuery", rawStaticModels.get("org.apache.ofbiz.entity.util.EntityQuery"));
         } catch (TemplateModelException e) {
             Debug.logError(e, MODULE);
         }
@@ -151,6 +168,28 @@ public final class FreeMarkerWorker {
             }
         });
         return newConfig;
+    }
+
+    /**
+     * Return an unrestricted or a whitelist-restricted {@link TemplateHashModel}
+     * depending on the value of {@code freemarker.use-restricted-static-models} in
+     * security.properties.
+     *
+     * <p>If the wrapper is {@code null}, then the default OFBiz {@code BeansWrapper} is used.
+     *
+     * @param wrapper The current {@link BeansWrapper}
+     * @return the configured {@link RestrictedStaticModels} or
+     * {@link freemarker.ext.beans.StaticModels.StaticModels StaticModels}
+     */
+    private static TemplateHashModel getConfiguredStaticModel(BeansWrapper wrapper) {
+        TemplateHashModel staticModels = getDefaultOfbizWrapper().getStaticModels();
+        if (wrapper != null) {
+            staticModels = wrapper.getStaticModels();
+        }
+        if (UtilProperties.getPropertyAsBoolean("security", "freemarker.use-restricted-static-models", true)) {
+            staticModels = RestrictedStaticModels.fromConfig(staticModels, "freemarker-whitelist");
+        }
+        return staticModels;
     }
 
     /**
@@ -516,13 +555,13 @@ public final class FreeMarkerWorker {
             if (name != null && name.startsWith("delegator:")) {
                 return null; // this is a template stored in the database
             }
-            URL locationUrl = null;
             try {
-                locationUrl = FlexibleLocation.resolveLocation(name);
+                URL locationUrl = FlexibleLocation.resolveLocation(name);
+                return locationUrl != null && new File(locationUrl.toURI()).exists() ? locationUrl : null;
             } catch (Exception e) {
                 Debug.logWarning("Unable to locate the template: " + name, MODULE);
             }
-            return locationUrl != null && new File(locationUrl.getFile()).exists() ? locationUrl : null;
+            return null;
         }
     }
 

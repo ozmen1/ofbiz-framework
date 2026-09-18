@@ -23,13 +23,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.commons.imaging.ImageReadException;
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.GeneralException;
 import org.apache.ofbiz.base.util.UtilDateTime;
@@ -50,6 +49,7 @@ import org.apache.ofbiz.entity.GenericEntityException;
 import org.apache.ofbiz.entity.GenericValue;
 import org.apache.ofbiz.entity.util.EntityQuery;
 import org.apache.ofbiz.security.SecuredUpload;
+import org.apache.ofbiz.security.SecurityUtil;
 import org.apache.ofbiz.service.DispatchContext;
 import org.apache.ofbiz.service.GenericServiceException;
 import org.apache.ofbiz.service.ModelService;
@@ -196,8 +196,7 @@ public class DataServices {
         return createFileMethod(dctx, context);
     }
 
-    public static Map<String, Object> createFileNoPerm(DispatchContext dctx, Map<String, ? extends Object> rcontext) throws IOException,
-            ImageReadException {
+    public static Map<String, Object> createFileNoPerm(DispatchContext dctx, Map<String, ? extends Object> rcontext) throws IOException {
         String originalFileName = (String) rcontext.get("dataResourceName");
         String fileNameAndPath = (String) rcontext.get("objectInfo");
         Delegator delegator = dctx.getDelegator();
@@ -253,12 +252,22 @@ public class DataServices {
             if (!file.isAbsolute()) {
                 return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentLocalFileDoesNotPointToAbsoluteLocation", locale));
             }
+            try {
+                SecurityUtil.checkLocalFileAllowList(file);
+            } catch (GeneralException e) {
+                return ServiceUtil.returnError(e.getMessage());
+            }
         } else if ("OFBIZ_FILE".equals(dataResourceTypeId) || "OFBIZ_FILE_BIN".equals(dataResourceTypeId)) {
             prefix = System.getProperty("ofbiz.home");
             if (objectInfo.indexOf('/') != 0 && prefix.lastIndexOf('/') != (prefix.length() - 1)) {
                 sep = "/";
             }
             file = new File(prefix + sep + objectInfo);
+            try {
+                SecurityUtil.checkOfbizFileAllowList(file);
+            } catch (GeneralException e) {
+                return ServiceUtil.returnError(e.getMessage());
+            }
         } else if ("CONTEXT_FILE".equals(dataResourceTypeId) || "CONTEXT_FILE_BIN".equals(dataResourceTypeId)) {
             prefix = (String) context.get("rootDir");
             if (UtilValidate.isEmpty(prefix)) {
@@ -268,6 +277,11 @@ public class DataServices {
                 sep = "/";
             }
             file = new File(prefix + sep + objectInfo);
+            try {
+                DataResourceWorker.checkContextFileBoundary(file, prefix);
+            } catch (GeneralException e) {
+                return ServiceUtil.returnError(e.getMessage());
+            }
         }
         if (file == null) {
             return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableObtainReferenceToFile",
@@ -284,31 +298,26 @@ public class DataServices {
                     String errorMessage = UtilProperties.getMessage("SecurityUiLabels", "SupportedTextFileFormats", locale);
                     return ServiceUtil.returnError(errorMessage);
                 }
-            } catch (IOException | ImageReadException e) {
+            } catch (IOException e) {
                 Debug.logWarning(e, MODULE);
                 return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableWriteCharacterDataToFile",
                         UtilMisc.toMap("fileName", file.getAbsolutePath()), locale));
             }
         } else if (binData != null) {
             try {
-                Path tempFile = Files.createTempFile(null, null);
+                String origName = file.getName();
+                int dotIdx = origName.lastIndexOf('.');
+                String fileExt = dotIdx >= 0 ? origName.substring(dotIdx) : null;
+                Path tempFile = Files.createTempFile(null, fileExt);
                 Files.write(tempFile, binData.array(), StandardOpenOption.APPEND);
-                // Check if a webshell is not uploaded
-                // TODO I believe the call below to SecuredUpload::isValidFile is now useless because of the same in createFileNoPerm
                 if (!SecuredUpload.isValidFile(tempFile.toString(), "All", delegator)) {
                     String errorMessage = UtilProperties.getMessage("SecurityUiLabels", "SupportedFileFormatsIncludingSvg", locale);
+                    new File(tempFile.toString()).deleteOnExit();
                     return ServiceUtil.returnError(errorMessage);
                 }
-                File tempFileToDelete = new File(tempFile.toString());
-                tempFileToDelete.deleteOnExit();
-                RandomAccessFile out = new RandomAccessFile(file, "rw");
-                out.write(binData.array());
-                out.close();
+                Files.copy(tempFile, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                new File(tempFile.toString()).deleteOnExit();
 
-            } catch (FileNotFoundException | ImageReadException e) {
-                Debug.logError(e, MODULE);
-                return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableToOpenFileForWriting",
-                        UtilMisc.toMap("fileName", file.getAbsolutePath()), locale));
             } catch (IOException e) {
                 Debug.logError(e, MODULE);
                 return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableWriteBinaryDataToFile",
@@ -467,18 +476,33 @@ public class DataServices {
                 if (!file.isAbsolute()) {
                     throw new GenericServiceException("File: " + fileName + " is not absolute.");
                 }
+                try {
+                    SecurityUtil.checkLocalFileAllowList(file);
+                } catch (GeneralException e) {
+                    return ServiceUtil.returnError(e.getMessage());
+                }
             } else if (dataResourceTypeId.startsWith("OFBIZ_FILE")) {
                 prefix = System.getProperty("ofbiz.home");
                 if (objectInfo.indexOf('/') != 0 && prefix.lastIndexOf('/') != (prefix.length() - 1)) {
                     sep = "/";
                 }
                 file = new File(prefix + sep + objectInfo);
+                try {
+                    SecurityUtil.checkOfbizFileAllowList(file);
+                } catch (GeneralException e) {
+                    return ServiceUtil.returnError(e.getMessage());
+                }
             } else if (dataResourceTypeId.startsWith("CONTEXT_FILE")) {
                 prefix = (String) context.get("rootDir");
                 if (objectInfo.indexOf('/') != 0 && prefix.lastIndexOf('/') != (prefix.length() - 1)) {
                     sep = "/";
                 }
                 file = new File(prefix + sep + objectInfo);
+                try {
+                    DataResourceWorker.checkContextFileBoundary(file, prefix);
+                } catch (GeneralException e) {
+                    return ServiceUtil.returnError(e.getMessage());
+                }
             }
             if (file == null) {
                 throw new IOException("File is null");
@@ -494,31 +518,25 @@ public class DataServices {
                         String errorMessage = UtilProperties.getMessage("SecurityUiLabels", "SupportedTextFileFormats", locale);
                         return ServiceUtil.returnError(errorMessage);
                     }
-                } catch (IOException | ImageReadException e) {
+                } catch (IOException e) {
                     Debug.logWarning(e, MODULE);
                     return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableWriteCharacterDataToFile",
                             UtilMisc.toMap("fileName", file.getAbsolutePath()), locale));
                 }
             } else if (binData != null) {
                 try {
-                    // Check if a webshell is not uploaded
-                    // TODO I believe the call below to SecuredUpload::isValidFile is now useless because of the same in createFileNoPerm
-                    Path tempFile = Files.createTempFile(null, null);
+                    String origName = file.getName();
+                    int dotIdx = origName.lastIndexOf('.');
+                    String fileExt = dotIdx >= 0 ? origName.substring(dotIdx) : null;
+                    Path tempFile = Files.createTempFile(null, fileExt);
                     Files.write(tempFile, binData.array(), StandardOpenOption.APPEND);
                     if (!SecuredUpload.isValidFile(tempFile.toString(), "Image", delegator)) {
                         String errorMessage = UtilProperties.getMessage("SecurityUiLabels", "SupportedFileFormatsIncludingSvg", locale);
+                        new File(tempFile.toString()).deleteOnExit();
                         return ServiceUtil.returnError(errorMessage);
                     }
-                    File tempFileToDelete = new File(tempFile.toString());
-                    tempFileToDelete.deleteOnExit();
-                    RandomAccessFile out = new RandomAccessFile(file, "rw");
-                    out.setLength(binData.array().length);
-                    out.write(binData.array());
-                    out.close();
-                } catch (FileNotFoundException | ImageReadException e) {
-                    Debug.logError(e, MODULE);
-                    return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableToOpenFileForWriting",
-                            UtilMisc.toMap("fileName", file.getAbsolutePath()), locale));
+                    Files.copy(tempFile, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    new File(tempFile.toString()).deleteOnExit();
                 } catch (IOException e) {
                     Debug.logError(e, MODULE);
                     return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentUnableWriteBinaryDataToFile",
@@ -687,7 +705,7 @@ public class DataServices {
                 if (Debug.infoOn()) {
                     Debug.logInfo("in createBinaryFileMethod, length:" + file.length(), MODULE);
                 }
-            } catch (IOException | ImageReadException e) {
+            } catch (IOException e) {
                 Debug.logWarning(e, MODULE);
                 throw new GenericServiceException(e.getMessage());
             }
@@ -748,7 +766,7 @@ public class DataServices {
                 if (Debug.infoOn()) {
                     Debug.logInfo("in updateBinaryFileMethod, length:" + file.length(), MODULE);
                 }
-            } catch (IOException | ImageReadException e) {
+            } catch (IOException e) {
                 Debug.logWarning(e, MODULE);
                 throw new GenericServiceException(e.getMessage());
             }

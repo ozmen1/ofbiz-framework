@@ -20,6 +20,7 @@ package org.apache.ofbiz.accounting.tax
 
 import org.apache.ofbiz.base.util.UtilDateTime
 import org.apache.ofbiz.entity.GenericValue
+import org.apache.ofbiz.service.ServiceErrorException
 
 import java.util.regex.Pattern
 
@@ -29,13 +30,10 @@ import java.util.regex.Pattern
  */
 Map createPartyTaxAuthInfo() {
     GenericValue taxAuthority = from('TaxAuthority').where(parameters).queryOne()
-    if (!taxAuthority) {
-        return error(label('PartyUiLabels', 'PartyTaxAuthPartyAndGeoNotAvailable'))
-    }
+    require(taxAuthority as boolean, label('PartyUiLabels', 'PartyTaxAuthPartyAndGeoNotAvailable'))
     String errorMesg = validatePartyTaxIdInline()
-    if (errorMesg) {
-        return error(errorMesg)
-    }
+    boolean isTaxIdValid = !errorMesg
+    require(isTaxIdValid, errorMesg)
     GenericValue partyAuthInfo = makeValue('PartyTaxAuthInfo', parameters)
     partyAuthInfo.fromDate = partyAuthInfo.fromDate ?: UtilDateTime.nowTimestamp()
     partyAuthInfo.create()
@@ -47,13 +45,12 @@ Map createPartyTaxAuthInfo() {
  */
 Map updatePartyTaxAuthInfo() {
     String errorMesg = validatePartyTaxIdInline()
-    if (errorMesg) {
-        return error(errorMesg)
-    }
-    GenericValue partyAuthInfo = from('PartyTaxAuthInfo').where(parameters).queryOne()
-    if (partyAuthInfo) {
-        partyAuthInfo.setNonPKFields(parameters, false)
-        partyAuthInfo.store()
+    boolean isTaxIdValid = !errorMesg
+    require(isTaxIdValid, errorMesg)
+    try {
+        update('PartyTaxAuthInfo').where(parameters).set(parameters, false)
+    } catch (ServiceErrorException e) {
+        fail('PartyTaxAuthInfo not found for the given parameters')
     }
     return success()
 }
@@ -64,7 +61,7 @@ Map updatePartyTaxAuthInfo() {
 String validatePartyTaxIdInline() {
     GenericValue taxAuthority = from('TaxAuthority').where(parameters).queryOne()
     if (taxAuthority && taxAuthority.taxIdFormatPattern && parameters.partyTaxId &&
-            !Pattern.compile(taxAuthority.taxIdFormatPattern).matcher(parameters.partyTaxId).find()) {
+            !Pattern.compile(taxAuthority.taxIdFormatPattern).matcher(parameters.partyTaxId).matches()) {
         return label('AccountingErrorUiLabels', 'AccountingTaxIdInvalidFormat', [parameters: parameters, taxAuthority: taxAuthority])
     }
     return ''
@@ -75,9 +72,9 @@ String validatePartyTaxIdInline() {
  * @return Success, error response otherwise.
  */
 Map createCustomerTaxAuthInfo() {
-    List taxAuthPartyGeoIds = org.apache.ofbiz.base.util.StringUtil.split(parameters.taxAuthPartyGeoIds, '::')
-    parameters.taxAuthPartyId = taxAuthPartyGeoIds[0]
-    parameters.taxAuthGeoId = taxAuthPartyGeoIds[1]
+    String taxAuthPartyGeoIds = parameters.taxAuthPartyGeoIds
+    parameters.taxAuthPartyId = taxAuthPartyGeoIds.substring(0, taxAuthPartyGeoIds.indexOf('::'))
+    parameters.taxAuthGeoId = taxAuthPartyGeoIds.substring(taxAuthPartyGeoIds.indexOf('::') + 2)
     run service: 'createPartyTaxAuthInfo', with: parameters
     return success()
 }

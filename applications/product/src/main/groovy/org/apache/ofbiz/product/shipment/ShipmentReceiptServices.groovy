@@ -22,7 +22,6 @@ import java.math.RoundingMode
 import java.sql.Timestamp
 
 import org.apache.ofbiz.base.util.UtilDateTime
-import org.apache.ofbiz.base.util.UtilProperties
 import org.apache.ofbiz.entity.GenericValue
 import org.apache.ofbiz.entity.condition.EntityCondition
 
@@ -43,11 +42,9 @@ Map createShipmentReceipt() {
     newEntity.create()
 
     if (parameters.inventoryItemDetailSeqId) {
-        GenericValue invDet = from('InventoryItemDetail')
+        update('InventoryItemDetail')
                 .where(inventoryItemDetailSeqId: parameters.inventoryItemDetailSeqId, inventoryItemId: parameters.inventoryItemId)
-                .queryOne()
-        invDet.receiptId = receiptId
-        invDet.store()
+                .set([receiptId: receiptId])
     }
     Boolean affectAccounting = true
 
@@ -74,6 +71,13 @@ Map receiveInventoryProduct () {
      * - DEJ20070822: something to consider for the future:
      *  maybe instead of this funny looping maybe for serialized items we should only allow a quantity of 1, ie return an error if it is not 1
      */
+
+    // Return an error if both quantityAccepted and quantityRejected are zero or less than zero
+    BigDecimal quantityRejected = parameters.quantityRejected ?: BigDecimal.ZERO
+    require((quantityRejected != BigDecimal.ZERO || parameters.quantityAccepted != BigDecimal.ZERO)
+        && (quantityRejected >= BigDecimal.ZERO && parameters.quantityAccepted >= BigDecimal.ZERO),
+        'ProductUiLabels', 'ProductNoItemsToAcceptOrReject')
+
     Map result = success()
     List successMessageList = []
     String currentInventoryItemId
@@ -82,11 +86,13 @@ Map receiveInventoryProduct () {
         // if we are serialized and either a serialNumber or inventoyItemId is passed in and the quantityAccepted is greater than 1 then complain
         if ((parameters.serialNumber || parameters.currentInventoryItemId) && (parameters.quantityAccepted > (BigDecimal.ONE))) {
             Map errorLog = [parameters: parameters]
-            return error(UtilProperties.getMessage('ProductUiLabels', 'FacilityReceiveInventoryProduct', errorLog,  parameters.locale))
+            fail('ProductUiLabels', 'FacilityReceiveInventoryProduct', errorLog)
             // before getting going, see if there are any validation issues so far
         }
-        loops = parameters.quantityAccepted
-        parameters.quantityAccepted = BigDecimal.ONE
+        if (parameters.quantityAccepted > BigDecimal.ZERO) {
+            loops = parameters.quantityAccepted
+            parameters.quantityAccepted = BigDecimal.ONE
+        }
     }
     parameters.quantityOnHandDiff = parameters.quantityAccepted
     parameters.availableToPromiseDiff = parameters.quantityAccepted
@@ -135,12 +141,14 @@ Map receiveInventoryProduct () {
             run service: 'updateInventoryItem', with: parameters
             currentInventoryItemId = parameters.currentInventoryItemId
         } else {
-            Map serviceResult = run service: 'createInventoryItem', with: parameters
-            currentInventoryItemId = serviceResult.inventoryItemId
+            if (parameters.quantityAccepted > BigDecimal.ZERO) {
+                Map serviceResult = run service: 'createInventoryItem', with: parameters
+                currentInventoryItemId = serviceResult.inventoryItemId
+            }
         }
 
         // do this only for non-serialized inventory
-        if (parameters.inventoryItemTypeId != 'SERIALIZED_INV_ITEM') {
+        if (parameters.inventoryItemTypeId != 'SERIALIZED_INV_ITEM' && parameters.quantityAccepted > BigDecimal.ZERO) {
             serviceInMap = [:]
             serviceInMap = parameters
             serviceInMap.inventoryItemId = currentInventoryItemId
@@ -153,7 +161,7 @@ Map receiveInventoryProduct () {
         run service: 'createShipmentReceipt', with: serviceInMap
 
         //update serialized items to AVAILABLE (only if this is not a return), which then triggers other SECA chains
-        if (parameters.inventoryItemTypeId == 'SERIALIZED_INV_ITEM' && !parameters.returnId) {
+        if (parameters.inventoryItemTypeId == 'SERIALIZED_INV_ITEM' && !parameters.returnId && parameters.quantityAccepted > BigDecimal.ZERO) {
             // Retrieve the new inventoryItem
             GenericValue inventoryItem = from('InventoryItem').where(inventoryItemId: currentInventoryItemId).queryOne()
 
@@ -165,13 +173,18 @@ Map receiveInventoryProduct () {
                 run service: 'updateInventoryItem', with: serviceInMap
             }
         }
-        serviceInMap = [:]
-        serviceInMap = parameters
-        serviceInMap.inventoryItemId = currentInventoryItemId
-        run service: 'balanceInventoryItems', with: serviceInMap
+        if (parameters.quantityAccepted > BigDecimal.ZERO) {
+            serviceInMap = [:]
+            serviceInMap = parameters
+            serviceInMap.inventoryItemId = currentInventoryItemId
+            run service: 'balanceInventoryItems', with: serviceInMap
 
-        successMessageList << "Received ${parameters.quantityAccepted} of ${parameters.productId}"
-                .concat(" in inventory item ${currentInventoryItemId}.") as String
+            successMessageList << "Received ${parameters.quantityAccepted} of ${parameters.productId}"
+                    .concat(" in inventory item ${currentInventoryItemId}.") as String
+        }
+
+        //the following ensures that, for serialized items, the rejected quantity is accounted for only once
+        parameters.quantityRejected = BigDecimal.ZERO
     }
     // return the last inventory item received
     result.inventoryItemId = currentInventoryItemId
@@ -275,100 +288,14 @@ Map quickReceiveReturn() {
 }
 
 /**
- * Issues order item quantity specified to the shipment, then receives inventory for that item and quantity
- */
-Map issueOrderItemToShipmentAndReceiveAgainstPO() {
-    Map result = success()
-    String shipmentItemSeqId
-    GenericValue shipmentItem
-    // get orderItem
-    GenericValue orderItem = from('OrderItem').where(parameters).queryOne()
-    // get orderItemShipGroupAssoc
-    GenericValue orderItemShipGroupAssoc = from('OrderItemShipGroupAssoc').where(parameters).queryOne()
-    // get shipment
-    GenericValue shipment = from('Shipment').where(parameters).queryOne()
-
-    // try to find an existing shipmentItem and attach to it, if none found create a new shipmentItem
-    // if there is NO productId on the orderItem, ALWAYS create a new shipmentItem
-    if (orderItem?.productId) {
-        EntityCondition condition = EntityCondition.makeCondition([
-            EntityCondition.makeCondition(productId: orderItem.productId),
-            EntityCondition.makeCondition(shipmentId: shipment.shipmentId)
-        ])
-        if (parameters.shipmentItemSeqId) {
-            condition = EntityCondition.makeCondition([
-                EntityCondition.makeCondition(shipmentItemSeqId: parameters.shipmentItemSeqId),
-                condition
-            ])
-        }
-        shipmentItem = from('ShipmentItem')
-                .where(condition)
-                .orderBy('shipmentItemSeqId')
-                .queryFirst()
-    }
-    if (shipmentItem) {
-        Map inputMap = parameters
-        shipmentItemSeqId = shipmentItem.shipmentItemSeqId
-        inputMap.orderItem = orderItem
-        Map serviceResult = run service: 'getTotalIssuedQuantityForOrderItem', with: inputMap
-        BigDecimal totalIssuedQuantity = serviceResult.totalIssuedQuantity
-        BigDecimal receivedQuantity = getReceivedQuantityForOrderItem(orderItem)
-        receivedQuantity += parameters.quantity
-        GenericValue orderShipment = from('OrderShipment')
-                .where(orderId: orderItem.orderId,
-                        orderItemSeqId: orderItem.orderItemSeqId,
-                        shipmentId: shipmentItem.shipmentId,
-                        shipmentItemSeqId: shipmentItem.shipmentItemSeqId,
-                        shipGroupSeqId: orderItemShipGroupAssoc.shipGroupSeqId)
-                .queryFirst()
-        if (totalIssuedQuantity < receivedQuantity) {
-            BigDecimal quantityToAdd = receivedQuantity - totalIssuedQuantity
-            shipmentItem.quantity += quantityToAdd
-            shipmentItem.store()
-            orderShipment.quantity = orderShipment.quantity + quantityToAdd
-            orderShipment.store()
-        }
-    } else {
-        Map shipmentItemCreate = [productId: orderItem.productId, shipmentId: parameters.shipmentId, quantity: parameters.quantity]
-        Map serviceResult = run service: 'createShipmentItem', with: shipmentItemCreate
-        Map shipmentItemLookupPk = [shipmentItemSeqId: serviceResult.shipmentItemSeqId, shipmentId: parameters.shipmentId]
-        shipmentItem = from('ShipmentItem').where(shipmentItemLookupPk).queryOne()
-        shipmentItemSeqId = shipmentItem.shipmentItemSeqId
-
-        // Create OrderShipment for this ShipmentItem
-        Map orderShipmentCreate = [quantity: parameters.quantity,
-                                   shipmentId: shipmentItem.shipmentId,
-                                   shipmentItemSeqId: shipmentItem.shipmentItemSeqId,
-                                   orderId: orderItem.orderId,
-                                   orderItemSeqId: orderItem.orderItemSeqId]
-        if (orderItemShipGroupAssoc) {
-            // If we have a ShipGroup Assoc for this Item to focus on, set that; this is mostly the case for purchase orders and such
-            orderShipmentCreate.shipGroupSeqId = orderItemShipGroupAssoc.shipGroupSeqId
-        }
-        run service: 'createOrderShipment', with: orderShipmentCreate
-    }
-    // TODO: if we want to record the role of the facility operation we have to re-implement this using ShipmentReceiptRole
-    // <call-simple-method method-name="associateIssueRoles" xml-resource="component://product/minilang/shipment/issuance/IssuanceServices.xml"/>
-
-    Map receiveInventoryProductCtx = parameters
-    receiveInventoryProductCtx.shipmentItemSeqId = shipmentItemSeqId
-    Map serviceResult = run service: 'receiveInventoryProduct', with: receiveInventoryProductCtx
-    result.inventoryItemId = serviceResult.inventoryItemId
-    result.successMessageList = serviceResult.successMessageList
-
-    return result
-}
-
-/**
  * Computes the till now received quantity from all ShipmentReceipts
  */
 BigDecimal getReceivedQuantityForOrderItem (GenericValue orderItem) {
-    BigDecimal receivedQuantity = 0
-    List shipmentReceipts = from('ShipmentReceipt').where(orderId: orderItem.orderId, orderItemSeqId: orderItem.orderItemSeqId).queryList()
-    for (GenericValue shipmentReceipt : shipmentReceipts) {
-        receivedQuantity +=  shipmentReceipt.quantityAccepted
-    }
-    return receivedQuantity
+    return from('ShipmentReceipt')
+            .where(orderId: orderItem.orderId,
+                    orderItemSeqId: orderItem.orderItemSeqId)
+            .queryList()
+            .sum { (it.quantityAccepted ?: 0) + (it.quantityRejected ?: 0) }
 }
 
 /**
@@ -453,10 +380,7 @@ Map cancelReceivedItems() {
     // 4. updateProductIfAvailableFromShipment
 
     // update the accepted and received quantity to zero in ShipmentReceipt entity
-    GenericValue shipmentReceipt = from('ShipmentReceipt').where(parameters).queryOne()
-    shipmentReceipt.quantityAccepted = 0.0
-    shipmentReceipt.quantityRejected = 0.0
-    shipmentReceipt.store()
+    update('ShipmentReceipt').where(parameters).set([quantityAccepted: 0.0, quantityRejected: 0.0])
 
     // create record for InventoryItemDetail entity
     GenericValue inventoryItem = delegator.getRelatedOne('InventoryItem', shipmentReceipt, false)

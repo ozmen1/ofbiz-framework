@@ -163,7 +163,7 @@ View types can be one of:
 - screenxml: An XML document.
 - simple-content; A special MIME content type (like binary files).
 - ftl: An HTML document generated directly from a FreeMarker template.
-- screenxls: An Excel spreadsheet.
+- screenxlsx: A genuine OOXML .xlsx spreadsheet generated via Apache POI.
 
 In the findInvoices example, the view-map type is a normal screen which is
 mapped to the screen:
@@ -228,6 +228,10 @@ include::applications/datamodel/DATAMODEL_CHANGES.adoc[leveloffset=+2]
 == Service Engine
 A description of the service engine can be found at the
 https://cwiki.apache.org/confluence/display/OFBIZ/Service+Engine+Guide[OFBiz wiki Service Engine Guide]
+
+== REST API
+
+include::framework/rest-api/src/docs/asciidoc/rest-api.adoc[leveloffset=+1]
 
 === Declaration and Implementation
 

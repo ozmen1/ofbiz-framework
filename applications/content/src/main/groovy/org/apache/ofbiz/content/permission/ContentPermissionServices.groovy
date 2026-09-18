@@ -18,7 +18,6 @@
 */
 package org.apache.ofbiz.content.permission
 
-import org.apache.ofbiz.base.util.UtilProperties
 import org.apache.ofbiz.entity.GenericValue
 
 /**
@@ -64,6 +63,13 @@ Map genericContentPermission() {
     // here we can use contentIdTo to check parent(s) ownership
     if (!parameters.ownerContentId && parameters.contentIdFrom) {
         ownerContentId = parameters.contentIdFrom
+    } else if (!parameters.ownerContentId && !parameters.contentIdFrom && parameters.roleTypeId && parameters.contentId) {
+        // establishing a role assignment (roleTypeId present, e.g. creating a ContentRole) with no
+        // owner/parent context supplied: anchor the ownership-based compensating check in
+        // createContentPermission/updateContentPermission against the actual target content instead
+        // of leaving it unbound, so only someone who already has standing on that content can grant
+        // a role on it.
+        ownerContentId = parameters.contentId
     }
 
     //  mainAction based call outs
@@ -122,7 +128,7 @@ Map viewContentPermission(Boolean hasPermission, String contentId, String conten
         // contentId is required for update checking
         contentId = contentId ?: parameters.contentId
         if (!contentId) {
-            return error(UtilProperties.getMessage('ContentUiLabels', 'ContentViewPermissionError'))
+            return error('ContentUiLabels', 'ContentViewPermissionError')
         }
 
         //check the operation security
@@ -282,20 +288,20 @@ Map updateContentPermission(Boolean hasPermission, String contentId, String owne
                 parameters.checkId = checkId
                 Map serviceResultCO = run service: 'checkOwnership', with: parameters
                 hasPermission = serviceResultCO.hasPermission ?: false
-            }
-            if (!hasPermission) {
-                // no permission on this parent; check the parent's parent(s)
-                while (!hasPermission && checkId) {
-                    // iterate until either we have permission or there are no more parents
-                    GenericValue currentContent = from('Content').where(contentId: checkId).cache().queryOne()
-                    if (currentContent?.ownerContentId) {
-                        checkId = currentContent.ownerContentId
-                        parameters.checkId = checkId
-                        Map serviceResCO = run service: 'checkOwnership', with: parameters
-                        hasPermission = serviceResCO.hasPermission ?: false
-                        } else {
-                        // no parent record found; time to stop recursion
-                        checkId = null
+                if (!hasPermission) {
+                    // no permission on this parent; check the parent's parent(s)
+                    while (!hasPermission && checkId) {
+                        // iterate until either we have permission or there are no more parents
+                        GenericValue currentContent = from('Content').where(contentId: checkId).cache().queryOne()
+                        if (currentContent?.ownerContentId) {
+                            checkId = currentContent.ownerContentId
+                            parameters.checkId = checkId
+                            Map serviceResCO = run service: 'checkOwnership', with: parameters
+                            hasPermission = serviceResCO.hasPermission ?: false
+                            } else {
+                            // no parent record found; time to stop recursion
+                            checkId = null
+                        }
                     }
                 }
             }
@@ -346,7 +352,7 @@ Map checkContentOperationSecurity(String contentOperationId, String contentPurpo
                         .orderBy('contentPurposeTypeId')
                         .cache()
                         .queryList()
-                operations << currentOperations
+                operations.addAll(currentOperations)
             }
         } else {
             operations = from('ContentPurposeOperation')
@@ -412,6 +418,16 @@ Map checkContentOperationSecurity(String contentOperationId, String contentPurpo
                 }
             }
         }
+    } else if (parameters.roleTypeId) {
+        // there are no ContentPurposeOperation entries for this operation/purpose, and this call is
+        // establishing a role assignment (roleTypeId present, e.g. creating/updating a ContentRole).
+        // Granting by default here would let any caller assign themselves an arbitrary role - including
+        // OWNER or CONTENT_ADMIN - on any content whenever no explicit rule happens to be configured.
+        // Fail closed for role-assignment actions; the caller must instead satisfy the ownership-based
+        // compensating check in createContentPermission/updateContentPermission (see the ownerContentId
+        // fallback in genericContentPermission above).
+        logVerbose('No operations found for a role-assignment action; permission denied by default')
+        hasPermission = false
     } else {
         // there are no ContentPurposeOperation entries for this operation/purpose; default is approve permission
         logVerbose('No operations found; permission granted!')
@@ -432,9 +448,7 @@ Map checkOwnership() {
     // resetting the permission flag
     Boolean hasPermission = false
 
-    if (!checkId) {
-        return error(label('ContentUiLabels', 'ContentRequiredField', [requiredField: 'checkId']))
-    }
+    require(checkId as boolean, label('ContentUiLabels', 'ContentRequiredField', [requiredField: 'checkId']))
 
     // get all the associated parties (this user + all group memberships)
     List partyIdList = findAllAssociatedPartyIds()
@@ -514,7 +528,7 @@ Map checkRoleSecurity(String roleEntity, String roleEntityField, String checkId,
 /**
  * Find all content purposes for the specified content
  */
-Map findAllContentPurposes(String checkId) {
+Object findAllContentPurposes(String checkId) {
     if (!checkId) {
         return error(label('ContentUiLabels', 'ContentRequiredField', [requiredField: 'checkId']))
     }
@@ -527,7 +541,7 @@ Map findAllContentPurposes(String checkId) {
 /**
  * Finds all associated party Ids for a use
  */
-Map findAllAssociatedPartyIds () {
+List findAllAssociatedPartyIds () {
     Map serviceResult = run service: 'getRelatedParties', with: [partyIdFrom: userLogin.partyId,
                                                                  partyRelationshipTypeId: 'GROUP_ROLLUP',
                                                                  includeFromToSwitched: 'Y']

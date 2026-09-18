@@ -40,6 +40,8 @@ $(document).ready(function () {
     });
     //initializing UI combobox dropdown by overriding its methods.
     ajaxAutoCompleteDropDown();
+    //initializing events listener
+    initializeEvents();
     // bindObservers will add observer on passed html section when DOM is ready.
     bindObservers("body");
 
@@ -92,21 +94,81 @@ $(document).ready(function () {
     }
 });
 
-/* bindObservers function contains the code of adding observers and it can be called for specific section as well
-   when we need to add observer on section which is updated by Ajax.
-   Example: bindObservers("sectionSelector");
-   sectionSelector can be Id, Class and Element name.
-*/
-function bindObservers(bind_element) {
+/* initializeEvents function contains the code of adding events at the loading of the page */
+function initializeEvents() {
 
     // Adding observer for checkboxes for select all action.
-    jQuery(bind_element).on("click", "[type=checkbox]", function () {
+    $("body").on("click", "[type=checkbox]", function () {
         var action_checkbox = jQuery(this),
             parent_action = action_checkbox.is(".selectAll") ? action_checkbox : getFormFields(getForm(action_checkbox)).filter(".selectAll");
         if (parent_action.length !== 0) {
             addSelectAllObserver(action_checkbox);
         }
     });
+
+    $("body").on("click", "[data-dialog-url]", function () {
+        var element = jQuery(this);
+        var url = element.data("dialog-url");
+        var title = element.data("dialog-title");
+        var width = element.data("dialog-width");
+        var height = element.data("dialog-height");
+        var params = element.data("dialog-params");
+        var dialogContainer = jQuery('<div/>');
+        dialogContainer.dialog({
+            autoOpen: false,
+            title: title,
+            height: height,
+            width: width,
+            modal: true,
+            closeOnEscape: true,
+            close: function () {
+                dialogContainer.dialog('destroy');
+            },
+            open: function () {
+                jQuery.ajax({
+                    url: url,
+                    type: "POST",
+                    data: params,
+                    success: function (data) {
+                        dialogContainer.html(data);
+                        bindObservers(dialogContainer);
+                    },
+                    error: (xhr) => {
+                        // unauthorized user, reload page with the link id so we can reopen the modal
+                        if (xhr.status === 401) {
+                            const url = new URL(window.location.href);
+                            url.searchParams.append(SP_CLICK_ON, element.attr('id'));
+                            window.location.replace(url.toString());
+                        } else {
+                            // display some feedback in the modal body
+                            dialogContainer.text(`An unexpected server error occurred (status : ${ xhr.status }).`);
+                        }
+                    }
+                });
+            }
+        });
+        dialogContainer.dialog("open");
+        dialogContainer.on("closeCurrentModalAfterAjaxSubmitFormUpdateAreasInSuccess", function () {
+            dialogContainer.dialog("destroy");
+        });
+    });
+
+    $("body").on("click", "[data-confirm-message]", function (e) {
+        var element = jQuery(this);
+        var confirmMessage = element.data("confirm-message");
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+
+}
+
+/* bindObservers function contains the code of adding observers and it can be called for specific section as well
+   when we need to add observer on section which is updated by Ajax.
+   Example: bindObservers("sectionSelector");
+   sectionSelector can be Id, Class and Element name.
+*/
+function bindObservers(bind_element) {
 
     // If parent checkbox is already checked on DOM ready then check its child checkboxes also.
     if (jQuery(".selectAll").is(":checked")) {
@@ -181,59 +243,7 @@ function bindObservers(bind_element) {
         var params = element.data("inplace-editor-params");
         ajaxInPlaceEditDisplayField(id, url, (new Function("return " + params + ";")()));
     });
-    jQuery(bind_element).on("click", "[data-dialog-url]", function () {
-        var element = jQuery(this);
-        var url = element.data("dialog-url");
-        var title = element.data("dialog-title");
-        var width = element.data("dialog-width");
-        var height = element.data("dialog-height");
-        var params = element.data("dialog-params");
-        var dialogContainer = jQuery('<div/>');
-        dialogContainer.dialog({
-            autoOpen: false,
-            title: title,
-            height: height,
-            width: width,
-            modal: true,
-            closeOnEscape: true,
-            close: function () {
-                dialogContainer.dialog('destroy');
-            },
-            open: function () {
-                jQuery.ajax({
-                    url: url,
-                    type: "POST",
-                    data: params,
-                    success: function (data) {
-                        dialogContainer.html(data);
-                        bindObservers(dialogContainer);
-                    },
-                    error: (xhr) => {
-                        // unauthorized user, reload page with the link id so we can reopen the modal
-                        if (xhr.status === 401) {
-                            const url = new URL(window.location.href);
-                            url.searchParams.append(SP_CLICK_ON, element.attr('id'));
-                            window.location.replace(url.toString());
-                        } else {
-                            // display some feedback in the modal body
-                            dialogContainer.text(`An unexpected server error occurred (status : ${ xhr.status }).`);
-                        }
-                    }
-                });
-            }
-        });
-        dialogContainer.dialog("open");
-        dialogContainer.on("closeCurrentModalAfterAjaxSubmitFormUpdateAreasInSuccess", function () {
-            dialogContainer.dialog("destroy");
-        });
-    });
-    jQuery(bind_element).on("click", "[data-confirm-message]", function (e) {
-        var element = jQuery(this);
-        var confirmMessage = element.data("confirm-message");
-        if (!confirm(confirmMessage)) {
-            e.preventDefault();
-        }
-    });
+
     jQuery(bind_element).find("[data-lookup-presentation]").each(function () {
         var element = jQuery(this);
         var form = getForm(this);
@@ -454,7 +464,7 @@ function initDateTimePicker(self) {
 function addSelectAllObserver(action_checkbox) {
     var form_fields = getFormFields(getForm(action_checkbox));
         all_child = form_fields.filter(":checkbox:not(:disabled):not(.selectAll)"),
-        select_child = all_child.filter(".selectAllChild").size() > 0 ? all_child.filter(".selectAllChild") : all_child,
+        select_child = all_child.filter(".selectAllChild").length > 0 ? all_child.filter(".selectAllChild") : all_child,
         parent_checkbox = form_fields.filter(".selectAll"),
         is_parent = action_checkbox.is(".selectAll");
 
@@ -465,7 +475,7 @@ function addSelectAllObserver(action_checkbox) {
         });
     } else {
         // Check/ Uncheck parent checkbox when child checkboxes checked.
-        if (select_child.size() > 0) {
+        if (select_child.length > 0) {
             var all_checked = true;
 
             select_child.each(function () {
@@ -498,7 +508,7 @@ function getFormFields(element) {
 function getForm(element) {
     const formId = jQuery(element).attr('form');
     // Get closest form if no form id specified else get the form using id.
-    if (formId === undefined) {
+    if (!formId) {
         return jQuery(element).closest('form');
     } else {
         return jQuery('#' + formId);
@@ -666,15 +676,11 @@ function ajaxUpdateArea(areaId, target, targetParams) {
 
 function updateArea(areaId, data) {
     // If the area is indicate as embedded why replace the area instead inject into
-    var bindObserversArea = "#" + areaId
     if (/^embedded/.test(areaId)) {
         jQuery("#" + areaId).replaceWith(data);
-        const newContentId = $(data).filter('.embeddedScreen').attr('id');
-        bindObserversArea = "#" + newContentId;
     } else {
         jQuery("#" + areaId).html(data);
     }
-    bindObservers(bindObserversArea);
 }
 
 /** Update multiple areas (HTML container elements).
@@ -847,6 +853,12 @@ function ajaxSubmitFormUpdateAreas(formName, areaCsvString, close) {
                 areaId = $form[0].target
             }
             updateArea(areaId, data)
+            var bindObserversArea = "#" + areaId
+            if (/^embedded/.test(areaId)) {
+                const newContentId = $(data).filter('.embeddedScreen').attr('id');
+                bindObserversArea = "#" + newContentId;
+            }
+            bindObservers(bindObserversArea);
         } else {
             if (containsErrorMessages(data)) {
                 displayErrorMessages(data)
@@ -918,6 +930,9 @@ function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, def
         else
             var url = initUrl + "?" + areaArray[i + 2];
         var div = areaArray[i];
+        if (!div) {
+            continue;
+        }
         // create a separated div where the result JSON Opbject will be placed
         if ((jQuery("#" + div + "_auto")).length < 1) {
             jQuery("<div id='" + div + "_auto'></div>").insertBefore("#" + areaArray[i]);
@@ -928,7 +943,7 @@ function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, def
             delay: defaultDelay,
             source: function (request, response) {
                 var queryArgs = { "term": request.term };
-                if (typeof args == "object" && jQuery.isArray(args)) {
+                if (typeof args == "object" && Array.isArray(args)) {
                     for (var i = 0; i < args.length; i++) {
                         queryArgs["parm" + i] = DOMPurify.sanitize(jQuery(args[i]).val())
                     }
@@ -995,6 +1010,9 @@ function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, def
 }
 
 function setLookDescription(textFieldId, description, params, formName, showDescription) {
+    if (!textFieldId) {
+        return;
+    }
     if (description) {
         var start = description.lastIndexOf(' [');
         if (start != -1) {
@@ -1206,6 +1224,9 @@ function toggleScreenlet(link, areaId, saveCollapsed, expandTxt, collapseTxt) {
  */
 
 function ajaxInPlaceEditDisplayField(element, url, options) {
+    if (!element) {
+        return;
+    }
     var jElement = jQuery("#" + element);
     jElement.mouseover(function () {
         jQuery(this).css('background-color', 'rgb(255, 255, 153)');
@@ -1215,13 +1236,13 @@ function ajaxInPlaceEditDisplayField(element, url, options) {
         jQuery(this).css('background-color', 'transparent');
     });
 
-    importLibrary(["/common/js/jquery/plugins/jeditable/jquery.jeditable-1.7.3.js"], function () {
+    importLibrary(["/common/js/node_modules/jquery-jeditable/dist/jquery.jeditable.min.js"], function () {
         jElement.editable(function (value, settings) {
             // removes all line breaks from the value param, because the parseJSON Function can't work with line breaks
             value = value.replace(/\n/g, " ");
             value = value.replace(/\"/g, "&quot;");
 
-            var resultField = jQuery.parseJSON('{"' + settings.name + '":"' + value + '"}');
+            var resultField = JSON.parse('{"' + settings.name + '":"' + value + '"}');
             // merge both parameter objects together
             jQuery.extend(settings.submitdata, resultField);
             jQuery.ajax({
@@ -1307,27 +1328,23 @@ function showjGrowlMessage(errMessage, classEvent, stickyValue, showAllLabel, co
         if (!hideAllLabel) hideAllLabel = jGrowlLabelObject[0];
     }
 
-    var libraryFiles = ["/common/js/jquery/plugins/Readmore.js-master/readmore.js",
-        "/common/js/jquery/plugins/jquery-jgrowl/jquery.jgrowl-1.4.6.min.js"];
-    importLibrary(libraryFiles, function () {
-        $.jGrowl.defaults.closerTemplate = '<div class="closeAllJGrowl">' + hideAllLabel + '</div>';
-        if (jGrowlPosition !== null && jGrowlPosition !== undefined) $.jGrowl.defaults.position = jGrowlPosition;
-        $.jGrowl(errMessage, {
-            theme: classEvent, sticky: stickyValue,
-            beforeOpen: function (e, m, o) {
-                if (jGrowlWidth !== null && jGrowlWidth !== undefined) $(e).width(jGrowlWidth + 'px');
-                if (jGrowlHeight !== null && jGrowlHeight !== undefined) $(e).height(jGrowlHeight + 'px');
-            },
-            afterOpen: function (e, m) {
-                jQuery(".jGrowl-message").readmore({
-                    moreLink: '<a href="#" style="display: block; width: auto; padding: 0px;text-align: right; margin-top: 10px; color: #ffffff; font-size: 0.8em">' + showAllLabel + '</a>',
-                    lessLink: '<a href="#" style="display: block; width: auto; padding: 0px;text-align: right; margin-top: 10px; color: #ffffff; font-size: 0.8em">' + collapseLabel + '</a>',
+    $.jGrowl.defaults.closerTemplate = '<div class="closeAllJGrowl">' + hideAllLabel + '</div>';
+    if (jGrowlPosition !== null && jGrowlPosition !== undefined) $.jGrowl.defaults.position = jGrowlPosition;
+    $.jGrowl(errMessage, {
+        theme: classEvent, sticky: stickyValue,
+        beforeOpen: function (e, m, o) {
+            if (jGrowlWidth !== null && jGrowlWidth !== undefined) $(e).width(jGrowlWidth + 'px');
+            if (jGrowlHeight !== null && jGrowlHeight !== undefined) $(e).height(jGrowlHeight + 'px');
+        },
+        afterOpen: function (e, m) {
+            jQuery(".jGrowl-message").readmore({
+                moreLink: '<a href="#" style="display: block; width: auto; padding: 0px;text-align: right; margin-top: 10px; color: #ffffff; font-size: 0.8em">' + showAllLabel + '</a>',
+                lessLink: '<a href="#" style="display: block; width: auto; padding: 0px;text-align: right; margin-top: 10px; color: #ffffff; font-size: 0.8em">' + collapseLabel + '</a>',
 
-                    maxHeight: 75
-                });
-            },
-            speed: jGrowlSpeed
-        });
+                collapsedHeight: 75
+            });
+        },
+        speed: jGrowlSpeed
     });
 }
 
@@ -1608,6 +1625,9 @@ var importLibrary = function () {
 
         jQuery.when.apply(jQuery,
             jQuery.map(urls, function (url) {
+                if (!url) {
+                    return null;
+                }
                 if (!importLibraryFiles.has(url)) {
                     var deferObj = (url.endsWith(".css") ?
                         jQuery.get(url, function (css) {

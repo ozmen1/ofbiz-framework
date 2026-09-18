@@ -19,7 +19,7 @@
 package org.apache.ofbiz.webapp.control;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.security.interfaces.RSAPublicKey;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -27,11 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.HttpHeaders;
 
 import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.StringUtil;
@@ -63,6 +58,11 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.HttpHeaders;
+
 
 /**
  * This class manages the single sign-on authentication through JWT tokens between OFBiz applications.
@@ -83,7 +83,7 @@ public class JWTManager {
                 if (localRef == null) {
                     String issuer = EntityUtilProperties.getPropertyValue("security", "security.token.issuer", "", delegator);
                     String jwksUrl = issuer + "/protocol/openid-connect/certs";
-                    localRef = new JwkProviderBuilder(new URL(jwksUrl))
+                    localRef = new JwkProviderBuilder(URI.create(jwksUrl).toURL())
                             .cached(10, 24, TimeUnit.HOURS)   // cache up to 10 keys for 24h
                             .rateLimited(10, 1, TimeUnit.MINUTES) // prevent frequent fetches
                             .build();
@@ -467,14 +467,14 @@ public class JWTManager {
     }
 
     /**
-     * Validate the token usingJWTManager::validateToken
+     * Validate the token usingJWTManager::validateAccessToken
      * If it fails, returns a ModelService.ERROR_MESSAGE in the result
      * @param jwtToken The JWT which normally contains the userLoginId
      * @param key the secret key to decrypt the token
      * @return Map of name, value pairs composing the result
      */
     private static Map<String, Object> validateJwtToken(Delegator delegator, String jwtToken) {
-        Map<String, Object> result = validateToken(delegator, jwtToken);
+        Map<String, Object> result = validateAccessToken(delegator, jwtToken);
         if (result.containsKey(ModelService.ERROR_MESSAGE)) {
             // Something unexpected happened here
             Debug.logWarning("There was a problem with the JWT token, no single sign on user login possible.", MODULE);
@@ -482,16 +482,33 @@ public class JWTManager {
         return result;
     }
 
-    public static String createRefreshToken(Delegator delegator, String userLoginId) {
+    public static String createRefreshToken(Delegator delegator, Map<String, String> claims) {
         int refreshTokenExpireTime = Integer.parseInt(EntityUtilProperties.getPropertyValue("security",
                 "security.jwt.refresh.token.expireTime", "86400", delegator));
-        return createJwt(delegator, UtilMisc.toMap("userLoginId", userLoginId, "type", "refresh"), refreshTokenExpireTime);
+        claims.put("type", "refresh");
+        return createJwt(delegator, claims, refreshTokenExpireTime);
     }
 
     public static Map<String, Object> validateRefreshToken(Delegator delegator, String refreshToken) {
         Map<String, Object> claims = validateToken(delegator, refreshToken);
         if (!claims.containsKey("type") || !"refresh".equals(claims.get("type"))) {
             return ServiceUtil.returnError("Invalid refresh token.");
+        }
+        return claims;
+    }
+
+    /**
+     * Validates a JWT for use as an access credential, rejecting it if it is a refresh token.
+     * Refresh tokens are signed with the same key as access tokens but carry a much longer
+     * expiration, so they must never be accepted outside the dedicated refresh flow.
+     * @param delegator the delegator
+     * @param jwtToken the JWT to validate
+     * @return the token claims if it is a valid, non-refresh token, or an error entry otherwise
+     */
+    public static Map<String, Object> validateAccessToken(Delegator delegator, String jwtToken) {
+        Map<String, Object> claims = validateToken(delegator, jwtToken);
+        if (!claims.containsKey(ModelService.ERROR_MESSAGE) && "refresh".equals(claims.get("type"))) {
+            return ServiceUtil.returnError("Invalid access token.");
         }
         return claims;
     }

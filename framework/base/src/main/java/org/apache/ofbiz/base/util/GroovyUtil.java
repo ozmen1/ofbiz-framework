@@ -21,7 +21,9 @@ package org.apache.ofbiz.base.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.script.ScriptContext;
@@ -30,6 +32,7 @@ import org.apache.ofbiz.base.location.FlexibleLocation;
 import org.apache.ofbiz.base.util.cache.UtilCache;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import groovy.lang.Binding;
@@ -46,22 +49,86 @@ public final class GroovyUtil {
     private static final String MODULE = GroovyUtil.class.getName();
     private static final UtilCache<String, Class<?>> PARSED_SCRIPTS = UtilCache.createUtilCache("script.GroovyLocationParsedCache", 0, 0, false);
     private static final GroovyClassLoader GROOVY_CLASS_LOADER;
+    private static final GroovyClassLoader GROOVY_CLASS_LOADER_FOR_LOCATION;
+    private static final CompilerConfiguration SANDBOXED_COMPILER_CONFIG;
 
     private GroovyUtil() { }
 
     static {
-        GroovyClassLoader groovyClassLoader = null;
+        GroovyClassLoader sandboxedClassLoader = null;
+        GroovyClassLoader locationClassLoader = null;
         String scriptBaseClass = UtilProperties.getPropertyValue("groovy", "scriptBaseClass");
         if (!scriptBaseClass.isEmpty()) {
-            CompilerConfiguration conf = new CompilerConfiguration();
-            conf.setScriptBaseClass(scriptBaseClass);
-            groovyClassLoader = new GroovyClassLoader(GroovyUtil.class.getClassLoader(), conf);
+            // Used by parseClass(String): compiles ${groovy:...} substrings and inline <script> bodies passed to
+            // ScriptUtil.parseScript(), which can carry caller-supplied text. Keep the compile-time
+            // SecureASTCustomizer here as an injection backstop (see GroovyUtilTests).
+            CompilerConfiguration sandboxedConf = new CompilerConfiguration();
+            sandboxedConf.setScriptBaseClass(scriptBaseClass);
+            sandboxedConf.addCompilationCustomizers(buildSecureAstCustomizer());
+            sandboxedClassLoader = new GroovyClassLoader(GroovyUtil.class.getClassLoader(), sandboxedConf);
+
+            // Used by parseClass(InputStream, location): compiles *.groovy files resolved from a component://
+            // location (controller events, service implementations, screen scripts). These are first-party
+            // files shipped with the framework/plugins, never request input, so they are intentionally NOT
+            // run through SecureASTCustomizer - some legitimately use java.lang.Thread / java.lang.Runtime
+            // (e.g. the webtools Threads and Cache Maintenance screens) and must still compile.
+            CompilerConfiguration locationConf = new CompilerConfiguration();
+            locationConf.setScriptBaseClass(scriptBaseClass);
+            locationClassLoader = new GroovyClassLoader(GroovyUtil.class.getClassLoader(), locationConf);
         }
-        GROOVY_CLASS_LOADER = groovyClassLoader;
+        GROOVY_CLASS_LOADER = sandboxedClassLoader;
+        GROOVY_CLASS_LOADER_FOR_LOCATION = locationClassLoader;
+    }
+
+    static {
+        SANDBOXED_COMPILER_CONFIG = new CompilerConfiguration();
+        SANDBOXED_COMPILER_CONFIG.addCompilationCustomizers(buildSecureAstCustomizer());
     }
 
     /**
-     * Evaluate a Groovy condition or expression
+     * Builds a fresh {@link SecureASTCustomizer} applying the compile-time AST restrictions used by
+     * GROOVY_CLASS_LOADER (parseClass(String)) and SANDBOXED_COMPILER_CONFIG (eval()), but not by
+     * GROOVY_CLASS_LOADER_FOR_LOCATION (trusted component:// *.groovy files). Blocks OS-execution APIs and dynamic class-loading
+     * as a defence-in-depth measure.
+     * <p>Returns a new instance on every call rather than a shared constant: {@code SecureASTCustomizer}
+     * visits the AST during compilation, so handing the same instance to two {@code CompilerConfiguration}s
+     * used concurrently would be unsafe.
+     * <p>Note: SecureASTCustomizer operates at compile time and does not constitute a complete sandbox;
+     * expressions compiled through either path should never originate from untrusted input.
+     * @return a new, independently-usable SecureASTCustomizer
+     */
+    private static SecureASTCustomizer buildSecureAstCustomizer() {
+        SecureASTCustomizer secureAst = new SecureASTCustomizer();
+        secureAst.setDisallowedImports(List.of(
+                "java.lang.Runtime",
+                "java.lang.ProcessBuilder",
+                "java.lang.ClassLoader",
+                "java.lang.Thread",
+                "java.lang.reflect.Method",
+                "java.lang.reflect.Field",
+                "java.net.Socket",
+                "java.net.ServerSocket",
+                "groovy.lang.GroovyShell",
+                "groovy.lang.GroovyClassLoader"));
+        @SuppressWarnings("rawtypes")
+        List<Class> blockedReceivers = Arrays.asList(
+                Runtime.class,
+                ProcessBuilder.class,
+                Thread.class,
+                ClassLoader.class);
+        secureAst.setDisallowedReceiversClasses(blockedReceivers);
+        return secureAst;
+    }
+
+    /**
+     * Evaluate a Groovy condition or expression.
+     * <p>The shell is created with a restricted {@link CompilerConfiguration} backed by
+     * {@link SecureASTCustomizer}: explicit imports of OS-execution and dynamic class-loading
+     * APIs ({@code Runtime}, {@code ProcessBuilder}, {@code Thread}, {@code ClassLoader} and
+     * related reflection / network classes) are disallowed, and those same types are blocked
+     * as method-call receivers.  This is a compile-time, defence-in-depth measure; it does
+     * not constitute a complete sandbox, and expressions must never originate from untrusted
+     * user input.
      * @param expression The expression to evaluate
      * @param context The context to use in evaluation (re-written)
      * @see <a href="StringUtil.html#convertOperatorSubstitutions(java.lang.String)">StringUtil.convertOperatorSubstitutions(java.lang.String)</a>
@@ -80,7 +147,7 @@ public final class GroovyUtil {
             Debug.logVerbose("Using Context -- " + context, MODULE);
         }
         try {
-            GroovyShell shell = new GroovyShell(getBinding(context, expression));
+            GroovyShell shell = new GroovyShell(GroovyUtil.class.getClassLoader(), getBinding(context, expression), SANDBOXED_COMPILER_CONFIG);
             o = shell.evaluate(StringUtil.convertOperatorSubstitutions(expression));
             if (Debug.verboseOn()) {
                 Debug.logVerbose("Evaluated to -- " + o, MODULE);
@@ -178,13 +245,12 @@ public final class GroovyUtil {
      */
     private static Class<?> parseClass(InputStream in, String location) throws IOException {
         String classText = UtilIO.readString(in);
-        if (GROOVY_CLASS_LOADER != null) {
-            return GROOVY_CLASS_LOADER.parseClass(classText, location);
+        if (GROOVY_CLASS_LOADER_FOR_LOCATION != null) {
+            return GROOVY_CLASS_LOADER_FOR_LOCATION.parseClass(classText, location);
         } else {
-            GroovyClassLoader classLoader = new GroovyClassLoader();
-            Class<?> klass = classLoader.parseClass(classText, location);
-            classLoader.close();
-            return klass;
+            try (GroovyClassLoader classLoader = new GroovyClassLoader()) {
+                return classLoader.parseClass(classText, location);
+            }
         }
     }
 
@@ -198,10 +264,9 @@ public final class GroovyUtil {
         if (GROOVY_CLASS_LOADER != null) {
             return GROOVY_CLASS_LOADER.parseClass(text);
         } else {
-            GroovyClassLoader groovyClassLoader = new GroovyClassLoader();
-            Class<?> classLoader = groovyClassLoader.parseClass(text);
-            groovyClassLoader.close();
-            return classLoader;
+            try (GroovyClassLoader groovyClassLoader = new GroovyClassLoader()) {
+                return groovyClassLoader.parseClass(text);
+            }
         }
     }
 

@@ -20,7 +20,7 @@ package org.apache.ofbiz.service;
 
 import java.util.Map;
 
-import org.apache.ofbiz.entity.Delegator;
+import org.apache.ofbiz.entity.util.DelegatorProvider;
 import org.apache.ofbiz.security.Security;
 import org.apache.ofbiz.service.jms.JmsListenerFactory;
 import org.apache.ofbiz.service.job.JobManager;
@@ -32,7 +32,7 @@ import org.apache.ofbiz.service.job.JobManager;
  * by calling the {@link org.apache.ofbiz.service.ServiceDispatcher#getLocalDispatcher(String, Delegator)}
  * factory method.</p>
  */
-public interface LocalDispatcher {
+public interface LocalDispatcher extends DelegatorProvider {
 
     /**
      * Initialize a dispatch context for this dispatch after the creation is ok
@@ -167,6 +167,17 @@ public interface LocalDispatcher {
             throws ServiceAuthException, ServiceValidationException, GenericServiceException;
     void runAsync(String serviceName, boolean persist, Object... context)
             throws ServiceAuthException, ServiceValidationException, GenericServiceException;
+
+    /**
+     * Run persist service asynchronously and follow it with a dedicated jobTracker
+     * @param serviceName Name of the service to run.
+     * @param jobTrackerId Job tracker reference that follow this job
+     * @param context Map of name, value pairs composing the context.
+     * @throws ServiceValidationException
+     * @throws GenericServiceException
+     */
+    void runAsyncTracked(String serviceName, String jobTrackerId, Map<String, Object> context)
+            throws ServiceValidationException, GenericServiceException;
 
     /**
      * Run the service asynchronously and IGNORE the result. This method WILL persist the job.
@@ -342,12 +353,6 @@ public interface LocalDispatcher {
      * @return JmsListenerFactory
      */
     JmsListenerFactory getJMSListeneFactory();
-
-    /**
-     * Gets the GenericEntityDelegator associated with this dispatcher
-     * @return GenericEntityDelegator associated with this dispatcher
-     */
-    Delegator getDelegator();
 
 
     /**

@@ -86,7 +86,10 @@ public final class ServiceDispatcher {
     private Delegator delegator = null;
     private GenericEngineFactory factory = null;
     private Security security = null;
-    private Map<String, DispatchContext> localContext = new HashMap<>();
+    // ConcurrentHashMap: register()/deregister() are synchronized, but getLocalContext(),
+    // getLocalDispatcher() and containsContext() read this on every service call without
+    // locking, so the map itself must tolerate a reader racing a concurrent writer.
+    private Map<String, DispatchContext> localContext = new ConcurrentHashMap<>();
     private Map<String, List<GenericServiceCallback>> callbacks = new HashMap<>();
     private JobManager jm = null;
     private JmsListenerFactory jlf = null;
@@ -278,6 +281,10 @@ public final class ServiceDispatcher {
         Map<String, Object> ecaContext = null;
         RunningService rs = null;
         DispatchContext ctx = getLocalContext(localName);
+        if (ctx == null) {
+            throw new GenericServiceException("Service container is not available (shutting down?) for context: " + localName
+                    + " — cannot run service: " + modelService.getName());
+        }
         GenericEngine engine = null;
         Transaction parentTransaction = null;
         boolean isFailure = false;

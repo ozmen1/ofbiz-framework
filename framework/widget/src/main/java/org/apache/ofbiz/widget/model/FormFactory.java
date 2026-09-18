@@ -28,7 +28,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.ofbiz.base.location.FlexibleLocation;
+import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilHttp;
+import org.apache.ofbiz.base.util.UtilValidate;
 import org.apache.ofbiz.base.util.UtilXml;
 import org.apache.ofbiz.base.util.cache.UtilCache;
 import org.apache.ofbiz.entity.Delegator;
@@ -55,6 +57,9 @@ public class FormFactory {
                                                 VisualTheme visualTheme, DispatchContext dispatchContext)
             throws IOException, SAXException, ParserConfigurationException {
         URL formFileUrl = FlexibleLocation.resolveLocation(resourceName);
+        if (formFileUrl == null || UtilValidate.isUrlInStringAndDoesNotStartByComponentProtocol(formFileUrl.toString())) {
+            throw new IllegalArgumentException("Could not resolve location to URL: " + resourceName);
+        }
         Document formFileDoc = UtilXml.readXmlDocument(formFileUrl, true, true);
         return readFormDocument(formFileDoc, entityModelReader, visualTheme, dispatchContext, resourceName);
     }
@@ -67,7 +72,16 @@ public class FormFactory {
         String cacheKey = sb.toString();
         ModelForm modelForm = FORM_LOCATION_CACHE.get(cacheKey);
         if (modelForm == null) {
-            URL formFileUrl = FlexibleLocation.resolveLocation(resourceName);
+            String sanitizedLocation = WidgetSecureLocation.sanitize(resourceName);
+            if (sanitizedLocation == null) {
+                Debug.logWarning("The location of form [%s] isn't an allowed path. Abort rendering. Raw location [%s]",
+                        MODULE, formName, resourceName);
+                throw new IllegalArgumentException("Abort form rendering due to unallowed form location");
+            }
+            URL formFileUrl = FlexibleLocation.resolveLocation(sanitizedLocation);
+            if (formFileUrl == null || UtilValidate.isUrlInStringAndDoesNotStartByComponentProtocol(formFileUrl.toString())) {
+                throw new IllegalArgumentException("Could not resolve location to URL: " + resourceName);
+            }
             Document formFileDoc = UtilXml.readXmlDocument(formFileUrl, true, true);
             if (formFileDoc == null) {
                 throw new IllegalArgumentException("Could not find resource [" + resourceName + "]");
@@ -97,11 +111,17 @@ public class FormFactory {
         if (modelForm == null) {
             Delegator delegator = (Delegator) request.getAttribute("delegator");
             LocalDispatcher dispatcher = (LocalDispatcher) request.getAttribute("dispatcher");
-            URL formFileUrl = request.getServletContext().getResource(resourceName);
+            String sanitizedLocation = WidgetSecureLocation.sanitize(resourceName);
+            if (sanitizedLocation == null) {
+                Debug.logWarning("The location of form [%s] isn't an allowed path. Abort rendering. Raw location [%s]",
+                        MODULE, formName, resourceName);
+                throw new IllegalArgumentException("Abort form rendering due to unallowed form location");
+            }
+            URL formFileUrl = request.getServletContext().getResource(sanitizedLocation);
             Document formFileDoc = UtilXml.readXmlDocument(formFileUrl, true, true);
             Element formElement = UtilXml.firstChildElement(formFileDoc.getDocumentElement(), "form", "name", formName);
             modelForm = createModelForm(formElement, delegator.getModelReader(), visualTheme, dispatcher.getDispatchContext(),
-                    resourceName, formName);
+                    sanitizedLocation, formName);
             modelForm = FORM_WEBAPP_CACHE.putIfAbsentAndGet(cacheKey, modelForm);
         }
         if (modelForm == null) {

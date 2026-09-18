@@ -102,11 +102,13 @@ public class OutputServices {
             screenContext = new HashMap<>();
         }
         screenContext.put("locale", locale);
+        screenContext.putIfAbsent("userLogin", serviceContext.get("userLogin"));
         if (UtilValidate.isEmpty(contentType)) {
             contentType = "application/postscript";
         }
         if (UtilValidate.isEmpty(printerContentType)) {
-            printerContentType = contentType;
+            // the FO transformation below always produces PDF, so let the print service autosense the format
+            printerContentType = DocFlavor.INPUT_STREAM.AUTOSENSE.getMimeType();
         }
 
         try {
@@ -218,12 +220,13 @@ public class OutputServices {
         Map<String, Object> screenContext = UtilGenerics.cast(serviceContext.remove("screenContext"));
         String contentType = (String) serviceContext.remove("contentType");
         String filePath = (String) serviceContext.remove("filePath");
-        String fileName = (String) serviceContext.remove("fileName");
+        String fileName = new File((String) serviceContext.remove("fileName")).getName();
 
         if (UtilValidate.isEmpty(screenContext)) {
             screenContext = new HashMap<>();
         }
         screenContext.put("locale", locale);
+        screenContext.putIfAbsent("userLogin", serviceContext.get("userLogin"));
         if (UtilValidate.isEmpty(contentType)) {
             contentType = "application/pdf";
         }
@@ -265,7 +268,12 @@ public class OutputServices {
             if (UtilValidate.isEmpty(filePath)) {
                 filePath = EntityUtilProperties.getPropertyValue("content", "content.output.path", "/output", delegator);
             }
-            File file = new File(filePath, fileName);
+            File baseDir = new File(filePath).getCanonicalFile();
+            File file = new File(baseDir, fileName).getCanonicalFile();
+            if (!file.toPath().startsWith(baseDir.toPath())) {
+                return ServiceUtil.returnError(UtilProperties.getMessage(RESOURCE, "ContentRenderingPathTraversalError",
+                        UtilMisc.toMap("fileName", fileName, "filePath", filePath), locale));
+            }
 
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(baos.toByteArray());
