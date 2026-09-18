@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText } from 'lucide-react';
+import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText, Landmark } from 'lucide-react';
 import { ViewType } from '../App';
 
 interface LayoutProps {
@@ -11,6 +11,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
   const isInvoiceView = currentView === 'invoices' || currentView === 'create-invoice' || currentView === 'invoice-detail';
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
+  const isFinAccountView = currentView === 'financial-accounts';
   const isJournalView = currentView === 'journal-entries' || currentView === 'create-journal-entry';
   const isAccountsView = currentView === 'chart-of-accounts';
 
@@ -64,6 +65,12 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             label="Payments" 
             active={isPaymentView} 
             onClick={() => onNavigate('payments')} 
+          />
+          <SidebarItem 
+            icon={<Landmark size={20} />} 
+            label="Kasa & Banka" 
+            active={isFinAccountView} 
+            onClick={() => onNavigate('financial-accounts')} 
           />
           <SidebarItem 
             icon={<BookOpen size={20} />} 

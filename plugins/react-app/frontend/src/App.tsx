@@ -11,6 +11,7 @@ import FinancialReports from './components/FinancialReports'
 import ChartOfAccounts from './components/ChartOfAccounts'
 import JournalEntries from './components/JournalEntries'
 import CreateJournalEntry from './components/CreateJournalEntry'
+import FinancialAccounts from './components/FinancialAccounts'
 import TestPage from './components/TestPage'
 import './index.css'
 
@@ -22,6 +23,7 @@ export type ViewType =
   | 'payments' 
   | 'create-payment' 
   | 'payment-detail' 
+  | 'financial-accounts'
   | 'reports'
   | 'chart-of-accounts'
   | 'journal-entries'
@@ -88,6 +90,9 @@ function App() {
           onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
         />
       )}
+
+      {/* Financial Accounts (Kasa & Banka) View */}
+      {currentView === 'financial-accounts' && <FinancialAccounts />}
 
       {/* General Ledger & Chart of Accounts Views */}
       {currentView === 'chart-of-accounts' && (

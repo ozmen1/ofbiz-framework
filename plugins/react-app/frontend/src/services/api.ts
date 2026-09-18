@@ -521,6 +521,179 @@ export interface GlMetadataResponse {
   };
 }
 
+// Financial Accounts (FinAccount & Bank/Cash) Interfaces
+export interface FinAccountItem {
+  finAccountId: string;
+  finAccountName: string;
+  finAccountCode: string;
+  finAccountTypeId: string;
+  finAccountTypeDesc: string;
+  statusId: string;
+  statusDesc: string;
+  currencyUomId: string;
+  organizationPartyId: string;
+  ownerPartyId: string;
+  postToGlAccountId: string;
+  postToGlAccountName: string;
+  actualBalance: number;
+  availableBalance: number;
+  fromDate: string;
+  thruDate: string;
+  transactionCount: number;
+}
+
+export interface FinAccountsResponse {
+  accounts: FinAccountItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  totalActiveBalance: number;
+}
+
+export interface FinAccountDetail extends FinAccountItem {
+  ownerPartyName?: string;
+  isRefundable: string;
+}
+
+export interface FinAccountTransItem {
+  finAccountTransId: string;
+  finAccountId: string;
+  finAccountName?: string;
+  finAccountTransTypeId: string;
+  finAccountTransTypeDesc: string;
+  partyId: string;
+  partyName: string;
+  glReconciliationId: string;
+  transactionDate: string;
+  entryDate: string;
+  amount: number;
+  paymentId?: string;
+  orderId?: string;
+  comments?: string;
+  statusId: string;
+  statusDesc: string;
+}
+
+export interface FinAccountDetailResponse {
+  account: FinAccountDetail;
+  transactions: FinAccountTransItem[];
+  reconciliations: any[];
+}
+
+export interface FinAccountTransactionsResponse {
+  transactions: FinAccountTransItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export interface CreateFinAccountPayload {
+  finAccountId?: string;
+  finAccountName: string;
+  finAccountTypeId: string;
+  finAccountCode?: string;
+  currencyUomId?: string;
+  organizationPartyId?: string;
+  ownerPartyId?: string;
+  postToGlAccountId?: string;
+  statusId?: string;
+  initialBalance?: number;
+}
+
+export interface UpdateFinAccountPayload {
+  finAccountId: string;
+  finAccountName?: string;
+  finAccountCode?: string;
+  finAccountTypeId?: string;
+  statusId?: string;
+  currencyUomId?: string;
+  postToGlAccountId?: string;
+}
+
+export interface CreateFinAccountTransPayload {
+  finAccountId: string;
+  finAccountTransTypeId: 'DEPOSIT' | 'WITHDRAWAL' | 'ADJUSTMENT';
+  amount: number;
+  transactionDate?: string;
+  partyId?: string;
+  comments?: string;
+  statusId?: string;
+  paymentId?: string;
+  orderId?: string;
+}
+
+export interface TransferFinAccountsPayload {
+  fromFinAccountId: string;
+  toFinAccountId: string;
+  amount: number;
+  transactionDate?: string;
+  comments?: string;
+}
+
+export interface GlReconciliationItem {
+  glReconciliationId: string;
+  glReconciliationName: string;
+  glAccountId: string;
+  glAccountName: string;
+  statusId: string;
+  statusDesc: string;
+  reconciledBalance: number;
+  openingBalance: number;
+  reconciledDate: string;
+  description: string;
+  transactionCount: number;
+}
+
+export interface GlReconciliationsResponse {
+  reconciliations: GlReconciliationItem[];
+}
+
+export interface GlReconciliationDetailResponse {
+  reconciliation: {
+    glReconciliationId: string;
+    glReconciliationName: string;
+    glAccountId: string;
+    glAccountName: string;
+    statusId: string;
+    statusDesc: string;
+    reconciledBalance: number;
+    openingBalance: number;
+    reconciledDate: string;
+    description: string;
+    totalLinkedAmount: number;
+  };
+  linkedTransactions: FinAccountTransItem[];
+  unlinkedTransactions: FinAccountTransItem[];
+}
+
+export interface CreateGlReconciliationPayload {
+  glReconciliationName: string;
+  glAccountId: string;
+  reconciledBalance: number;
+  openingBalance?: number;
+  reconciledDate?: string;
+  description?: string;
+  organizationPartyId?: string;
+}
+
+export interface ReconcileTransactionsPayload {
+  glReconciliationId: string;
+  finAccountTransIds: string[];
+  action?: 'LINK' | 'UNLINK';
+  markReconciled?: 'Y' | 'N';
+}
+
+export interface FinAccountMetadataResponse {
+  metadata: {
+    finAccountTypes: { finAccountTypeId: string; description: string; isRefundable: string }[];
+    finAccountTransTypes: { finAccountTransTypeId: string; description: string }[];
+    finAccountStatuses: { statusId: string; description: string }[];
+    glAccounts: { glAccountId: string; accountCode: string; accountName: string; glAccountClassId: string }[];
+    currencies: { uomId: string; description: string }[];
+    organizations: { partyId: string; name: string }[];
+  };
+}
+
 /**
  * Base fetch function to call OFBiz endpoints, strip '//' prefix, and handle errors.
  */
@@ -828,5 +1001,110 @@ export const api = {
   // 34. Get GL Metadata
   getGlMetadata: async (): Promise<GlMetadataResponse> => {
     return requestApi<GlMetadataResponse>('getGlMetadata');
+  },
+
+  // 35. Get Financial Accounts (Kasa & Banka)
+  getFinAccounts: async (filters: Record<string, any> = {}): Promise<FinAccountsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getFinAccounts?${query}` : 'getFinAccounts';
+    return requestApi<FinAccountsResponse>(endpoint);
+  },
+
+  // 36. Get Financial Account Details
+  getFinAccountDetails: async (finAccountId: string): Promise<FinAccountDetailResponse> => {
+    return requestApi<FinAccountDetailResponse>(`getFinAccountDetails?finAccountId=${encodeURIComponent(finAccountId)}`);
+  },
+
+  // 37. Create Financial Account
+  createFinAccount: async (payload: CreateFinAccountPayload): Promise<{ finAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ finAccountId: string; _EVENT_MESSAGE_?: string }>('createFinAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 38. Update Financial Account
+  updateFinAccount: async (payload: UpdateFinAccountPayload): Promise<{ finAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ finAccountId: string; _EVENT_MESSAGE_?: string }>('updateFinAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 39. Get Financial Account Transactions
+  getFinAccountTransactions: async (filters: Record<string, any> = {}): Promise<FinAccountTransactionsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getFinAccountTransactions?${query}` : 'getFinAccountTransactions';
+    return requestApi<FinAccountTransactionsResponse>(endpoint);
+  },
+
+  // 40. Create Financial Account Transaction (Deposit, Withdrawal, Adjustment)
+  createFinAccountTrans: async (payload: CreateFinAccountTransPayload): Promise<{ finAccountTransId: string; finAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ finAccountTransId: string; finAccountId: string; _EVENT_MESSAGE_?: string }>('createFinAccountTrans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 41. Set Financial Account Transaction Status (Approve, Cancel)
+  setFinAccountTransStatus: async (finAccountTransId: string, statusId: string): Promise<{ finAccountTransId: string; statusId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ finAccountTransId: string; statusId: string; _EVENT_MESSAGE_?: string }>('setFinAccountTransStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ finAccountTransId, statusId }),
+    });
+  },
+
+  // 42. Transfer Between Financial Accounts (Virman)
+  transferBetweenFinAccounts: async (payload: TransferFinAccountsPayload): Promise<{ fromTransId: string; toTransId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ fromTransId: string; toTransId: string; _EVENT_MESSAGE_?: string }>('transferBetweenFinAccounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 43. Get Bank Reconciliations
+  getGlReconciliations: async (filters: Record<string, any> = {}): Promise<GlReconciliationsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getGlReconciliations?${query}` : 'getGlReconciliations';
+    return requestApi<GlReconciliationsResponse>(endpoint);
+  },
+
+  // 44. Get Bank Reconciliation Details
+  getGlReconciliationDetails: async (glReconciliationId: string): Promise<GlReconciliationDetailResponse> => {
+    return requestApi<GlReconciliationDetailResponse>(`getGlReconciliationDetails?glReconciliationId=${encodeURIComponent(glReconciliationId)}`);
+  },
+
+  // 45. Create Bank Reconciliation
+  createGlReconciliation: async (payload: CreateGlReconciliationPayload): Promise<{ glReconciliationId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ glReconciliationId: string; _EVENT_MESSAGE_?: string }>('createGlReconciliation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 46. Reconcile Transactions (Link / Unlink)
+  reconcileTransactions: async (payload: ReconcileTransactionsPayload): Promise<{ glReconciliationId: string; _EVENT_MESSAGE_?: string }> => {
+    const bodyObj: Record<string, any> = {
+      glReconciliationId: payload.glReconciliationId,
+      finAccountTransIds: JSON.stringify(payload.finAccountTransIds),
+      action: payload.action || 'LINK',
+      markReconciled: payload.markReconciled || 'N',
+    };
+    return requestApi<{ glReconciliationId: string; _EVENT_MESSAGE_?: string }>('reconcileTransactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(bodyObj),
+    });
+  },
+
+  // 47. Get FinAccount Metadata
+  getFinAccountMetadata: async (): Promise<FinAccountMetadataResponse> => {
+    return requestApi<FinAccountMetadataResponse>('getFinAccountMetadata');
   },
 };
