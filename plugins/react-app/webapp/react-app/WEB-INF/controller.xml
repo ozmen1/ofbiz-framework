@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://ofbiz.apache.org/Site-Conf" xsi:schemaLocation="http://ofbiz.apache.org/Site-Conf http://ofbiz.apache.org/dtds/site-conf.xsd">
+    <include location="component://common/webcommon/WEB-INF/common-controller.xml"/>
+
+    <description>React App Configuration</description>
+
+    <!-- Request Mappings -->
+    <request-map uri="main"><security auth="false" https="false"/><response name="success" type="view" value="main"/></request-map>
+    
+    <request-map uri="getAccountingSummary">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/AccountingSummary.groovy"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    
+    <!-- View Mappings -->
+    <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
+</site-conf>

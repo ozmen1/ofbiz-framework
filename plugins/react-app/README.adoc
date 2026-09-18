@@ -1,0 +1,9 @@
+
+The files in this directory are used as templates for the ant create-component target, +
+please do not modify them without understanding the effect that it will have on that build target.
+
+./gradlew ofbiz
+
+PS C:\Users\admin\source\repos\ofbiz-framework\plugins\react-app\frontend> npm run build
+http://localhost:8080/react-app/
+https://localhost:8443/react-app/
