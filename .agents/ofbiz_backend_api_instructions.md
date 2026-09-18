@@ -65,10 +65,19 @@ return "success"
 ## 4. Problem Çözüm Akışı (Troubleshooting)
 
 Eğer frontend `Unknown request [istek_adi]` hatası alıyorsa:
-1. İsteğin `controller.xml` dosyasına yazılıp yazılmadığını kontrol et.
-2. `controller.xml` dosyasında bir syntax/şema hatası olup olmadığını loglardan kontrol et. En ufak bir XML hatası, dosyadaki tüm request'lerin parse edilmesini engeller!
+1. **İki `controller.xml` Dosyasını Kontrol Et (Vite Build Tuzağı!):**
+   - Projede İKİ adet `controller.xml` vardır:
+     - `plugins/react-app/frontend/public/WEB-INF/controller.xml` (Kaynak dosya)
+     - `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` (Runtime dosya)
+   - Vite `npm run build` komutu çalıştırıldığında `webapp/react-app` dizinini tamamen temizler ve `frontend/public/WEB-INF/controller.xml` dosyasını `webapp/react-app/WEB-INF/controller.xml` üzerine kopyalar.
+   - **Eğer request-map sadece `webapp/.../controller.xml` dosyasına eklenirse, ilk `npm run build` işleminde silinir!**
+   - Bu nedenle endpoint'ler MUTLAKA **her iki dosyaya da**, en başta `frontend/public/WEB-INF/controller.xml` dosyasına eklenmelidir.
+2. `controller.xml` dosyasında bir syntax/şema hatası olup olmadığını loglardan kontrol et (`xmlns="http://ofbiz.apache.org/Site-Conf"` kullanılmalı). En ufak bir XML hatası, dosyadaki tüm request'lerin parse edilmesini engeller!
 3. OFBiz bileşeninin yüklendiğinden (`ofbiz-component.xml` içinde controller mount edildiğinden) emin ol.
+4. OFBiz controller konfigürasyonunu ~10 saniye boyunca önbellekte tutar (`webapp.ControllerConfig.expireTime=10000`). Değişiklik sonrası 10 saniye bekleyip test et.
 
 Eğer frontend API isteğinde `Unexpected token < in JSON at position 0` hatası alıyorsa:
-1. OFBiz bir API isteğine `HTML` dönmüştür. Bu durum genellikle bir hata sayfası (`error.ftl`) veya Giriş (Login) sayfasına yönlendirildiğinde olur.
-2. Loglardan hatanın arkasında ne olduğuna bak. `auth="true"` olup olmadığını kontrol et. Mevcut React projesi henüz auth token göndermiyorsa geçici olarak auth gereksinimini kaldır veya frontend tarafındaki proxy konfigürasyonunu incele.
+1. OFBiz bir API isteğine `HTML` dönmüştür. Bu durum genellikle bilinmeyen request hatası (`Unknown request`), bir hata sayfası (`error.ftl`) veya Giriş (Login) sayfasına yönlendirildiğinde olur.
+2. Loglardan hatanın arkasında ne olduğuna bak. `auth="true"` olup olmadığını kontrol et. Mevcut React projesi henüz auth token göndermiyorsa geçici olarak auth gereksinimini kaldır (`auth="false"`).
+3. React fetch kodunda yanıtın `<!DOCTYPE` veya `<html` ile başlayıp başlamadığını kontrol edin ve `//` güvenlik önekini temizlemeyi unutmayın.
+

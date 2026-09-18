@@ -63,15 +63,22 @@ Production (Canlı) ortamında React uygulamasının SPA (Single Page Applicatio
 Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kuralları harfiyen uygula:
 
 1. **İzole Frontend Geliştirme:**
-   - Frontend UI değişiklikleri için **SADECE** `plugins\react-app\frontend` dizininde çalış.
-   - Paket kurulumu veya komut çalıştırma gerektiğinde, terminal cwd'sini daima `c:\Users\admin\source\repos\ofbiz-framework\plugins\react-app\frontend` olarak ayarla (Örn: `npm install <paket>`).
-2. **Backend API Entegrasyonu:**
-   - Yeni bir özellik geliştirildiğinde, backend mantığı OFBiz üzerinde (Java/Groovy/XML) yazılmalı, ardından bu veriler bir REST endpoint olarak dışarı açılmalıdır.
-   - Frontend, backend ile iletişim için standart Fetch API veya Axios kullanarak JSON formatında istek yapmalıdır. Geleneksel OFBiz widget'ları (Ftl, Form/Menu widget) kullanılmamalıdır.
+   - Frontend UI değişiklikleri için **SADECE** `plugins/react-app/frontend` dizininde çalış.
+   - Paket kurulumu veya komut çalıştırma gerektiğinde, terminal cwd'sini daima `plugins/react-app/frontend` olarak ayarla (Örn: `npm install <paket>`).
+2. **Backend API Entegrasyonu & Request-Map Kuralları (KRİTİK):**
+   - Yeni bir özellik geliştirildiğinde veya frontend'de bir API isteği eklendiğinde, OFBiz'de bu istek için mutlaka bir `<request-map>` tanımlanmalıdır.
+   - **Vite Build Tuzağı ve İki controller.xml Senkronizasyonu:**
+     - Projede `plugins/react-app/frontend/public/WEB-INF/controller.xml` ve `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` olmak üzere iki dosya vardır.
+     - `npm run build` çalıştırıldığında Vite `webapp/react-app/` dizinini silip `frontend/public/` içeriğini kopyalar.
+     - Bu nedenle eklenen her `<request-map>`, **öncelikle `plugins/react-app/frontend/public/WEB-INF/controller.xml` dosyasına**, ardından `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` dosyasına eklenmelidir. Asla sadece webapp altındaki dosyayı düzenlemeyin!
+   - Frontend, backend ile iletişim için standart Fetch API veya Axios kullanarak JSON formatında istek yapmalıdır (`/react-app/control/<uri>`).
+   - OFBiz JSON yanıtlarının başındaki `//` güvenlik önekini `rawText.startsWith('//') ? rawText.substring(2) : rawText` ile temizleyin.
 3. **Kimlik Doğrulama (Authentication):**
    - OFBiz'den dönen kimlik doğrulama token'ları (örn. JWT veya Session Cookie) frontend tarafında Context API, Redux veya Zustand aracılığıyla global state'te güvenli bir şekilde saklanmalıdır. API isteklerine Authorization header'ı olarak eklenmelidir.
 4. **Stil ve Tasarım:**
    - Modern ve responsive bir arayüz geliştirilmelidir (Tercihen TailwindCSS veya Material UI kullanılabilir, projedeki `package.json` dosyasını kontrol et).
    - "Placeholder" tasarımlardan kaçınılmalı, gerçekçi, bitmiş bir ürün görünümü sunulmalıdır.
-5. **Dosya Değişiklikleri:**
+5. **Dosya Değişiklikleri ve Build Kontrolü:**
    - Yeni bir sayfa veya bileşen eklendiğinde `src/components` veya `src/pages` klasör mimarisine uy.
+   - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
+

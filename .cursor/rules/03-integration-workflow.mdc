@@ -26,15 +26,27 @@ You are an expert developer managing the integration between the Apache OFBiz ba
   1. Go to `plugins/react-app/frontend`.
   2. Run `npm run build`.
   3. This compiles the code and places `index.html` and assets under `plugins/react-app/webapp/react-app`.
+- **CRITICAL: Double `controller.xml` Synchronization (Vite Build Trap):**
+  - Vite cleans `../webapp/react-app` (`emptyOutDir: true`) and copies `frontend/public/WEB-INF/` into `webapp/react-app/WEB-INF/`.
+  - **Rule:** When adding or updating a `<request-map>`, you MUST add it to **BOTH** files:
+    1. `plugins/react-app/frontend/public/WEB-INF/controller.xml` (Primary source for builds)
+    2. `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` (Runtime file)
+  - If you only edit the webapp file, the next `npm run build` will overwrite it with the outdated file from `frontend/public/`!
 - **View Mapping:**
-  - The controller (`plugins/react-app/webapp/react-app/WEB-INF/controller.xml`) maps the `main` view to the built html:
-    `<view-map name="main" type="ftl" page="component://react-app/webapp/react-app/index.html"/>`
+  - The controller maps the `main` view to the screen/index:
+    `<view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>`
 - **Request Registration:**
-  - Any new endpoint/service accessed by the React frontend MUST be registered in `controller.xml` as a `<request-map>` with the correct response mappings to `json` (or another format).
+  - Any new endpoint/service accessed by the React frontend MUST be registered in `controller.xml` as a `<request-map uri="endpointName">` with `<response name="success" type="request" value="json"/>` and `<response name="error" type="request" value="json"/>`.
 
 ## 4. Troubleshooting Checklist for AI Agents
-- **404 / Unknown Request:** If React gets a 404/500 for a controller request, verify that:
-  - The request map is registered in `controller.xml`.
-  - The service is defined in `servicedef/services.xml`.
-  - The build was compiled using `npm run build` and OFBiz was restarted (or loaded dynamically).
-- **XML Schema Validation Errors:** OFBiz controller and component XMLs must adhere strictly to their respective XSD schemas. Always check schema definitions when editing XML files.
+- **Unknown Request [xyz] / 404:**
+  - Verify that `<request-map uri="xyz">` is registered in **BOTH** `frontend/public/WEB-INF/controller.xml` and `webapp/react-app/WEB-INF/controller.xml`.
+  - Ensure `controller.xml` uses the standard schema (`xmlns="http://ofbiz.apache.org/Site-Conf"` and `xsi:schemaLocation="http://ofbiz.apache.org/Site-Conf http://ofbiz.apache.org/dtds/site-conf.xsd"`).
+  - Verify the service is defined in `servicedef/services.xml` or the groovy script exists.
+  - Run `npm run build` in `plugins/react-app/frontend` to sync files.
+  - OFBiz caches controller configs for ~10 seconds (`webapp.ControllerConfig.expireTime=10000`).
+- **Unexpected token < in JSON (HTML returned):**
+  - OFBiz returns `Error.ftl` HTML when an unknown request occurs or an exception is thrown. Inspect the OFBiz console logs.
+- **JSON Security Prefix:**
+  - OFBiz prepends `//` to JSON responses. Always strip `//` before calling `JSON.parse()`.
+
