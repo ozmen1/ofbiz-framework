@@ -10,6 +10,7 @@ interface InvoiceDetailProps {
   invoiceId: string | null;
   onBack: () => void;
   onViewInvoice?: (newId: string) => void;
+  onViewPayment?: (paymentId: string) => void;
 }
 
 const getStatusColor = (statusId: string) => {
@@ -49,7 +50,7 @@ const formatStatus = (statusId: string) => {
   return (statusId || '').replace('INVOICE_', '').replace(/_/g, ' ');
 };
 
-const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onViewInvoice }) => {
+const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onViewInvoice, onViewPayment }) => {
   const [detail, setDetail] = useState<InvoiceDetailResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -741,7 +742,19 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
               {paymentsApplied.map((pa) => (
                 <div key={pa.paymentApplicationId} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                   <div>
-                    <div style={{ fontWeight: 600 }}>Ödeme No: {pa.paymentId}</div>
+                    <div 
+                      onClick={() => onViewPayment && onViewPayment(pa.paymentId)}
+                      style={{ 
+                        fontWeight: 600, 
+                        color: onViewPayment ? 'var(--primary)' : 'white', 
+                        cursor: onViewPayment ? 'pointer' : 'default',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
+                      }}
+                    >
+                      Ödeme No: #{pa.paymentId}
+                    </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Uygulama ID: {pa.paymentApplicationId}</div>
                   </div>
                   <div style={{ textAlign: 'right', fontWeight: 600, color: '#4ade80' }}>

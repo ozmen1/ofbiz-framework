@@ -9,6 +9,9 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
+  const isInvoiceView = currentView === 'invoices' || currentView === 'create-invoice' || currentView === 'invoice-detail';
+  const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
       {/* Sidebar */}
@@ -42,12 +45,38 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <SidebarItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={currentView === 'dashboard'} onClick={() => onNavigate('dashboard')} />
-          <SidebarItem icon={<FileText size={20} />} label="Invoices" active={currentView === 'invoices'} onClick={() => onNavigate('invoices')} />
-          <SidebarItem icon={<CreditCard size={20} />} label="Payments" />
-          <SidebarItem icon={<PieChart size={20} />} label="Reports" />
-          <SidebarItem icon={<Settings size={20} />} label="Settings" />
-          <SidebarItem icon={<Beaker size={20} />} label="API Test" active={currentView === 'test-page'} onClick={() => onNavigate('test-page')} />
+          <SidebarItem 
+            icon={<LayoutDashboard size={20} />} 
+            label="Dashboard" 
+            active={currentView === 'dashboard'} 
+            onClick={() => onNavigate('dashboard')} 
+          />
+          <SidebarItem 
+            icon={<FileText size={20} />} 
+            label="Invoices" 
+            active={isInvoiceView} 
+            onClick={() => onNavigate('invoices')} 
+          />
+          <SidebarItem 
+            icon={<CreditCard size={20} />} 
+            label="Payments" 
+            active={isPaymentView} 
+            onClick={() => onNavigate('payments')} 
+          />
+          <SidebarItem 
+            icon={<PieChart size={20} />} 
+            label="Reports" 
+          />
+          <SidebarItem 
+            icon={<Settings size={20} />} 
+            label="Settings" 
+          />
+          <SidebarItem 
+            icon={<Beaker size={20} />} 
+            label="API Test" 
+            active={currentView === 'test-page'} 
+            onClick={() => onNavigate('test-page')} 
+          />
         </nav>
 
         <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)' }}>
@@ -69,6 +98,9 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'invoices' && 'Invoices'}
               {currentView === 'create-invoice' && 'Create New Invoice'}
               {currentView === 'invoice-detail' && 'Invoice Details'}
+              {currentView === 'payments' && 'Payments'}
+              {currentView === 'create-payment' && 'Create New Payment'}
+              {currentView === 'payment-detail' && 'Payment Details'}
               {currentView === 'test-page' && 'API Test Sayfası'}
             </h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -76,13 +108,30 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'invoices' && "Search and manage your invoices."}
               {currentView === 'create-invoice' && "Enter details for a new sales or purchase invoice."}
               {currentView === 'invoice-detail' && "View and edit invoice header information."}
+              {currentView === 'payments' && "Manage customer receipts, vendor disbursements, and payment applications."}
+              {currentView === 'create-payment' && "Record a new customer receipt or vendor disbursement."}
+              {currentView === 'payment-detail' && "View payment details and match with invoices."}
               {currentView === 'test-page' && "OFBiz REST API entegrasyonu test sayfası."}
             </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn-primary" style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} onClick={() => onNavigate('create-invoice')}>
-              + New Invoice
-            </button>
+            {isPaymentView ? (
+              <button 
+                className="btn-primary" 
+                style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} 
+                onClick={() => onNavigate('create-payment')}
+              >
+                + New Payment
+              </button>
+            ) : (
+              <button 
+                className="btn-primary" 
+                style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} 
+                onClick={() => onNavigate('create-invoice')}
+              >
+                + New Invoice
+              </button>
+            )}
           </div>
         </header>
 
