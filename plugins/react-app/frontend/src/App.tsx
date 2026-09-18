@@ -13,6 +13,7 @@ import JournalEntries from './components/JournalEntries'
 import CreateJournalEntry from './components/CreateJournalEntry'
 import FinancialAccounts from './components/FinancialAccounts'
 import AdvancedAccounting from './components/AdvancedAccounting'
+import { TaxAndGlMapping } from './components/TaxAndGlMapping'
 import TestPage from './components/TestPage'
 import './index.css'
 
@@ -27,6 +28,7 @@ export type ViewType =
   | 'financial-accounts'
   | 'reports'
   | 'advanced-accounting'
+  | 'tax-and-gl-mapping'
   | 'chart-of-accounts'
   | 'journal-entries'
   | 'create-journal-entry'
@@ -120,6 +122,9 @@ function App() {
 
       {/* Advanced Accounting (Billing Accounts, Fixed Assets, Budgets, Agreements) */}
       {currentView === 'advanced-accounting' && <AdvancedAccounting />}
+
+      {/* Tax & Automated GL Mappings (Faz 6) */}
+      {currentView === 'tax-and-gl-mapping' && <TaxAndGlMapping />}
 
       {currentView === 'test-page' && <TestPage />}
     </Layout>

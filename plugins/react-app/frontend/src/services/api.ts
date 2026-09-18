@@ -1007,6 +1007,174 @@ export interface UpdateAgreementPayload {
   thruDate?: string;
 }
 
+// ==========================================
+// FAZ 6: TAX AND GL MAPPINGS INTERFACES
+// ==========================================
+
+export interface TaxAuthorityItem {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  geoName: string;
+  partyName: string;
+  requireTaxIdForExemption: string;
+  taxIdFormatPattern: string;
+  includeTaxInPrice: string;
+  rateCount: number;
+  glAccountCount: number;
+}
+
+export interface TaxAuthoritiesResponse {
+  taxAuthorities: TaxAuthorityItem[];
+  totalCount: number;
+}
+
+export interface TaxRateItem {
+  taxAuthorityRateSeqId: string;
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  geoName: string;
+  partyName: string;
+  taxAuthorityRateTypeId: string;
+  taxAuthorityRateTypeDesc: string;
+  taxPercentage: number;
+  description: string;
+  taxShipping: string;
+  fromDate: string;
+  thruDate: string;
+  productCategoryId: string;
+  productCategoryName: string;
+}
+
+export interface TaxRatesResponse {
+  taxRates: TaxRateItem[];
+  totalCount: number;
+}
+
+export interface TaxAuthorityGlAccountItem {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface InvoiceItemTypeGlAccountItem {
+  invoiceItemTypeId: string;
+  itemTypeDesc: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface PaymentMethodTypeGlAccountItem {
+  paymentMethodTypeId: string;
+  methodTypeDesc: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface GlAccountTypeDefaultItem {
+  glAccountTypeId: string;
+  glAccountTypeDesc: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface GlMappingsResponse {
+  organizationPartyId: string;
+  invoiceItemTypeGlAccounts: InvoiceItemTypeGlAccountItem[];
+  paymentMethodTypeGlAccounts: PaymentMethodTypeGlAccountItem[];
+  glAccountTypeDefaults: GlAccountTypeDefaultItem[];
+}
+
+export interface TaxAuthorityMetaItem {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  geoName: string;
+  partyName: string;
+  label: string;
+}
+
+export interface GeoMetaItem {
+  geoId: string;
+  geoName: string;
+  geoCode: string;
+  geoTypeId: string;
+}
+
+export interface TaxAuthorityRateTypeMetaItem {
+  id: string;
+  description: string;
+}
+
+export interface GlAccountMetaItem {
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+  glAccountTypeId: string;
+  glAccountClassId: string;
+  label: string;
+}
+
+export interface InvoiceItemTypeMetaItem {
+  invoiceItemTypeId: string;
+  description: string;
+  parentTypeId: string;
+}
+
+export interface PaymentMethodTypeMetaItem {
+  paymentMethodTypeId: string;
+  description: string;
+}
+
+export interface GlAccountTypeMetaItem {
+  glAccountTypeId: string;
+  description: string;
+}
+
+export interface OrgMetaItem {
+  partyId: string;
+  name: string;
+  currencyUomId: string;
+}
+
+export interface TaxAndGlMappingMetadata {
+  taxAuthorities: TaxAuthorityMetaItem[];
+  geos: GeoMetaItem[];
+  taxAuthorityRateTypes: TaxAuthorityRateTypeMetaItem[];
+  glAccounts: GlAccountMetaItem[];
+  invoiceItemTypes: InvoiceItemTypeMetaItem[];
+  paymentMethodTypes: PaymentMethodTypeMetaItem[];
+  glAccountTypes: GlAccountTypeMetaItem[];
+  organizations: OrgMetaItem[];
+}
+
+export interface CreateTaxAuthorityPayload {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  requireTaxIdForExemption?: string;
+  taxIdFormatPattern?: string;
+  includeTaxInPrice?: string;
+}
+
+export interface CreateTaxRatePayload {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  taxAuthorityRateTypeId?: string;
+  taxPercentage: number | string;
+  description?: string;
+  taxShipping?: string;
+  fromDate?: string;
+  thruDate?: string;
+  productCategoryId?: string;
+}
+
 /**
  * Base fetch function to call OFBiz endpoints, strip '//' prefix, and handle errors.
  */
@@ -1567,4 +1735,162 @@ export const api = {
       body: toFormData(payload),
     });
   },
+
+  // ==========================================
+  // FAZ 6: TAX AND GL MAPPING METHODS
+  // ==========================================
+
+  // 67. Get Tax and GL Mapping Metadata
+  getTaxAndGlMappingMetadata: async (): Promise<TaxAndGlMappingMetadata> => {
+    return requestApi<TaxAndGlMappingMetadata>('getTaxAndGlMappingMetadata');
+  },
+
+  // 68. Get Tax Authorities
+  getTaxAuthorities: async (): Promise<TaxAuthoritiesResponse> => {
+    return requestApi<TaxAuthoritiesResponse>('getTaxAuthorities');
+  },
+
+  // 69. Create Tax Authority
+  createTaxAuthority: async (payload: CreateTaxAuthorityPayload): Promise<{ taxAuthGeoId: string; taxAuthPartyId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ taxAuthGeoId: string; taxAuthPartyId: string; _EVENT_MESSAGE_?: string }>('createTaxAuthority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 70. Update Tax Authority
+  updateTaxAuthority: async (payload: CreateTaxAuthorityPayload): Promise<{ taxAuthGeoId: string; taxAuthPartyId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ taxAuthGeoId: string; taxAuthPartyId: string; _EVENT_MESSAGE_?: string }>('updateTaxAuthority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 71. Delete Tax Authority
+  deleteTaxAuthority: async (taxAuthGeoId: string, taxAuthPartyId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteTaxAuthority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ taxAuthGeoId, taxAuthPartyId }),
+    });
+  },
+
+  // 72. Get Tax Rates
+  getTaxRates: async (filters: Record<string, any> = {}): Promise<TaxRatesResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getTaxRates?${query}` : 'getTaxRates';
+    return requestApi<TaxRatesResponse>(endpoint);
+  },
+
+  // 73. Create Tax Rate
+  createTaxRate: async (payload: CreateTaxRatePayload): Promise<{ taxAuthorityRateSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ taxAuthorityRateSeqId: string; _EVENT_MESSAGE_?: string }>('createTaxRate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 74. Update Tax Rate
+  updateTaxRate: async (payload: { taxAuthorityRateSeqId: string; taxPercentage?: number | string; description?: string; taxShipping?: string; thruDate?: string }): Promise<{ taxAuthorityRateSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ taxAuthorityRateSeqId: string; _EVENT_MESSAGE_?: string }>('updateTaxRate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 75. Delete Tax Rate
+  deleteTaxRate: async (taxAuthorityRateSeqId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteTaxRate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ taxAuthorityRateSeqId }),
+    });
+  },
+
+  // 76. Get Tax Authority GL Accounts
+  getTaxAuthorityGlAccounts: async (taxAuthGeoId: string, taxAuthPartyId: string): Promise<{ taxAuthorityGlAccounts: TaxAuthorityGlAccountItem[] }> => {
+    return requestApi<{ taxAuthorityGlAccounts: TaxAuthorityGlAccountItem[] }>(`getTaxAuthorityGlAccounts?taxAuthGeoId=${encodeURIComponent(taxAuthGeoId)}&taxAuthPartyId=${encodeURIComponent(taxAuthPartyId)}`);
+  },
+
+  // 77. Set Tax Authority GL Account
+  setTaxAuthorityGlAccount: async (payload: { taxAuthGeoId: string; taxAuthPartyId: string; organizationPartyId: string; glAccountId: string }): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('setTaxAuthorityGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 78. Delete Tax Authority GL Account
+  deleteTaxAuthorityGlAccount: async (taxAuthGeoId: string, taxAuthPartyId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteTaxAuthorityGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ taxAuthGeoId, taxAuthPartyId, organizationPartyId }),
+    });
+  },
+
+  // 79. Get GL Mappings
+  getGlMappings: async (organizationPartyId: string = 'Company'): Promise<GlMappingsResponse> => {
+    return requestApi<GlMappingsResponse>(`getGlMappings?organizationPartyId=${encodeURIComponent(organizationPartyId)}`);
+  },
+
+  // 80. Set Invoice Item Type GL Account
+  setInvoiceItemTypeGlAccount: async (invoiceItemTypeId: string, glAccountId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('setInvoiceItemTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ invoiceItemTypeId, glAccountId, organizationPartyId }),
+    });
+  },
+
+  // 81. Remove Invoice Item Type GL Account
+  removeInvoiceItemTypeGlAccount: async (invoiceItemTypeId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('removeInvoiceItemTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ invoiceItemTypeId, organizationPartyId }),
+    });
+  },
+
+  // 82. Set Payment Method Type GL Account
+  setPaymentMethodTypeGlAccount: async (paymentMethodTypeId: string, glAccountId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('setPaymentMethodTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentMethodTypeId, glAccountId, organizationPartyId }),
+    });
+  },
+
+  // 83. Remove Payment Method Type GL Account
+  removePaymentMethodTypeGlAccount: async (paymentMethodTypeId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('removePaymentMethodTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentMethodTypeId, organizationPartyId }),
+    });
+  },
+
+  // 84. Set GL Account Type Default
+  setGlAccountTypeDefault: async (glAccountTypeId: string, glAccountId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('setGlAccountTypeDefault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glAccountTypeId, glAccountId, organizationPartyId }),
+    });
+  },
+
+  // 85. Remove GL Account Type Default
+  removeGlAccountTypeDefault: async (glAccountTypeId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('removeGlAccountTypeDefault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glAccountTypeId, organizationPartyId }),
+    });
+  },
 };
+
