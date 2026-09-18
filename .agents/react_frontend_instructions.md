@@ -4,18 +4,20 @@ Bu belge, Apache OFBiz içerisindeki React frontend projesinin (Vite tabanlı) e
 
 ## Proje Yapısı
 
-- **OFBiz Kök Dizini:** `c:\Users\admin\source\repos\ofbiz-framework`
-- **Plugin Dizini:** `plugins\react-app`
-- **React Frontend Dizini:** `plugins\react-app\frontend`
+- **OFBiz Kök Dizini:** `/home/admin/Documents/ofbiz`
+- **Plugin Dizini:** `plugins/react-app`
+- **React Frontend Dizini:** `plugins/react-app/frontend`
 
 ## 1. Geliştirme Ortamı (Development Workflow)
 
-Geliştirme aşamasında React projesi ve OFBiz bağımsız servisler olarak çalıştırılır:
-- **OFBiz (Backend):** Standart yöntemlerle çalıştırılır (`gradlew ofbiz`). Arayüz sağlamak yerine sadece REST API hizmeti vermelidir (Genellikle `https://localhost:8443` portunda çalışır).
-- **React (Frontend):** `plugins\react-app\frontend` dizininde Vite geliştirme sunucusu başlatılır (`npm run dev`).
+Geliştirme aşamasında React projesi ve OFBiz bağımsız servisler olarak veya entegre çalıştırılabilir:
+- **OFBiz (Backend):** Standart yöntemlerle çalıştırılır (`./gradlew ofbizBackground`). HTTP `8080` ve HTTPS `8443` portlarında hizmet verir.
+- **React (Frontend):** `plugins/react-app/frontend` dizininde Vite geliştirme sunucusu başlatılır (`npm run dev`).
 
-### CORS ve Proxy Ayarları
-Frontend geliştirme sırasında CORS (Cross-Origin Resource Sharing) hatalarını önlemek ve frontend'i backend'e bağlamak için `vite.config.ts` içerisinde OFBiz API'lerine proxy ayarlanmalıdır:
+### CORS, HTTP/HTTPS Portları ve Proxy Ayarları
+OFBiz varsayılan olarak `framework/webapp/config/url.properties` dosyasında `no.http=Y` ayarı ile HTTP isteklerini `302 Found` ile HTTPS (`8443`) portuna yönlendirir. Bu durum tarayıcı veya yerel ağ üzerinden HTTP (`8080`) ile bağlanıldığında isteklerin düşmesine neden olur.
+- `url.properties` dosyasında `no.http=N` yapılandırılmalı ve `http.request-map.list` listesine tüm API endpoint'leri eklenmelidir.
+- Frontend geliştirme sırasında (`npm run dev`), `vite.config.ts` içerisinde `/react-app/control` API istekleri için proxy tanımlanmalıdır:
 
 ```typescript
 // vite.config.ts
@@ -24,17 +26,24 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/react-app/',
   server: {
     proxy: {
-      '/api': { // OFBiz'deki REST API kök dizini
-        target: 'https://localhost:8443',
+      '/react-app/control': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false, // OFBiz self-signed SSL sertifikası kullanıyorsa false olmalıdır
+        secure: false,
+      },
+      '/control': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }
 });
 ```
+
 
 ## 2. Üretim (Production) ve OFBiz'e Entegre Etme
 

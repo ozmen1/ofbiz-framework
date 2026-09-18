@@ -120,30 +120,75 @@ fetch('/react-app/control/endpointUri')
 
 ---
 
-## 6. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
+## 6. HTTP (8080) vs HTTPS (8443) Port Yönlendirmesi ve `url.properties` Yapılandırması
+
+OFBiz varsayılan olarak tüm istekleri HTTPS'e (`8443`) zorlar. Bu davranış `framework/webapp/config/url.properties` dosyasında `no.http=Y` parametresi ile yönetilir.
+
+### HTTP 302 Yönlendirme Tuzağı ve Neden Veri Gelmez?
+1. Eğer `no.http=Y` ise, `http.request-map.list` içerisinde açıkça tanımlanmamış tüm istekler HTTP `8080` portundan `https://localhost:8443/...` adresine `HTTP 302` yönlendirmesi (redirect) alır.
+2. Bir kullanıcı veya yerel ağdaki başka bir makine (örn: `http://192.168.1.x:8080/react-app/`) uygulamayı HTTP üzerinden açtığında, frontend'in attığı relative API istekleri (`/react-app/control/...`) sunucu tarafından `https://localhost:8443/...` adresine yönlendirilir.
+3. Tarayıcı `localhost` adresini kendi istemci makinesi sanar veya self-signed SSL sertifikası sebebiyle isteği bloklar (CORS/Network Error). Sonuç olarak **React arayüzüne hiçbir veri gelmez**.
+
+### Zorunlu Yapılandırma Kuralları:
+1. **`framework/webapp/config/url.properties` Dosyası:**
+   - `no.http=N` yapılmalıdır (HTTP bağlantısına izin verir).
+   - `http.request-map.list` listesine eklenen her yeni React endpoint'i eklenmelidir:
+     ```properties
+     no.http=N
+     http.request-map.list=SOAPService,viewShipmentLabel,getAccountingSummary,main,getInvoices,getInvoiceDetails,createInvoice,updateInvoice,setInvoiceStatus,createInvoiceItem,removeInvoiceItem,copyInvoice,getInvoiceMetadata
+     ```
+2. **`controller.xml` Dosyaları:**
+   - Her iki `controller.xml` dosyasındaki endpoint'lerde `<security https="false" auth="false"/>` ayarlanmalıdır.
+3. **Vite Geliştirme Proxy'si (`plugins/react-app/frontend/vite.config.ts`):**
+   - `npm run dev` geliştirme ortamında çalışırken API çağrılarının yönlendirilebilmesi için:
+     ```typescript
+     server: {
+       proxy: {
+         '/react-app/control': {
+           target: 'http://localhost:8080',
+           changeOrigin: true,
+           secure: false,
+         },
+         '/control': {
+           target: 'http://localhost:8080',
+           changeOrigin: true,
+           secure: false,
+         }
+       }
+     }
+     ```
+
+---
+
+## 7. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
 
 React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sırasıyla takip edin:
 
 1. **Backend Katmanı:**
    - Groovy dosyasını (`plugins/react-app/src/main/groovy/...`) veya servisi (`servicedef/services.xml`) oluşturun.
 2. **Controller Kaynak Dosyası:**
-   - [plugins/react-app/frontend/public/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/frontend/public/WEB-INF/controller.xml) dosyasına `<request-map>` düğümünü ekleyin.
+   - [plugins/react-app/frontend/public/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/frontend/public/WEB-INF/controller.xml) dosyasına `<request-map>` düğümünü ekleyin (`security https="false"`).
 3. **Controller Runtime Dosyası:**
    - [plugins/react-app/webapp/react-app/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/webapp/react-app/WEB-INF/controller.xml) dosyasına aynı `<request-map>` düğümünü ekleyin.
-4. **React Frontend Kodu:**
+4. **URL İzinleri (`url.properties`):**
+   - [framework/webapp/config/url.properties](file:///home/admin/Documents/ofbiz/framework/webapp/config/url.properties) içindeki `http.request-map.list` virgülle ayrılmış listesine yeni endpoint'in URI'sini ekleyin.
+5. **React Frontend Kodu:**
    - İlgili React bileşeninde `/react-app/control/<uri>` çağrısını ve `//` temizleme mantığını yazın.
-5. **Frontend Build:**
+6. **Frontend Build:**
    - Terminalde `cd plugins/react-app/frontend && npm run build` çalıştırın. Bu sayede hem kod derlenir hem de `public/WEB-INF` dosyaları `webapp/react-app/WEB-INF` dizinine senkronize edilir.
-6. **Doğrulama (Test):**
-   - OFBiz controller önbelleğinin yenilenmesi için 10 saniye bekleyin (veya curl ile test edin):
+7. **Doğrulama (Test):**
+   - OFBiz controller önbelleğinin yenilenmesi için 10 saniye bekleyin.
+   - Hem HTTP (8080) hem de HTTPS (8443) üzerinden test edin:
      ```bash
+     curl -k -i http://localhost:8080/react-app/control/<uri>
      curl -k -i https://localhost:8443/react-app/control/<uri>
      ```
-   - Yanıtın `content-type: application/json` ve `HTTP/2 200` olduğunu doğrulayın.
-7. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
+   - Yanıtın `302 Redirect` OLMADIĞINI, `content-type: application/json` ve `HTTP 200` olduğunu doğrulayın.
+8. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
    - Sistem Docker tabanlı PostgreSQL veritabanı ile çalışmaktadır (ayrıntılar için `ofbiz-postgres-docker` skill dosyasına bakın).
    - Entity veya servis değişikliklerinde doğrudan PostgreSQL üzerinden veriyi doğrulamak için:
      ```bash
      sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT * FROM <tablo_adi> LIMIT 5;"
      ```
+
 

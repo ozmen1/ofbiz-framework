@@ -91,3 +91,14 @@ Sistem PostgreSQL (`ofbiz-postgres` Docker konteyneri) ile çalışmaktadır. En
   sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT count(*) FROM invoice;"
   ```
 * Detaylı veritabanı yönetimi ve delegator yapılandırmaları için `.agents/skills/ofbiz-postgres-docker/SKILL.md` kılavuzuna başvurun.
+
+## 6. HTTP (8080) ve HTTPS (8443) Port Yönlendirmesi (`url.properties`)
+
+OFBiz varsayılan olarak `framework/webapp/config/url.properties` dosyasında `no.http=Y` ayarına sahiptir. Bu durumda `http.request-map.list` içinde yer almayan tüm HTTP (8080) istekleri `302 Found` ile `https://localhost:8443/...` adresine yönlendirilir.
+
+* **Sorun:** React uygulaması HTTP (`http://<ip>:8080/react-app/`) üzerinden açıldığında, tarayıcının attığı relative API istekleri `https://localhost:8443`'e yönlenir ve istemcide SSL/CORS/bağlantı hatası oluşturarak verilerin gelmesini engeller.
+* **Kural:**
+  1. `framework/webapp/config/url.properties` dosyasında `no.http=N` olmalıdır.
+  2. `http.request-map.list` virgülle ayrılmış listesine tüm yeni React API URI'leri eklenmelidir (ör. `getInvoices`, `getInvoiceDetails`, `createInvoice`, vb.).
+  3. `controller.xml` içindeki endpoint tanımlarında `<security https="false" auth="false"/>` yer almalıdır.
+
