@@ -1,4 +1,5 @@
-import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText, Landmark, Layers, Percent } from 'lucide-react';
+import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2 } from 'lucide-react';
+
 import { ViewType } from '../App';
 
 interface LayoutProps {
@@ -10,11 +11,13 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
   const isInvoiceView = currentView === 'invoices' || currentView === 'create-invoice' || currentView === 'invoice-detail';
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
+  const isPaymentGroupView = currentView === 'payment-groups';
   const isFinAccountView = currentView === 'financial-accounts';
   const isJournalView = currentView === 'journal-entries' || currentView === 'create-journal-entry';
   const isAccountsView = currentView === 'chart-of-accounts';
   const isAdvancedView = currentView === 'advanced-accounting';
   const isTaxAndGlView = currentView === 'tax-and-gl-mapping';
+
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
@@ -67,6 +70,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             active={isPaymentView} 
             onClick={() => onNavigate('payments')} 
           />
+          <SidebarItem 
+            icon={<Layers2 size={20} />} 
+            label="Ödeme Grupları" 
+            active={isPaymentGroupView} 
+            onClick={() => onNavigate('payment-groups')} 
+          />
+
           <SidebarItem 
             icon={<Landmark size={20} />} 
             label="Kasa & Banka" 
@@ -137,6 +147,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'payments' && 'Payments'}
               {currentView === 'create-payment' && 'Create New Payment'}
               {currentView === 'payment-detail' && 'Payment Details'}
+              {currentView === 'payment-groups' && 'Ödeme Grupları & Bordrolar'}
               {currentView === 'reports' && 'Mali Raporlar ve Tablolar'}
               {currentView === 'test-page' && 'API Test Sayfası'}
             </h2>
@@ -148,9 +159,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'payments' && "Manage customer receipts, vendor disbursements, and payment applications."}
               {currentView === 'create-payment' && "Record a new customer receipt or vendor disbursement."}
               {currentView === 'payment-detail' && "View payment details and match with invoices."}
+              {currentView === 'payment-groups' && "Toplu tahsilat fişleri, çek run ve EFT bordrolarını yönetin."}
               {currentView === 'reports' && "Mizan (Trial Balance), Bilanço, Gelir Tablosu ve Yaşlandırma Analizleri."}
               {currentView === 'test-page' && "OFBiz REST API entegrasyonu test sayfası."}
             </p>
+
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             {isPaymentView ? (

@@ -1222,7 +1222,36 @@ function toFormData(obj: Record<string, any>): string {
   return params.toString();
 }
 
+/**
+ * Genel amaçlı fetchApi yardımcısı.
+ * Tam URL veya /react-app/control/... path'i kabul eder.
+ * OFBiz'in "//" JSON güvenlik önekini temizler.
+ */
+export async function fetchApi(url: string, options?: RequestInit): Promise<any> {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Accept': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  const text = await response.text();
+
+  if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+    throw new Error(`OFBiz sunucusundan HTML hata sayfası döndü. (${response.status} ${response.statusText})`);
+  }
+
+  const cleanJson = text.startsWith('//') ? text.substring(2) : text;
+  try {
+    return JSON.parse(cleanJson);
+  } catch (err: any) {
+    throw new Error(`JSON ayrıştırma hatası: ${err.message}. Ham yanıt: ${cleanJson.substring(0, 100)}`);
+  }
+}
+
 export const api = {
+
   // 1. Get Invoices List
   getInvoices: async (filters: Record<string, any> = {}): Promise<InvoicesResponse> => {
     const query = toFormData(filters);

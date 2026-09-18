@@ -7,6 +7,7 @@ import InvoiceDetail from './components/InvoiceDetail'
 import PaymentList from './components/PaymentList'
 import CreatePayment from './components/CreatePayment'
 import PaymentDetail from './components/PaymentDetail'
+import PaymentGroups from './components/PaymentGroups'
 import FinancialReports from './components/FinancialReports'
 import ChartOfAccounts from './components/ChartOfAccounts'
 import JournalEntries from './components/JournalEntries'
@@ -17,6 +18,7 @@ import { TaxAndGlMapping } from './components/TaxAndGlMapping'
 import TestPage from './components/TestPage'
 import './index.css'
 
+
 export type ViewType = 
   | 'dashboard' 
   | 'invoices' 
@@ -24,7 +26,8 @@ export type ViewType =
   | 'invoice-detail' 
   | 'payments' 
   | 'create-payment' 
-  | 'payment-detail' 
+  | 'payment-detail'
+  | 'payment-groups'
   | 'financial-accounts'
   | 'reports'
   | 'advanced-accounting'
@@ -33,6 +36,7 @@ export type ViewType =
   | 'journal-entries'
   | 'create-journal-entry'
   | 'test-page';
+
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -125,6 +129,9 @@ function App() {
 
       {/* Tax & Automated GL Mappings (Faz 6) */}
       {currentView === 'tax-and-gl-mapping' && <TaxAndGlMapping />}
+
+      {/* Payment Groups & Batches (Faz 7) */}
+      {currentView === 'payment-groups' && <PaymentGroups />}
 
       {currentView === 'test-page' && <TestPage />}
     </Layout>

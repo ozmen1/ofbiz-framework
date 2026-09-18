@@ -620,6 +620,116 @@
         <response name="error" type="request" value="json"/>
     </request-map>
     
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Faz 7: Ödeme Grupları & Bordrolar (Payment Groups & Batches)       -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getPaymentGroups">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="getPaymentGroups"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPaymentGroupDetail">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="getPaymentGroupDetail"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createPaymentGroup">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="createPaymentGroup"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updatePaymentGroup">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="updatePaymentGroup"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deletePaymentGroup">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="deletePaymentGroup"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="addPaymentToGroup">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="addPaymentToGroup"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="removePaymentFromGroup">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="removePaymentFromGroup"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getAvailablePayments">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="getAvailablePayments"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPaymentGroupTypes">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGroupEvents.groovy" invoke="getPaymentGroupTypes"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Faz 7: Fatura Notları, Şartlar & Evrak Ekleri (Invoice Content)   -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getInvoiceNotes">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="getInvoiceNotes"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createInvoiceNote">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="createInvoiceNote"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteInvoiceNote">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="deleteInvoiceNote"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getInvoiceTerms">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="getInvoiceTerms"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createInvoiceTerm">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="createInvoiceTerm"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateInvoiceTerm">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="updateInvoiceTerm"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteInvoiceTerm">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="deleteInvoiceTerm"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getTermTypes">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceContentEvents.groovy" invoke="getTermTypes"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>

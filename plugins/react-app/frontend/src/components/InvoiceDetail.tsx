@@ -5,6 +5,8 @@ import {
   Tag, ShieldAlert, CreditCard
 } from 'lucide-react';
 import { api, InvoiceDetailResponse } from '../services/api';
+import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
+
 
 interface InvoiceDetailProps {
   invoiceId: string | null;
@@ -795,6 +797,11 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             </div>
           )}
         </div>
+
+        {/* Faz 7: Notlar & Vade Şartları */}
+        {invoice.invoiceId && (
+          <InvoiceNotesAndTerms invoiceId={invoice.invoiceId} />
+        )}
 
       </div>
 
