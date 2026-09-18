@@ -1,0 +1,74 @@
+# OFBiz Backend API Entegrasyon Kuralları (Agent Yönergesi)
+
+Bu belge, OFBiz projelerinde (özellikle React gibi harici SPA frontend'ler ile haberleşirken) yeni REST API endpoint'leri oluştururken veya mevcut yapıları güncellerken sık yapılan hataları engellemek amacıyla AI asistanları için hazırlanmıştır. 
+
+Aşağıdaki kurallara kesinlikle uyulmalıdır:
+
+## 1. controller.xml Şema ve Yapılandırması
+
+OFBiz'in `controller.xml` dosyasını oluştururken veya düzenlerken `site-conf` düğümü için **kesinlikle standart OFBiz şeması** kullanılmalıdır. Hatalı namespace atamaları Tomcat'in başlatılması veya XML okuması sırasında (`XmlFileLoader`) çökmelere neden olur.
+
+**Yanlış Kullanım (Hata Verir):**
+```xml
+<site-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://ofbiz.apache.org/dtds/site-conf.xsd"
+        xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/site-conf.xsd">
+```
+
+**DOĞRU KULLANIM:**
+```xml
+<site-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://ofbiz.apache.org/Site-Conf" 
+        xsi:schemaLocation="http://ofbiz.apache.org/Site-Conf http://ofbiz.apache.org/dtds/site-conf.xsd">
+```
+
+## 2. Request-Map ve JSON Yanıt Döndürme
+
+React veya başka bir frontend'in veri alabilmesi için, geleneksel ekran (`screen`) render etmek yerine doğrudan JSON veri dönen `request-map` tanımları kullanılmalıdır.
+
+* `response name="success"` için `type="request"` ve `value="json"` kullanılmalıdır (OFBiz `common-controller` üzerinden JSON request işleyicisini devralır).
+* Güvenlik test aşamasındaysa veya JWT kullanılmıyorsa `auth="false"` yapılmalıdır; aksi halde OFBiz HTML formatında login ekranına redirect atar, bu da Frontend'in JSON ayrıştırmasında `JSON.parse` veya `<!DOCTYPE` hataları (Unexpected token < in JSON) yaşamasına neden olur.
+
+**Örnek Endpoint Tanımı (`controller.xml`):**
+```xml
+<request-map uri="getAccountingSummary">
+    <security https="false" auth="false"/> <!-- Test aşamasındaysa auth=false tutun -->
+    <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/AccountingSummary.groovy"/>
+    <response name="success" type="request" value="json"/>
+    <response name="error" type="request" value="json"/>
+</request-map>
+```
+
+## 3. Groovy Event Script ile Veri Gönderme
+
+Groovy (veya Java) event kodları doğrudan ekrana string yazdırmamalıdır. Dönmesi beklenen veriler bir `Map` (veya List) objesine atılmalı ve `request.setAttribute` ile isteğe eklenmelidir. Sonunda `return "success"` döndürülmelidir. OFBiz'in çekirdeği bu attribute'ları alıp otomatik olarak JSON'a çevirecektir.
+
+**Örnek Groovy Event Kodu:**
+```groovy
+import java.util.*
+import org.apache.ofbiz.base.util.*
+
+// 1. Veri modelini (JSON nesnesi olacak şekilde) oluştur
+Map responseData = [
+    status: "success",
+    message: "Veriler başarıyla çekildi",
+    accountingData: [ invoiceCount: 15, pendingApprovals: 5 ]
+]
+
+// 2. Bunu request attribute olarak OFBiz framework'üne ver
+request.setAttribute("accountingData", responseData)
+
+// 3. Başarı durumunu dön, framework bunu JSON olarak parse etsin
+return "success"
+```
+
+## 4. Problem Çözüm Akışı (Troubleshooting)
+
+Eğer frontend `Unknown request [istek_adi]` hatası alıyorsa:
+1. İsteğin `controller.xml` dosyasına yazılıp yazılmadığını kontrol et.
+2. `controller.xml` dosyasında bir syntax/şema hatası olup olmadığını loglardan kontrol et. En ufak bir XML hatası, dosyadaki tüm request'lerin parse edilmesini engeller!
+3. OFBiz bileşeninin yüklendiğinden (`ofbiz-component.xml` içinde controller mount edildiğinden) emin ol.
+
+Eğer frontend API isteğinde `Unexpected token < in JSON at position 0` hatası alıyorsa:
+1. OFBiz bir API isteğine `HTML` dönmüştür. Bu durum genellikle bir hata sayfası (`error.ftl`) veya Giriş (Login) sayfasına yönlendirildiğinde olur.
+2. Loglardan hatanın arkasında ne olduğuna bak. `auth="true"` olup olmadığını kontrol et. Mevcut React projesi henüz auth token göndermiyorsa geçici olarak auth gereksinimini kaldır veya frontend tarafındaki proxy konfigürasyonunu incele.
