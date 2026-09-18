@@ -66,6 +66,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
           <SidebarItem 
             icon={<PieChart size={20} />} 
             label="Reports" 
+            active={currentView === 'reports'}
+            onClick={() => onNavigate('reports')}
           />
           <SidebarItem 
             icon={<Settings size={20} />} 
@@ -101,6 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'payments' && 'Payments'}
               {currentView === 'create-payment' && 'Create New Payment'}
               {currentView === 'payment-detail' && 'Payment Details'}
+              {currentView === 'reports' && 'Mali Raporlar ve Tablolar'}
               {currentView === 'test-page' && 'API Test Sayfası'}
             </h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -111,6 +114,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               {currentView === 'payments' && "Manage customer receipts, vendor disbursements, and payment applications."}
               {currentView === 'create-payment' && "Record a new customer receipt or vendor disbursement."}
               {currentView === 'payment-detail' && "View payment details and match with invoices."}
+              {currentView === 'reports' && "Mizan (Trial Balance), Bilanço, Gelir Tablosu ve Yaşlandırma Analizleri."}
               {currentView === 'test-page' && "OFBiz REST API entegrasyonu test sayfası."}
             </p>
           </div>

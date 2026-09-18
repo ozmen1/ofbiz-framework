@@ -243,6 +243,106 @@ export interface CreatePaymentApplicationPayload {
   amountApplied?: number;
 }
 
+// Financial Reports Interfaces
+export interface TrialBalanceAccount {
+  glAccountId: string;
+  accountCode: string;
+  accountName: string;
+  glAccountClassId: string;
+  glAccountTypeId: string;
+  debits: number;
+  credits: number;
+  balance: number;
+  debitCreditFlag: string;
+}
+
+export interface TrialBalanceResponse {
+  accounts: TrialBalanceAccount[];
+  totalDebits: number;
+  totalCredits: number;
+  difference: number;
+  isBalanced: boolean;
+  organizationPartyId: string;
+}
+
+export interface BalanceSheetResponse {
+  balanceSheet: {
+    asOfDate: string;
+    organizationPartyId: string;
+    assets: {
+      currentAssets: { glAccountId: string; accountName: string; balance: number }[];
+      totalCurrentAssets: number;
+      longTermAssets: { glAccountId: string; accountName: string; balance: number }[];
+      totalLongTermAssets: number;
+      totalAssets: number;
+    };
+    liabilities: {
+      currentLiabilities: { glAccountId: string; accountName: string; balance: number }[];
+      totalCurrentLiabilities: number;
+      longTermLiabilities: { glAccountId: string; accountName: string; balance: number }[];
+      totalLongTermLiabilities: number;
+      totalLiabilities: number;
+    };
+    equity: {
+      equityAccounts: { glAccountId: string; accountName: string; balance: number }[];
+      totalEquity: number;
+    };
+    totalLiabilitiesAndEquity: number;
+    difference: number;
+    isBalanced: boolean;
+  };
+}
+
+export interface IncomeStatementResponse {
+  incomeStatement: {
+    organizationPartyId: string;
+    period: string;
+    revenues: { glAccountId: string; accountName: string; balance: number }[];
+    totalRevenue: number;
+    cogs: { glAccountId: string; accountName: string; balance: number }[];
+    totalCogs: number;
+    grossProfit: number;
+    expenses: { glAccountId: string; accountName: string; balance: number }[];
+    totalExpenses: number;
+    operatingIncome: number;
+    netIncome: number;
+  };
+}
+
+export interface AgingRow {
+  partyId: string;
+  partyName: string;
+  current: number;
+  days1_30: number;
+  days31_60: number;
+  days61_90: number;
+  daysOver90: number;
+  total: number;
+}
+
+export interface AgingResponse {
+  agingSummary: {
+    type: string;
+    bucketTotals: {
+      current: number;
+      days1_30: number;
+      days31_60: number;
+      days61_90: number;
+      daysOver90: number;
+      grandTotal: number;
+    };
+    rows: AgingRow[];
+  };
+}
+
+export interface ReportMetadataResponse {
+  metadata: {
+    organizations: { partyId: string; name: string }[];
+    years: string[];
+    currencies: { uomId: string; description: string }[];
+  };
+}
+
 /**
  * Base fetch function to call OFBiz endpoints, strip '//' prefix, and handle errors.
  */
@@ -441,5 +541,36 @@ export const api = {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: toFormData({ paymentApplicationId }),
     });
+  },
+
+  // 20. Trial Balance (Mizan)
+  getTrialBalance: async (filters: Record<string, any> = {}): Promise<TrialBalanceResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getTrialBalance?${query}` : 'getTrialBalance';
+    return requestApi<TrialBalanceResponse>(endpoint);
+  },
+
+  // 21. Balance Sheet (Bilanço)
+  getBalanceSheet: async (filters: Record<string, any> = {}): Promise<BalanceSheetResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getBalanceSheet?${query}` : 'getBalanceSheet';
+    return requestApi<BalanceSheetResponse>(endpoint);
+  },
+
+  // 22. Income Statement (Gelir Tablosu)
+  getIncomeStatement: async (filters: Record<string, any> = {}): Promise<IncomeStatementResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getIncomeStatement?${query}` : 'getIncomeStatement';
+    return requestApi<IncomeStatementResponse>(endpoint);
+  },
+
+  // 23. Aging Summary (Yaşlandırma Raporu)
+  getAgingSummary: async (type: 'AR' | 'AP' = 'AR'): Promise<AgingResponse> => {
+    return requestApi<AgingResponse>(`getAgingSummary?type=${type}`);
+  },
+
+  // 24. Report Metadata
+  getReportMetadata: async (): Promise<ReportMetadataResponse> => {
+    return requestApi<ReportMetadataResponse>('getReportMetadata');
   },
 };

@@ -7,6 +7,7 @@ import InvoiceDetail from './components/InvoiceDetail'
 import PaymentList from './components/PaymentList'
 import CreatePayment from './components/CreatePayment'
 import PaymentDetail from './components/PaymentDetail'
+import FinancialReports from './components/FinancialReports'
 import TestPage from './components/TestPage'
 import './index.css'
 
@@ -18,6 +19,7 @@ export type ViewType =
   | 'payments' 
   | 'create-payment' 
   | 'payment-detail' 
+  | 'reports'
   | 'test-page';
 
 function App() {
@@ -77,6 +79,9 @@ function App() {
           onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
         />
       )}
+
+      {/* Reports View */}
+      {currentView === 'reports' && <FinancialReports />}
 
       {currentView === 'test-page' && <TestPage />}
     </Layout>
