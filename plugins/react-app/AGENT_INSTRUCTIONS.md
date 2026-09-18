@@ -2,11 +2,10 @@
 
 Bu belge, Apache OFBiz içerisindeki React frontend projesinin (Vite tabanlı) entegrasyonu ve geliştirilmesi için kuralları, mimari kararları ve yönergeleri içerir. AI Agent'lar ve geliştiriciler bu kurallara uymalıdır.
 
-## Proje Yapısı
-
-- **OFBiz Kök Dizini:** `c:\Users\admin\source\repos\ofbiz-framework`
-- **Plugin Dizini:** `plugins\react-app`
-- **React Frontend Dizini:** `plugins\react-app\frontend`
+- **OFBiz Kök Dizini:** `/home/admin/Documents/ofbiz`
+- **Plugin Dizini:** `plugins/react-app`
+- **React Frontend Dizini:** `plugins/react-app/frontend`
+- **Modül Geliştirme Playbook:** `plugins/react-app/docs/OFBIZ_REACT_MODULE_PLAYBOOK.md`
 
 ## 1. Geliştirme Ortamı (Development Workflow)
 
@@ -81,4 +80,12 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
 5. **Dosya Değişiklikleri ve Build Kontrolü:**
    - Yeni bir sayfa veya bileşen eklendiğinde `src/components` veya `src/pages` klasör mimarisine uy.
    - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
+6. **Backend Groovy Event ve İşlem (Transaction) Bütünlüğü:**
+   - Groovy event metodlarında `EntityQuery.from(...).where(...)` kullanırken koşul listesi boş olduğunda `where(null)` çağırmayın (`if (!conditions.isEmpty()) query = query.where(...)`).
+   - Servis çalıştırmadan önce `secas.xml` içindeki ECA kurallarını denetleyin. Otomatik tetiklenen bir alt servisi (ör. durum oluşturma) tekrar çağırıp mükerrerlik hatasıyla JTA transaction'ın `rollback-only` olmasını engelleyin.
+7. **HTTP Port & Ağ İzinleri:**
+   - `framework/webapp/config/url.properties` içindeki `http.request-map.list` listesine eklenen tüm endpoint'leri tanımlayın (`no.http=N`).
+   - `framework/security/config/security.properties` içindeki `host-headers-allowed` listesinde yerel alt ağların (`192.168.*`) bulunduğundan emin olun.
+
+Detaylı mimari şablonlar, modül cookbook'ları ve UI tasarım kalıpları için `plugins/react-app/docs/OFBIZ_REACT_MODULE_PLAYBOOK.md` dosyasını inceleyin.
 

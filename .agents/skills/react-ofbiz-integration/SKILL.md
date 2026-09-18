@@ -1,229 +1,191 @@
 ---
 name: react-ofbiz-integration
 description: >-
-  React-app plugininde yapılan değişikliklerin Apache OFBiz controller request-map mekanizmasına
-  doğru şekilde uygulanması, Vite build çıktısı senkronizasyonu ve API entegrasyonu kuralları.
-  React frontend üzerinde yeni bir endpoint, veri çağrısı veya arayüz değişikliği yapıldığında
-  veya controller.xml düzenlenirken bu skill kullanılmalıdır.
+  Apache OFBiz backend servislerinin ve veri modellerinin React SPA (plugins/react-app) arayüzüne
+  entegrasyonu, controller request-map senkronizasyonu, Groovy event yazımı, Vite build yönetimi,
+  güvenlik/ağ yapılandırmaları ve yeni kurumsal modül geliştirme standartları kılavuzu.
 ---
 
-# React-App ve OFBiz Controller Request-Map Entegrasyon Kılavuzu
+# React-App ve OFBiz Entegrasyon & Modül Geliştirme Kılavuzu
 
-Bu kılavuz, `plugins/react-app` içerisinde yeni bir React özelliği, sayfa veya API çağrısı geliştirildiğinde bu değişikliğin Apache OFBiz backend sistemine eksiksiz ve kalıcı olarak nasıl yansıtılacağını tanımlar.
+Bu kılavuz, `plugins/react-app` içerisinde yeni bir React özelliği, ekran veya modül geliştirildiğinde bu değişikliğin Apache OFBiz backend sistemine eksiksiz, güvenli ve kalıcı olarak nasıl yansıtılacağını tanımlar. Muhasebe (Accounting) modülünün 5 fazında sahada doğrulanmış kuralları ve en iyi uygulamaları içerir.
+
+Ayrıntılı playbook için bkz: `plugins/react-app/docs/OFBIZ_REACT_MODULE_PLAYBOOK.md`
 
 ---
 
 ## 1. Temel Mimari ve İstek Akışı
 
-OFBiz mimarisinde dışarıdan (React SPA vb.) gelen tüm HTTP istekleri Tomcat üzerindeki `ControlServlet` tarafından karşılanır. 
+OFBiz mimarisinde React SPA'dan gelen tüm HTTP istekleri Tomcat üzerindeki `ControlServlet` tarafından karşılanır.
+
+```
+React SPA (Fetch/api.ts) 
+   ──> /react-app/control/<uri> 
+   ──> ControlServlet 
+   ──> controller.xml (request-map)
+   ──> Groovy Event (<Module>Events.groovy)
+   ──> Delegator (PostgreSQL) / Dispatcher (Services)
+   ──> JSON Response (//{"key": ...})
+```
 
 * React bileşenleri `/react-app/control/<istekAdi>` URL'sine HTTP isteği yapar.
 * `ControlServlet`, gelen isteği `controller.xml` dosyasındaki `<request-map uri="<istekAdi>">` tanımları arasında arar.
-* Eğer istek tanımlı değilse OFBiz derhal `RequestHandlerException: Unknown request [...]` hatası fırlatır ve geriye `Error.ftl` (HTML) döner. Bu durum React tarafında `Unexpected token < in JSON` hatasına yol açar.
+* Eğer istek tanımlı değilse OFBiz derhal `RequestHandlerException: Unknown request [...]` fırlatır ve geriye `Error.ftl` (HTML) döner. Bu durum React tarafında `Unexpected token < in JSON` hatasına yol açar.
 
 ---
 
 ## 2. EN KRİTİK KURAL: İki Adet `controller.xml` Senkronizasyonu (Vite Build Tuzağı)
 
 Projede iki ayrı `controller.xml` dosyası yer almaktadır:
-
 1. **Kaynak Dosya:** `plugins/react-app/frontend/public/WEB-INF/controller.xml`
 2. **OFBiz Çalışma Zamanı (Runtime) Dosyası:** `plugins/react-app/webapp/react-app/WEB-INF/controller.xml`
 
 ### Vite Build Tuzağı Nedir?
-`plugins/react-app/frontend/vite.config.ts` dosyasında build çıktısı şu şekilde yapılandırılmıştır:
-```typescript
-build: {
-  outDir: '../webapp/react-app',
-  emptyOutDir: true,
-}
-```
-`emptyOutDir: true` sebebiyle React tarafında `npm run build` komutu çalıştırıldığında:
+`plugins/react-app/frontend/vite.config.ts` dosyasında `build.emptyOutDir: true` yapılandırılmıştır.
+React tarafında `npm run build` komutu çalıştırıldığında:
 1. `plugins/react-app/webapp/react-app` dizini **tamamen silinir**.
-2. `frontend/public/` altındaki tüm dosyalar (ve dolayısıyla `frontend/public/WEB-INF/controller.xml`) `webapp/react-app/WEB-INF/` içine kopyalanır.
+2. `frontend/public/` altındaki tüm dosyalar (dolayısıyla `frontend/public/WEB-INF/controller.xml`) `webapp/react-app/WEB-INF/` içine kopyalanır.
 
 > [!CAUTION]
 > **ASLA SADECE `webapp/react-app/WEB-INF/controller.xml` DOSYASINI DÜZENLEMEKLE YETİNMEYİN!**
-> Eğer yeni bir `request-map` sadece `webapp/react-app/...` dosyasına eklenirse, bir sonraki `npm run build` işleminde bu dosya silinir ve `frontend/public/...` dosyasındaki eski sürüm üzerine yazılarak endpoint kaybolur.
-
-### Uygulanması Zorunlu Kural:
-Bir endpoint eklerken veya güncellerken:
-* **ÖNCELİKLE** `plugins/react-app/frontend/public/WEB-INF/controller.xml` dosyasına ekleyin.
-* **ARDINDAN** `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` dosyasına ekleyin (veya frontend'i `npm run build` ile derleyerek kopyalanmasını sağlayın).
+> Yeni bir endpoint eklerken **önce** `frontend/public/WEB-INF/controller.xml` dosyasına ekleyin, **ardından** `webapp/react-app/WEB-INF/controller.xml` dosyasına ekleyin.
 
 ---
 
-## 3. Standart `request-map` Tanımları
+## 3. Backend Groovy Event Tasarım Standartları
 
-### A. Groovy Script ile Veri Döndüren Endpoint (Event Type: Groovy)
+Tüm API uç noktaları `plugins/react-app/src/main/groovy/org/apache/ofbiz/reactapp/<Modul>Events.groovy` içinde toplanır.
+
+### Standart Groovy Event İskeleti
+```groovy
+package org.apache.ofbiz.reactapp
+
+import org.apache.ofbiz.base.util.*
+import org.apache.ofbiz.entity.*
+import org.apache.ofbiz.entity.condition.*
+import org.apache.ofbiz.entity.util.EntityQuery
+import org.apache.ofbiz.service.*
+
+final String MODULE = "<Modul>Events.groovy"
+
+GenericValue getSystemUserLogin() {
+    def delegator = binding.getVariable("delegator")
+    def request = binding.getVariable("request")
+    GenericValue uL = (GenericValue) request.getSession().getAttribute("userLogin")
+    if (!uL) {
+        uL = EntityQuery.use(delegator).from("UserLogin").where("userLoginId", "system").queryOne()
+    }
+    return uL
+}
+```
+
+### Kritik Backend Hata ve Çözümleri
+
+#### A. `EntityQuery.where(null)` Belirsizlik Hatası (Ambiguous Method Overload)
+Groovy derleyicisi `where(null)` çağrısında `where(Map)`, `where(List)` ve `where(EntityCondition)` arasında seçim yapamaz ve runtime hatası fırlatır.
+- **Kural:**
+  ```groovy
+  def query = EntityQuery.use(delegator).from("MyEntity")
+  if (!conditions.isEmpty()) {
+      query = query.where(EntityCondition.makeCondition(conditions, EntityOperator.AND))
+  }
+  List records = query.queryList()
+  ```
+
+#### B. OFBiz JTA Transaction Rollback & ECA Çakışması
+OFBiz'de `dispatcher.runSync` çağrılan bir servis hata fırlatırsa (ör: birincil anahtar mükerrerliği), bu blok `try-catch` ile yakalansa bile geçerli JTA işlemi `setRollbackOnly` işaretlenir ve o istekteki tüm veritabanı yazma işlemleri iptal edilir.
+- **Kural:** Servis çağırmadan önce `secas.xml` dosyasını denetleyin. Otomatik çalışan bir ECA varsa (örneğin `createBudget` -> `createBudgetStatus`), aynı servisi koddan tekrar çağırmayın. Durum güncellemelerinde doğrudan `create*Status` yerine geçerlilik denetimi yapan `update*Status` veya `change*Status` servislerini kullanın.
+
+#### C. Metadata / Bootstrap Endpoint Kuralı
+Her modülde `get<Modul>Metadata` endpoint'i sağlayın. Arayüzün ihtiyaç duyduğu tüm dropdown tiplerini (`Type`, `StatusItem`, para birimleri, taraflar) tek bir istekte dönün.
+
+---
+
+## 4. Standart `request-map` Tanımları
+
 ```xml
-<request-map uri="getAccountingSummary">
+<request-map uri="getMyEndpoint">
     <security https="false" auth="false"/>
-    <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/AccountingSummary.groovy"/>
+    <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/MyModuleEvents.groovy" invoke="getMyEndpoint"/>
     <response name="success" type="request" value="json"/>
     <response name="error" type="request" value="json"/>
 </request-map>
 ```
 * `response` tipi kesinlikle `type="request" value="json"` olmalıdır.
-* Groovy script içinde dönülecek veri `request.setAttribute("veriAdi", dataMap)` ile eklenmeli ve son satırda `return "success"` döndürülmelidir.
-
-### B. OFBiz Servisi Çalıştıran Endpoint (Event Type: Service)
-```xml
-<request-map uri="getAccountingSummary">
-    <security https="false" auth="false"/>
-    <event type="service" invoke="getAccountingSummary"/>
-    <response name="success" type="request" value="json"/>
-    <response name="error" type="request" value="json"/>
-</request-map>
-```
-* Servis `plugins/react-app/servicedef/services.xml` içinde tanımlı olmalı, `auth="false"` veya token izinlerine sahip olmalıdır.
+* Groovy script içinde dönülecek veri `request.setAttribute("anahtar", deger)` ile atanmalı ve `return "success"` döndürülmelidir.
 
 ---
 
-## 4. controller.xml XML Şema Zorunluluğu
+## 5. HTTP 302 ve Port Yönlendirmesi (`url.properties`)
 
-`site-conf` kök etiketinde standart OFBiz şeması kullanılmalıdır:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<site-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://ofbiz.apache.org/Site-Conf" 
-        xsi:schemaLocation="http://ofbiz.apache.org/Site-Conf http://ofbiz.apache.org/dtds/site-conf.xsd">
-    <include location="component://common/webcommon/WEB-INF/common-controller.xml"/>
-
-    <description>React App Configuration</description>
-    ...
-```
-> [!WARNING]
-> `xsi:noNamespaceSchemaLocation="https://ofbiz.apache.org/dtds/site-conf.xsd"` veya hatalı namespace kullanmayın. Bu hata OFBiz XML yükleyicisinin çökmesine veya dosyadaki tüm request haritalarının devre dışı kalmasına neden olur.
-
----
-
-## 5. React Tarafında API Çağrısı ve Güvenlik Öneki (`//`)
-
-OFBiz backend JSON yanıtlarını JSON Hijacking saldırılarına karşı `//` önekiyle döndürür (örneğin: `//{"accountingData":{...}}`).
-
-React bileşenlerinde `fetch` yapılırken daima şu kontrol uygulanmalıdır:
-```typescript
-fetch('/react-app/control/endpointUri')
-  .then(res => res.text())
-  .then(text => {
-    // 1. OFBiz HTML hata sayfası kontrolü
-    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-      throw new Error('OFBiz HTML hata sayfası döndürdü (Unknown request veya yetki hatası)');
-    }
-    // 2. Güvenlik öneki olan // işaretini temizleme
-    const cleanJson = text.startsWith('//') ? text.substring(2) : text;
-    const json = JSON.parse(cleanJson);
-    return json;
-  });
-```
-
----
-
-## 6. HTTP (8080) vs HTTPS (8443) Port Yönlendirmesi ve `url.properties` Yapılandırması
-
-OFBiz varsayılan olarak tüm istekleri HTTPS'e (`8443`) zorlar. Bu davranış `framework/webapp/config/url.properties` dosyasında `no.http=Y` parametresi ile yönetilir.
-
-### HTTP 302 Yönlendirme Tuzağı ve Neden Veri Gelmez?
-1. Eğer `no.http=Y` ise, `http.request-map.list` içerisinde açıkça tanımlanmamış tüm istekler HTTP `8080` portundan `https://localhost:8443/...` adresine `HTTP 302` yönlendirmesi (redirect) alır.
-2. Bir kullanıcı veya yerel ağdaki başka bir makine (örn: `http://192.168.1.x:8080/react-app/`) uygulamayı HTTP üzerinden açtığında, frontend'in attığı relative API istekleri (`/react-app/control/...`) sunucu tarafından `https://localhost:8443/...` adresine yönlendirilir.
-3. Tarayıcı `localhost` adresini kendi istemci makinesi sanar veya self-signed SSL sertifikası sebebiyle isteği bloklar (CORS/Network Error). Sonuç olarak **React arayüzüne hiçbir veri gelmez**.
-
-### Zorunlu Yapılandırma Kuralları:
-1. **`framework/webapp/config/url.properties` Dosyası:**
-   - `no.http=N` yapılmalıdır (HTTP bağlantısına izin verir).
-   - `http.request-map.list` listesine eklenen her yeni React endpoint'i eklenmelidir:
+OFBiz varsayılan olarak HTTP (`8080`) portundan gelen istekleri HTTPS (`8443`) portuna `302 Redirect` yapar.
+- **Kural:** `framework/webapp/config/url.properties` dosyasında:
+  1. `no.http=N` olmalıdır.
+  2. `http.request-map.list` listesine yeni eklenen her endpoint adı virgülle eklenmelidir:
      ```properties
-     no.http=N
-     http.request-map.list=SOAPService,viewShipmentLabel,getAccountingSummary,main,getInvoices,getInvoiceDetails,createInvoice,updateInvoice,setInvoiceStatus,createInvoiceItem,removeInvoiceItem,copyInvoice,getInvoiceMetadata
-     ```
-2. **`controller.xml` Dosyaları:**
-   - Her iki `controller.xml` dosyasındaki endpoint'lerde `<security https="false" auth="false"/>` ayarlanmalıdır.
-3. **Vite Geliştirme Proxy'si (`plugins/react-app/frontend/vite.config.ts`):**
-   - `npm run dev` geliştirme ortamında çalışırken API çağrılarının yönlendirilebilmesi için:
-     ```typescript
-     server: {
-       proxy: {
-         '/react-app/control': {
-           target: 'http://localhost:8080',
-           changeOrigin: true,
-           secure: false,
-         },
-         '/control': {
-           target: 'http://localhost:8080',
-           changeOrigin: true,
-           secure: false,
-         }
-       }
-     }
+     http.request-map.list=...,getMyEndpoint,createMyRecord
      ```
 
 ---
 
-## 7. Ağ ve Yerel IP Erişimi / Host Header Güvenlik Politikası (`security.properties`)
+## 6. Ağ ve Yerel IP Erişimi / Host Header İzinleri (`security.properties`)
 
-OFBiz, Host Header Injection (ve önbellek zehirleme) saldırılarını engellemek için gelen her HTTP isteğindeki Host/Domain başlığını sıkı bir beyaz listeyle denetler.
-
-### Ağdan Erişimde "Veri Gelmiyor" / 500 HTML Hata Tuzağı:
-1. İstemci tarayıcısı yerel ağ üzerinden sunucuya bağlandığında (örneğin: `https://192.168.1.110:8443/react-app/` veya `http://192.168.1.110:8080/react-app/`):
-   - React statik dosyaları (HTML/JS/CSS) Tomcat tarafından sorunsuz servis edilir ve sayfa yüklenir.
-   - Ancak React bileşeni `/react-app/control/...` API çağrılarını başlattığında istek `ControlServlet` -> `RequestHandler.doRequest` akışına girer.
-2. `RequestHandler` gelen `request.getServerName()` değerini (ör: `192.168.1.110`) kontrol eder.
-3. Eğer bu IP veya domain `security.properties` dosyasındaki `host-headers-allowed` listesinde yer almıyorsa:
-   - `RequestHandlerException: Domain 192.168.1.110 not accepted to prevent host header injection.` hatası fırlatılır.
-   - `ControlServlet` bu istisnayı yakalayıp istemciye 500 Internal Error HTML hata sayfası (`Error.ftl`) döner.
-   - React tarafındaki `api.ts` gelen HTML metnini yakalayarak işlemi reddeder (`OFBiz sunucusundan HTML hata sayfası döndü`).
-   - Sonuç: **Sayfa açılır ancak tablolara ve istatistik kartlarına veritabanından hiçbir veri gelmez!**
-
-### Yapılandırma ve Çözüm:
-1. **`framework/security/config/security.properties`:**
-   `host-headers-allowed` parametresine yerel IP adresleri, alt ağ wildcard'ları ve makine host adları tanımlanmalıdır:
-   ```properties
-   host-headers-allowed=localhost,127.0.0.1,192.168.1.110,192.168.*,10.*,172.16.*,172.17.*,172.18.*,172.19.*,172.20.*,172.21.*,172.22.*,raspberrypi,raspberrypi.local,demo-trunk.ofbiz.apache.org,...
-   ```
-2. **Wildcard Desteği (`UtilMisc.isHostAllowed`):**
-   `UtilMisc.isHostAllowed(String host)` yardımcı metodu sayesinde `192.168.*`, `10.*` gibi IP önekleri veya `*.local` gibi domain wildcard'ları dinamik olarak desteklenir.
-3. **Servisi Yeniden Başlatma:**
-   Yapılandırmanın yürürlüğe girmesi için OFBiz yeniden başlatılmalıdır:
-   ```bash
-   ./gradlew terminateOfbiz
-   ./gradlew ofbizBackground
-   ```
+Yerel ağdan (`192.168.x.x` veya farklı bir IP'den) erişildiğinde `ControlServlet` 500 HTML hata sayfası döner ve React verileri yüklenemez.
+- **Kural:** `framework/security/config/security.properties` dosyasında `host-headers-allowed` parametresinde subnet wildcard'ları (`192.168.*`, `10.*`) tanımlı olmalıdır.
 
 ---
 
-## 8. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
+## 7. React Tarafında API Çağrısı ve Güvenlik Öneki (`//`)
+
+OFBiz backend JSON yanıtlarını JSON Hijacking saldırılarına karşı `//` önekiyle döndürür (`//{"data":{...}}`).
+
+`plugins/react-app/frontend/src/services/api.ts` içindeki standart temizleme mantığı:
+```typescript
+const cleanJson = (text: string) => {
+  const trimmed = text.trim();
+  if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
+    throw new Error('OFBiz HTML hata sayfası döndürdü (Unknown request veya yetki hatası)');
+  }
+  return trimmed.startsWith('//') ? trimmed.substring(2) : trimmed;
+};
+```
+
+---
+
+## 8. Frontend UI/UX Tasarım Kalıbı
+
+Her modül sayfası şu 5 katmanlı modern bileşen mimarisini takip etmelidir:
+1. **KPI Metrik Kartları (Metrics Row):** Toplam kayıt, bekleyen onaylar, parasal büyüklükler.
+2. **Sekmeli Yapı (Tabbed Layout):** Modülün temel alt varlıkları arasında geçiş.
+3. **Filtre Çubuğu (Filter & Search):** Arama kutusu, durum filtreleri ve "Yeni Kayıt" butonu.
+4. **Veri Tablosu (Data Table):** Durum rozetleri, para birimi (`₺`/`$`) ve tarih biçimlendirmeleri.
+5. **Kayar Çekmece (Slide-Over Drawer - Framer Motion):** Tıklanan kaydın detayını, kalemlerini ve durum geçmişini sayfa değiştirmeden inceleme.
+6. **Form Modalları (Modals):** Validasyonlu, buton kilitlemeli ve işlem sonrası anlık tablo tazeleyen açılır pencereler.
+
+---
+
+## 9. Yeni Modülleri Geliştirirken Hızlı Referans (Cookbook)
+
+| Modül | Temel Varlıklar (Entities) | Temel Servisler / Akış |
+|---|---|---|
+| **Sipariş (Order)** | `OrderHeader`, `OrderItem`, `OrderRole`, `OrderStatus` | `createOrder`, `changeOrderStatus`, `quickShipEntireOrder` |
+| **Cari/Taraf (Party)** | `Party`, `Person`, `PartyGroup`, `ContactMech`, `PostalAddress` | `createPerson`, `createPartyGroup`, `createPartyPostalAddress` |
+| **Ürün/Katalog (Product)** | `Product`, `ProductCategory`, `ProductPrice`, `GoodIdentification` | `createProduct`, `updateProduct`, `createProductPrice` |
+| **Depo/Stok (Facility)** | `Facility`, `InventoryItem`, `Shipment`, `ShipmentItem` | `createInventoryItem`, `createFacility`, `receiveInventoryProduct` |
+
+---
+
+## 10. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
 
 React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sırasıyla takip edin:
 
-1. **Backend Katmanı:**
-   - Groovy dosyasını (`plugins/react-app/src/main/groovy/...`) veya servisi (`servicedef/services.xml`) oluşturun.
-2. **Controller Kaynak Dosyası:**
-   - [plugins/react-app/frontend/public/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/frontend/public/WEB-INF/controller.xml) dosyasına `<request-map>` düğümünü ekleyin (`security https="false"`).
-3. **Controller Runtime Dosyası:**
-   - [plugins/react-app/webapp/react-app/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/webapp/react-app/WEB-INF/controller.xml) dosyasına aynı `<request-map>` düğümünü ekleyin.
-4. **URL İzinleri (`url.properties`):**
-   - [framework/webapp/config/url.properties](file:///home/admin/Documents/ofbiz/framework/webapp/config/url.properties) içindeki `http.request-map.list` virgülle ayrılmış listesine yeni endpoint'in URI'sini ekleyin.
-5. **Host Header İzinleri (`security.properties`):**
-   - Yerel ağdan veya farklı IP adreslerinden erişiliyorsa, `framework/security/config/security.properties` içindeki `host-headers-allowed` parametresine IP veya `192.168.*` eklendiğinden emin olun.
-6. **React Frontend Kodu:**
-   - İlgili React bileşeninde `/react-app/control/<uri>` çağrısını ve `//` temizleme mantığını yazın.
-7. **Frontend Build:**
-   - Terminalde `cd plugins/react-app/frontend && npm run build` çalıştırın. Bu sayede hem kod derlenir hem de `public/WEB-INF` dosyaları `webapp/react-app/WEB-INF` dizinine senkronize edilir.
-8. **Doğrulama (Test):**
-   - OFBiz controller önbelleğinin yenilenmesi için 10 saniye bekleyin.
-   - Hem yerel (`localhost`) hem de harici IP (`192.168.x.x`) üzerinden test edin:
-     ```bash
-     curl -k -i https://192.168.1.110:8443/react-app/control/<uri>
-     curl -k -i http://localhost:8080/react-app/control/<uri>
-     ```
-   - Yanıtın `302 Redirect` veya `500 HTML Error` OLMADIĞINI, `content-type: application/json` ve `HTTP 200` olduğunu doğrulayın.
-9. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
-   - Sistem Docker tabanlı PostgreSQL veritabanı ile çalışmaktadır (ayrıntılar için `ofbiz-postgres-docker` skill dosyasına bakın).
-   - Entity veya servis değişikliklerinde doğrudan PostgreSQL üzerinden veriyi doğrulamak için:
-     ```bash
-     sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT * FROM <tablo_adi> LIMIT 5;"
-     ```
-
-
-
+1. **Analiz:** İlgili `entitymodel.xml`, `services.xml` ve `secas.xml` dosyalarını inceleyin.
+2. **Backend:** `plugins/react-app/src/main/groovy/.../<Modul>Events.groovy` içine metotları yazın.
+3. **Controller Kaynak:** `plugins/react-app/frontend/public/WEB-INF/controller.xml` dosyasına ekleyin.
+4. **Controller Runtime:** `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` dosyasına ekleyin.
+5. **URL İzinleri:** `framework/webapp/config/url.properties` dosyasında `http.request-map.list`'e ekleyin.
+6. **Frontend API:** `api.ts` içinde TypeScript modellerini ve endpoint fonksiyonlarını yazın.
+7. **Frontend UI:** Bileşeni oluşturup `App.tsx` ve `Layout.tsx` rotalarına ekleyin.
+8. **Build:** `cd plugins/react-app/frontend && npm run build` çalıştırarak derleyin.
+9. **Canlı Doğrulama:** `curl` ile JSON yanıtını ve PostgreSQL üzerinden veritabanı yansımasını test edin.
+10. **Git Commit:** Hooks atlanarak temiz bir commit mesajıyla kaydedin.
