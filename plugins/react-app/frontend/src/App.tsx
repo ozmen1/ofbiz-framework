@@ -12,6 +12,7 @@ import ChartOfAccounts from './components/ChartOfAccounts'
 import JournalEntries from './components/JournalEntries'
 import CreateJournalEntry from './components/CreateJournalEntry'
 import FinancialAccounts from './components/FinancialAccounts'
+import AdvancedAccounting from './components/AdvancedAccounting'
 import TestPage from './components/TestPage'
 import './index.css'
 
@@ -25,6 +26,7 @@ export type ViewType =
   | 'payment-detail' 
   | 'financial-accounts'
   | 'reports'
+  | 'advanced-accounting'
   | 'chart-of-accounts'
   | 'journal-entries'
   | 'create-journal-entry'
@@ -115,6 +117,9 @@ function App() {
 
       {/* Reports View */}
       {currentView === 'reports' && <FinancialReports />}
+
+      {/* Advanced Accounting (Billing Accounts, Fixed Assets, Budgets, Agreements) */}
+      {currentView === 'advanced-accounting' && <AdvancedAccounting />}
 
       {currentView === 'test-page' && <TestPage />}
     </Layout>

@@ -694,6 +694,319 @@ export interface FinAccountMetadataResponse {
   };
 }
 
+// ==========================================
+// PHASE 5: ADVANCED ACCOUNTING TYPES
+// ==========================================
+
+export interface AdvancedAccountingMetadata {
+  fixedAssetTypes: { fixedAssetTypeId: string; description: string }[];
+  budgetTypes: { budgetTypeId: string; description: string }[];
+  budgetItemTypes: { budgetItemTypeId: string; description: string }[];
+  customTimePeriods: {
+    customTimePeriodId: string;
+    periodTypeId: string;
+    periodNum: number;
+    periodName: string;
+    fromDate: string;
+    thruDate: string;
+  }[];
+  agreementTypes: { agreementTypeId: string; description: string }[];
+  currencies: { uomId: string; description: string }[];
+  parties: { partyId: string; partyName: string }[];
+}
+
+export interface AdvancedAccountingMetadataResponse {
+  metadata: AdvancedAccountingMetadata;
+}
+
+// 1. Billing Accounts
+export interface BillingAccountItem {
+  billingAccountId: string;
+  accountLimit: number;
+  accountBalance: number;
+  availableBalance: number;
+  accountCurrencyUomId: string;
+  description: string;
+  fromDate: string;
+  thruDate: string;
+  partyId: string;
+  customerName: string;
+  roleTypeId: string;
+  invoiceCount: number;
+  paymentCount: number;
+}
+
+export interface BillingAccountsResponse {
+  accounts: BillingAccountItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  totalLimit: number;
+  totalAvailable: number;
+  totalBilled: number;
+}
+
+export interface BillingAccountRoleItem {
+  partyId: string;
+  partyName: string;
+  roleTypeId: string;
+  fromDate: string;
+  thruDate: string;
+}
+
+export interface BillingAccountInvoiceItem {
+  invoiceId: string;
+  invoiceTypeId: string;
+  invoiceDate: string;
+  statusId: string;
+  total: number;
+  currencyUomId: string;
+  description: string;
+}
+
+export interface BillingAccountPaymentItem {
+  paymentApplicationId: string;
+  paymentId: string;
+  invoiceId: string;
+  amountApplied: number;
+}
+
+export interface BillingAccountTermItem {
+  billingAccountTermId: string;
+  termTypeId: string;
+  termValue: number;
+  termDays: number;
+  description: string;
+}
+
+export interface BillingAccountDetailResponse {
+  account: {
+    billingAccountId: string;
+    accountLimit: number;
+    accountBalance: number;
+    availableBalance: number;
+    netAccountBalance: number;
+    accountCurrencyUomId: string;
+    description: string;
+    fromDate: string;
+    thruDate: string;
+  };
+  roles: BillingAccountRoleItem[];
+  invoices: BillingAccountInvoiceItem[];
+  payments: BillingAccountPaymentItem[];
+  terms: BillingAccountTermItem[];
+}
+
+export interface CreateBillingAccountPayload {
+  accountLimit: number;
+  accountCurrencyUomId?: string;
+  description?: string;
+  partyId?: string;
+  roleTypeId?: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface UpdateBillingAccountPayload {
+  billingAccountId: string;
+  accountLimit?: number;
+  description?: string;
+  thruDate?: string;
+}
+
+// 2. Fixed Assets
+export interface FixedAssetItem {
+  fixedAssetId: string;
+  fixedAssetName: string;
+  fixedAssetTypeId: string;
+  fixedAssetTypeDesc: string;
+  serialNumber?: string;
+  purchaseCost: number;
+  purchaseCostUomId: string;
+  salvageValue: number;
+  depreciation: number;
+  netBookValue: number;
+  dateAcquired?: string;
+  expectedEndOfLife?: string;
+  actualEndOfLife?: string;
+}
+
+export interface FixedAssetsResponse {
+  assets: FixedAssetItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  totalPurchaseCost: number;
+  totalDepreciation: number;
+  totalNetBookValue: number;
+}
+
+export interface FixedAssetDepScheduleItem {
+  yearNum: number;
+  calendarYear: number;
+  depreciationAmount: number;
+  accumulatedDepreciation: number;
+  endingBookValue: number;
+}
+
+export interface FixedAssetDetailResponse {
+  asset: FixedAssetItem & {
+    dateLastServiced?: string;
+    dateNextService?: string;
+  };
+  maintenances: {
+    maintHistSeqId: string;
+    statusId: string;
+    maintenanceDate: string;
+    comments: string;
+  }[];
+  depreciationSchedule: FixedAssetDepScheduleItem[];
+}
+
+export interface CreateFixedAssetPayload {
+  fixedAssetId?: string;
+  fixedAssetName: string;
+  fixedAssetTypeId: string;
+  purchaseCost?: number;
+  purchaseCostUomId?: string;
+  salvageValue?: number;
+  dateAcquired?: string;
+  expectedEndOfLife?: string;
+  serialNumber?: string;
+}
+
+export interface UpdateFixedAssetPayload {
+  fixedAssetId: string;
+  fixedAssetName?: string;
+  fixedAssetTypeId?: string;
+  purchaseCost?: number;
+  salvageValue?: number;
+  depreciation?: number;
+  expectedEndOfLife?: string;
+  serialNumber?: string;
+}
+
+// 3. Budgets
+export interface BudgetItemSummary {
+  budgetId: string;
+  budgetTypeId: string;
+  budgetTypeDesc: string;
+  customTimePeriodId: string;
+  periodDesc: string;
+  comments: string;
+  statusId: string;
+  statusDesc: string;
+  totalAmount: number;
+  itemCount: number;
+}
+
+export interface BudgetsResponse {
+  budgets: BudgetItemSummary[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  totalBudgetedAmount: number;
+}
+
+export interface BudgetItemLine {
+  budgetId: string;
+  budgetItemSeqId: string;
+  budgetItemTypeId: string;
+  budgetItemTypeDesc: string;
+  amount: number;
+  purpose: string;
+  justification: string;
+}
+
+export interface BudgetStatusHistoryItem {
+  statusId: string;
+  statusDesc: string;
+  statusDate: string;
+  comments: string;
+  changeByUserLoginId: string;
+}
+
+export interface BudgetDetailResponse {
+  budget: BudgetItemSummary;
+  items: BudgetItemLine[];
+  statuses: BudgetStatusHistoryItem[];
+}
+
+export interface CreateBudgetPayload {
+  budgetId?: string;
+  budgetTypeId: string;
+  customTimePeriodId?: string;
+  comments?: string;
+}
+
+export interface CreateBudgetItemPayload {
+  budgetId: string;
+  budgetItemTypeId?: string;
+  amount: number;
+  purpose?: string;
+  justification?: string;
+}
+
+// 4. Agreements
+export interface AgreementSummary {
+  agreementId: string;
+  agreementTypeId: string;
+  agreementTypeDesc: string;
+  partyIdFrom: string;
+  partyFromDesc: string;
+  partyIdTo: string;
+  partyToDesc: string;
+  description: string;
+  statusId: string;
+  agreementDate: string;
+  fromDate: string;
+  thruDate: string;
+}
+
+export interface AgreementsResponse {
+  agreements: AgreementSummary[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export interface AgreementDetailResponse {
+  agreement: AgreementSummary & { textData?: string };
+  terms: {
+    agreementTermId: string;
+    termTypeId: string;
+    termValue: number;
+    termDays: number;
+    description: string;
+  }[];
+  items: {
+    agreementItemSeqId: string;
+    agreementItemTypeId: string;
+    currencyUomId: string;
+    agreementText: string;
+  }[];
+}
+
+export interface CreateAgreementPayload {
+  agreementId?: string;
+  agreementTypeId?: string;
+  partyIdFrom?: string;
+  partyIdTo: string;
+  agreementDate?: string;
+  fromDate?: string;
+  thruDate?: string;
+  description?: string;
+  textData?: string;
+}
+
+export interface UpdateAgreementPayload {
+  agreementId: string;
+  description?: string;
+  textData?: string;
+  statusId?: string;
+  thruDate?: string;
+}
+
 /**
  * Base fetch function to call OFBiz endpoints, strip '//' prefix, and handle errors.
  */
@@ -1106,5 +1419,152 @@ export const api = {
   // 47. Get FinAccount Metadata
   getFinAccountMetadata: async (): Promise<FinAccountMetadataResponse> => {
     return requestApi<FinAccountMetadataResponse>('getFinAccountMetadata');
+  },
+
+  // ==========================================
+  // PHASE 5: ADVANCED ACCOUNTING API
+  // ==========================================
+
+  // 48. Get Advanced Accounting Metadata
+  getAdvancedAccountingMetadata: async (): Promise<AdvancedAccountingMetadataResponse> => {
+    return requestApi<AdvancedAccountingMetadataResponse>('getAdvancedAccountingMetadata');
+  },
+
+  // 49. Get Billing Accounts
+  getBillingAccounts: async (filters: Record<string, any> = {}): Promise<BillingAccountsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getBillingAccounts?${query}` : 'getBillingAccounts';
+    return requestApi<BillingAccountsResponse>(endpoint);
+  },
+
+  // 50. Get Billing Account Details
+  getBillingAccountDetails: async (billingAccountId: string): Promise<BillingAccountDetailResponse> => {
+    return requestApi<BillingAccountDetailResponse>(`getBillingAccountDetails?billingAccountId=${encodeURIComponent(billingAccountId)}`);
+  },
+
+  // 51. Create Billing Account
+  createBillingAccount: async (payload: CreateBillingAccountPayload): Promise<{ billingAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ billingAccountId: string; _EVENT_MESSAGE_?: string }>('createBillingAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 52. Update Billing Account
+  updateBillingAccount: async (payload: UpdateBillingAccountPayload): Promise<{ billingAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ billingAccountId: string; _EVENT_MESSAGE_?: string }>('updateBillingAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 53. Get Fixed Assets
+  getFixedAssets: async (filters: Record<string, any> = {}): Promise<FixedAssetsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getFixedAssets?${query}` : 'getFixedAssets';
+    return requestApi<FixedAssetsResponse>(endpoint);
+  },
+
+  // 54. Get Fixed Asset Details
+  getFixedAssetDetails: async (fixedAssetId: string): Promise<FixedAssetDetailResponse> => {
+    return requestApi<FixedAssetDetailResponse>(`getFixedAssetDetails?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  // 55. Create Fixed Asset
+  createFixedAsset: async (payload: CreateFixedAssetPayload): Promise<{ fixedAssetId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ fixedAssetId: string; _EVENT_MESSAGE_?: string }>('createFixedAsset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 56. Update Fixed Asset
+  updateFixedAsset: async (payload: UpdateFixedAssetPayload): Promise<{ fixedAssetId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ fixedAssetId: string; _EVENT_MESSAGE_?: string }>('updateFixedAsset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 57. Calculate / Record Depreciation
+  calculateDepreciation: async (fixedAssetId: string, depreciationAmount?: number): Promise<{ fixedAssetId: string; depreciationAdded: number; totalDepreciation: number; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ fixedAssetId: string; depreciationAdded: number; totalDepreciation: number; _EVENT_MESSAGE_?: string }>('calculateDepreciation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ fixedAssetId, depreciationAmount }),
+    });
+  },
+
+  // 58. Get Budgets
+  getBudgets: async (filters: Record<string, any> = {}): Promise<BudgetsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getBudgets?${query}` : 'getBudgets';
+    return requestApi<BudgetsResponse>(endpoint);
+  },
+
+  // 59. Get Budget Details
+  getBudgetDetails: async (budgetId: string): Promise<BudgetDetailResponse> => {
+    return requestApi<BudgetDetailResponse>(`getBudgetDetails?budgetId=${encodeURIComponent(budgetId)}`);
+  },
+
+  // 60. Create Budget
+  createBudget: async (payload: CreateBudgetPayload): Promise<{ budgetId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ budgetId: string; _EVENT_MESSAGE_?: string }>('createBudget', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 61. Create Budget Item
+  createBudgetItem: async (payload: CreateBudgetItemPayload): Promise<{ budgetId: string; budgetItemSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ budgetId: string; budgetItemSeqId: string; _EVENT_MESSAGE_?: string }>('createBudgetItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 62. Set Budget Status
+  setBudgetStatus: async (budgetId: string, statusId: string, comments?: string): Promise<{ budgetId: string; statusId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ budgetId: string; statusId: string; _EVENT_MESSAGE_?: string }>('setBudgetStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ budgetId, statusId, comments }),
+    });
+  },
+
+  // 63. Get Agreements
+  getAgreements: async (filters: Record<string, any> = {}): Promise<AgreementsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getAgreements?${query}` : 'getAgreements';
+    return requestApi<AgreementsResponse>(endpoint);
+  },
+
+  // 64. Get Agreement Details
+  getAgreementDetails: async (agreementId: string): Promise<AgreementDetailResponse> => {
+    return requestApi<AgreementDetailResponse>(`getAgreementDetails?agreementId=${encodeURIComponent(agreementId)}`);
+  },
+
+  // 65. Create Agreement
+  createAgreement: async (payload: CreateAgreementPayload): Promise<{ agreementId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ agreementId: string; _EVENT_MESSAGE_?: string }>('createAgreement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 66. Update Agreement
+  updateAgreement: async (payload: UpdateAgreementPayload): Promise<{ agreementId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ agreementId: string; _EVENT_MESSAGE_?: string }>('updateAgreement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
   },
 };
