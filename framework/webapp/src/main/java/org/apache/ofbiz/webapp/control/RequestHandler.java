@@ -90,7 +90,6 @@ public final class RequestHandler {
     private final URL controllerConfigURL;
     private final boolean trackServerHit;
     private final boolean trackVisit;
-    private static final List<String> HOSTHEADERSALLOWED = UtilMisc.getHostHeadersAllowed();
     private ControllerConfig ccfg;
 
     private RequestHandler(ServletContext context) {
@@ -392,7 +391,7 @@ public final class RequestHandler {
     public void doRequest(HttpServletRequest request, HttpServletResponse response, String chain,
                           GenericValue userLogin, Delegator delegator) throws RequestHandlerException, RequestHandlerExceptionAllowExternalRequests {
 
-        if (!HOSTHEADERSALLOWED.contains(request.getServerName())) {
+        if (!UtilMisc.isHostAllowed(request.getServerName())) {
             Debug.logError("Domain " + request.getServerName() + " not accepted to prevent host header injection."
                     + " You need to set host-headers-allowed property in security.properties file.", MODULE);
             throw new RequestHandlerException("Domain " + request.getServerName() + " not accepted to prevent host header injection."

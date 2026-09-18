@@ -618,6 +618,35 @@ public final class UtilMisc {
     }
 
     /**
+     * Checks if the given host header or server name is permitted under the
+     * {@code host-headers-allowed} security policy.
+     * Supports exact matches, wildcard prefixes (e.g. 192.168.*), and wildcard domains (e.g. *.local).
+     * @param host the host or serverName to check
+     * @return true if allowed, false otherwise
+     */
+    public static boolean isHostAllowed(String host) {
+        if (UtilValidate.isEmpty(host)) {
+            return false;
+        }
+        List<String> hostHeadersAllowed = getHostHeadersAllowed();
+        if (UtilValidate.isEmpty(hostHeadersAllowed)) {
+            return true;
+        }
+        if (hostHeadersAllowed.contains(host)) {
+            return true;
+        }
+        for (String allowed : hostHeadersAllowed) {
+            if (allowed.endsWith("*") && host.startsWith(allowed.substring(0, allowed.length() - 1))) {
+                return true;
+            }
+            if (allowed.startsWith("*.") && host.endsWith(allowed.substring(1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * List of allowed origins for the API CORS policy, read from the
      * {@code cors.origins.allowed} property in security.properties.
      * Each entry must be a full origin (scheme + host + optional port),

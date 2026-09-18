@@ -102,3 +102,14 @@ OFBiz varsayılan olarak `framework/webapp/config/url.properties` dosyasında `n
   2. `http.request-map.list` virgülle ayrılmış listesine tüm yeni React API URI'leri eklenmelidir (ör. `getInvoices`, `getInvoiceDetails`, `createInvoice`, vb.).
   3. `controller.xml` içindeki endpoint tanımlarında `<security https="false" auth="false"/>` yer almalıdır.
 
+## 7. Yerel Ağ Erişimi ve Host Header Güvenlik Politikası (`security.properties`)
+
+OFBiz, Host Header Injection saldırılarına karşı gelen isteklerdeki `Host` başlığını sıkı bir beyaz listeyle denetler (`RequestHandler.java`).
+
+* **Sorun:** React uygulaması ağdaki başka bir makineden (ör. `https://192.168.1.110:8443/react-app/`) açıldığında statik sayfalar yüklenir ancak API istekleri `RequestHandlerException: Domain 192.168.1.110 not accepted to prevent host header injection` hatası alır ve OFBiz geriye 500 HTML hata sayfası döner. React arayüzünde veriler yüklenemez.
+* **Kural:**
+  1. `framework/security/config/security.properties` dosyasında `host-headers-allowed` parametresine yerel IP adresleri ve alt ağ wildcard'ları (`192.168.*`, `10.*`, `172.*`, `raspberrypi`) eklenmelidir.
+  2. `UtilMisc.isHostAllowed` yardımcı metodu dinamik wildcard desteği sunar.
+  3. Bu dosyalardaki değişikliklerin devreye girmesi için OFBiz yeniden başlatılmalıdır (`./gradlew terminateOfbiz` ardından `./gradlew ofbizBackground`).
+
+

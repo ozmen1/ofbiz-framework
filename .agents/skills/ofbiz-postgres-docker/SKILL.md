@@ -235,3 +235,8 @@ ss -tulpn | grep 8443
   - `sudo docker exec ofbiz-postgres psql -U postgres -d ofbiz -c "ALTER SCHEMA public OWNER TO ofbiz; GRANT ALL ON SCHEMA public TO ofbiz;"` çalıştırın.
 * **`GenericDataSourceException: Unable to establish a connection` Hatası:**
   - `dependencies.gradle` içinde `runtimeOnly libs.postgresql` olduğundan ve `build.gradle` içindeki `classpath` üzerinde PostgreSQL JAR'ının bulunduğundan emin olun.
+* **Veritabanında Veri Olmasına Rağmen React Frontend'e Veri Gelmemesi (Host Header Hatası):**
+  - `psql` ile veritabanında tabloların ve fatura/ürün kayıtlarının bulunduğu doğrulanmasına rağmen, tarayıcıda yerel ağ IP'si (ör. `https://192.168.1.x:8443/react-app/`) üzerinden açılan React arayüzünde veriler yüklenmiyorsa:
+  - Sorun veritabanı veya bağlantı havuzu DEĞİLDİR. OFBiz'in Host Header Injection güvenlik mekanizması harici IP'den gelen API isteklerini engelleyip geriye 500 HTML hata sayfası dönmektedir (`RequestHandlerException: Domain ... not accepted`).
+  - Çözüm için `framework/security/config/security.properties` dosyasındaki `host-headers-allowed` parametresine yerel ağ IP'si veya `192.168.*` eklenmeli ve OFBiz yeniden başlatılmalıdır. Ayrıntılar için `react-ofbiz-integration` skill kılavuzuna bakın.
+

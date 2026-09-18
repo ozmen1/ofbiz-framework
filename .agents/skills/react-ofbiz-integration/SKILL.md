@@ -160,7 +160,39 @@ OFBiz varsayılan olarak tüm istekleri HTTPS'e (`8443`) zorlar. Bu davranış `
 
 ---
 
-## 7. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
+## 7. Ağ ve Yerel IP Erişimi / Host Header Güvenlik Politikası (`security.properties`)
+
+OFBiz, Host Header Injection (ve önbellek zehirleme) saldırılarını engellemek için gelen her HTTP isteğindeki Host/Domain başlığını sıkı bir beyaz listeyle denetler.
+
+### Ağdan Erişimde "Veri Gelmiyor" / 500 HTML Hata Tuzağı:
+1. İstemci tarayıcısı yerel ağ üzerinden sunucuya bağlandığında (örneğin: `https://192.168.1.110:8443/react-app/` veya `http://192.168.1.110:8080/react-app/`):
+   - React statik dosyaları (HTML/JS/CSS) Tomcat tarafından sorunsuz servis edilir ve sayfa yüklenir.
+   - Ancak React bileşeni `/react-app/control/...` API çağrılarını başlattığında istek `ControlServlet` -> `RequestHandler.doRequest` akışına girer.
+2. `RequestHandler` gelen `request.getServerName()` değerini (ör: `192.168.1.110`) kontrol eder.
+3. Eğer bu IP veya domain `security.properties` dosyasındaki `host-headers-allowed` listesinde yer almıyorsa:
+   - `RequestHandlerException: Domain 192.168.1.110 not accepted to prevent host header injection.` hatası fırlatılır.
+   - `ControlServlet` bu istisnayı yakalayıp istemciye 500 Internal Error HTML hata sayfası (`Error.ftl`) döner.
+   - React tarafındaki `api.ts` gelen HTML metnini yakalayarak işlemi reddeder (`OFBiz sunucusundan HTML hata sayfası döndü`).
+   - Sonuç: **Sayfa açılır ancak tablolara ve istatistik kartlarına veritabanından hiçbir veri gelmez!**
+
+### Yapılandırma ve Çözüm:
+1. **`framework/security/config/security.properties`:**
+   `host-headers-allowed` parametresine yerel IP adresleri, alt ağ wildcard'ları ve makine host adları tanımlanmalıdır:
+   ```properties
+   host-headers-allowed=localhost,127.0.0.1,192.168.1.110,192.168.*,10.*,172.16.*,172.17.*,172.18.*,172.19.*,172.20.*,172.21.*,172.22.*,raspberrypi,raspberrypi.local,demo-trunk.ofbiz.apache.org,...
+   ```
+2. **Wildcard Desteği (`UtilMisc.isHostAllowed`):**
+   `UtilMisc.isHostAllowed(String host)` yardımcı metodu sayesinde `192.168.*`, `10.*` gibi IP önekleri veya `*.local` gibi domain wildcard'ları dinamik olarak desteklenir.
+3. **Servisi Yeniden Başlatma:**
+   Yapılandırmanın yürürlüğe girmesi için OFBiz yeniden başlatılmalıdır:
+   ```bash
+   ./gradlew terminateOfbiz
+   ./gradlew ofbizBackground
+   ```
+
+---
+
+## 8. Değişiklik Uygulama Adım Adım Kontrol Listesi (Checklist)
 
 React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sırasıyla takip edin:
 
@@ -172,23 +204,26 @@ React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sı
    - [plugins/react-app/webapp/react-app/WEB-INF/controller.xml](file:///home/admin/Documents/ofbiz/plugins/react-app/webapp/react-app/WEB-INF/controller.xml) dosyasına aynı `<request-map>` düğümünü ekleyin.
 4. **URL İzinleri (`url.properties`):**
    - [framework/webapp/config/url.properties](file:///home/admin/Documents/ofbiz/framework/webapp/config/url.properties) içindeki `http.request-map.list` virgülle ayrılmış listesine yeni endpoint'in URI'sini ekleyin.
-5. **React Frontend Kodu:**
+5. **Host Header İzinleri (`security.properties`):**
+   - Yerel ağdan veya farklı IP adreslerinden erişiliyorsa, `framework/security/config/security.properties` içindeki `host-headers-allowed` parametresine IP veya `192.168.*` eklendiğinden emin olun.
+6. **React Frontend Kodu:**
    - İlgili React bileşeninde `/react-app/control/<uri>` çağrısını ve `//` temizleme mantığını yazın.
-6. **Frontend Build:**
+7. **Frontend Build:**
    - Terminalde `cd plugins/react-app/frontend && npm run build` çalıştırın. Bu sayede hem kod derlenir hem de `public/WEB-INF` dosyaları `webapp/react-app/WEB-INF` dizinine senkronize edilir.
-7. **Doğrulama (Test):**
+8. **Doğrulama (Test):**
    - OFBiz controller önbelleğinin yenilenmesi için 10 saniye bekleyin.
-   - Hem HTTP (8080) hem de HTTPS (8443) üzerinden test edin:
+   - Hem yerel (`localhost`) hem de harici IP (`192.168.x.x`) üzerinden test edin:
      ```bash
+     curl -k -i https://192.168.1.110:8443/react-app/control/<uri>
      curl -k -i http://localhost:8080/react-app/control/<uri>
-     curl -k -i https://localhost:8443/react-app/control/<uri>
      ```
-   - Yanıtın `302 Redirect` OLMADIĞINI, `content-type: application/json` ve `HTTP 200` olduğunu doğrulayın.
-8. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
+   - Yanıtın `302 Redirect` veya `500 HTML Error` OLMADIĞINI, `content-type: application/json` ve `HTTP 200` olduğunu doğrulayın.
+9. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
    - Sistem Docker tabanlı PostgreSQL veritabanı ile çalışmaktadır (ayrıntılar için `ofbiz-postgres-docker` skill dosyasına bakın).
    - Entity veya servis değişikliklerinde doğrudan PostgreSQL üzerinden veriyi doğrulamak için:
      ```bash
      sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT * FROM <tablo_adi> LIMIT 5;"
      ```
+
 
 

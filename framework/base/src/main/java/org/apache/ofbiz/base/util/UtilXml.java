@@ -89,7 +89,6 @@ public final class UtilXml {
     private static final String MODULE = UtilXml.class.getName();
     private static final XStream X_STREAM = createXStream();
     private UtilXml() { }
-    private static final List<String> HOSTHEADERSALLOWED = UtilMisc.getHostHeadersAllowed();
 
     private static XStream createXStream() {
         XStream xstream = new XStream();
@@ -424,7 +423,7 @@ public final class UtilXml {
             }
         }
         // urlHost is empty for local URLs (e.g. file:), which are always allowed
-        if (!HOSTHEADERSALLOWED.contains(urlHost) && !urlHost.isEmpty()) {
+        if (!UtilMisc.isHostAllowed(urlHost) && !urlHost.isEmpty()) {
             Debug.logWarning("Domain " + urlHost + " not accepted to prevent host header injection."
                     + " You need to set host-headers-allowed property in security.properties file.", MODULE);
             throw new IOException("Domain " + urlHost + " not accepted to prevent host header injection."

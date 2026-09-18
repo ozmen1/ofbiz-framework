@@ -14,10 +14,16 @@ Geliştirme aşamasında React projesi ve OFBiz bağımsız servisler olarak vey
 - **OFBiz (Backend):** Standart yöntemlerle çalıştırılır (`./gradlew ofbizBackground`). HTTP `8080` ve HTTPS `8443` portlarında hizmet verir.
 - **React (Frontend):** `plugins/react-app/frontend` dizininde Vite geliştirme sunucusu başlatılır (`npm run dev`).
 
-### CORS, HTTP/HTTPS Portları ve Proxy Ayarları
-OFBiz varsayılan olarak `framework/webapp/config/url.properties` dosyasında `no.http=Y` ayarı ile HTTP isteklerini `302 Found` ile HTTPS (`8443`) portuna yönlendirir. Bu durum tarayıcı veya yerel ağ üzerinden HTTP (`8080`) ile bağlanıldığında isteklerin düşmesine neden olur.
-- `url.properties` dosyasında `no.http=N` yapılandırılmalı ve `http.request-map.list` listesine tüm API endpoint'leri eklenmelidir.
-- Frontend geliştirme sırasında (`npm run dev`), `vite.config.ts` içerisinde `/react-app/control` API istekleri için proxy tanımlanmalıdır:
+### CORS, HTTP/HTTPS Portları, Host Header ve Proxy Ayarları
+1. **HTTP/HTTPS Yönlendirme:**
+   - OFBiz varsayılan olarak `framework/webapp/config/url.properties` dosyasında `no.http=Y` ayarı ile HTTP isteklerini `302 Found` ile HTTPS (`8443`) portuna yönlendirir. Bu durum tarayıcı veya yerel ağ üzerinden HTTP (`8080`) ile bağlanıldığında isteklerin düşmesine neden olur.
+   - `url.properties` dosyasında `no.http=N` yapılandırılmalı ve `http.request-map.list` listesine tüm API endpoint'leri eklenmelidir.
+2. **Host Header Güvenlik Beyaz Listesi (`security.properties`):**
+   - OFBiz `RequestHandler`, gelen `Host` başlığında yer alan IP/domain değerini `security.properties` dosyasındaki `host-headers-allowed` listesinde arar.
+   - Eğer ağ IP'si (ör. `192.168.1.110`) bu listede yoksa, OFBiz API çağrılarına **500 HTML hata sayfası** döner. Frontend'de `api.ts` bu HTML'i yakalar ve arayüze veri gelmez!
+   - `host-headers-allowed` içinde `192.168.*`, `10.*`, `172.*`, `raspberrypi`, `raspberrypi.local` tanımlı olmalıdır.
+3. **Vite Proxy:**
+   - Frontend geliştirme sırasında (`npm run dev`), `vite.config.ts` içerisinde `/react-app/control` API istekleri için proxy tanımlanmalıdır:
 
 ```typescript
 // vite.config.ts
@@ -90,4 +96,9 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
 5. **Dosya Değişiklikleri ve Build Kontrolü:**
    - Yeni bir sayfa veya bileşen eklendiğinde `src/components` veya `src/pages` klasör mimarisine uy.
    - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
+6. **Ağ Erişimi ve Host Header Doğrulaması (Yerel Ağda Veri Gelmeme Sorunu):**
+   - Uygulama sadece `localhost` üzerinden değil, yerel ağ IP'si (örn: `https://192.168.1.x:8443/react-app/`) üzerinden de test edilmelidir.
+   - Eğer React ekranı açılıyor fakat tablolara veya istatistik kartlarına veri dolmuyorsa, tarayıcı geliştirici araçları (Network sekmesi) üzerinden API çağrılarını kontrol et.
+   - Eğer API çağrıları `500 Internal Server Error` ile HTML dönüyorsa, sorun OFBiz `host-headers-allowed` güvenliğidir. `framework/security/config/security.properties` dosyasına IP/subnet eklenmeli ve OFBiz yeniden başlatılmalıdır.
+
 
