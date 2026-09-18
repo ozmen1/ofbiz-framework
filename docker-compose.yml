@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ofbiz-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ofbiz
+      POSTGRES_DB: ofbiz
+    volumes:
+      - ofbiz-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ofbiz -d ofbiz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ofbiz-postgres-data:
+    name: ofbiz-postgres-data

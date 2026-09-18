@@ -81,3 +81,13 @@ Eğer frontend API isteğinde `Unexpected token < in JSON at position 0` hatası
 2. Loglardan hatanın arkasında ne olduğuna bak. `auth="true"` olup olmadığını kontrol et. Mevcut React projesi henüz auth token göndermiyorsa geçici olarak auth gereksinimini kaldır (`auth="false"`).
 3. React fetch kodunda yanıtın `<!DOCTYPE` veya `<html` ile başlayıp başlamadığını kontrol edin ve `//` güvenlik önekini temizlemeyi unutmayın.
 
+## 5. PostgreSQL ve Docker Veritabanı Doğrulaması
+
+Sistem PostgreSQL (`ofbiz-postgres` Docker konteyneri) ile çalışmaktadır. Entity veya delegator üzerinden yapılan tüm ekleme/güncelleme/silme işlemleri (örneğin `createInvoice`, `createInvoiceItem`) doğrudan PostgreSQL tablolarına yansır.
+
+* **Konteyner Durumu:** `sudo docker ps -f name=ofbiz-postgres`
+* **SQL Konsolu:**
+  ```bash
+  sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT count(*) FROM invoice;"
+  ```
+* Detaylı veritabanı yönetimi ve delegator yapılandırmaları için `.agents/skills/ofbiz-postgres-docker/SKILL.md` kılavuzuna başvurun.

@@ -140,3 +140,10 @@ React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sı
      curl -k -i https://localhost:8443/react-app/control/<uri>
      ```
    - Yanıtın `content-type: application/json` ve `HTTP/2 200` olduğunu doğrulayın.
+7. **Veritabanı Kalıcılığı (PostgreSQL Kontrolü):**
+   - Sistem Docker tabanlı PostgreSQL veritabanı ile çalışmaktadır (ayrıntılar için `ofbiz-postgres-docker` skill dosyasına bakın).
+   - Entity veya servis değişikliklerinde doğrudan PostgreSQL üzerinden veriyi doğrulamak için:
+     ```bash
+     sudo docker exec ofbiz-postgres psql -U ofbiz -d ofbiz -c "SELECT * FROM <tablo_adi> LIMIT 5;"
+     ```
+
