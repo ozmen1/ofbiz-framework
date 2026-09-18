@@ -343,6 +343,184 @@ export interface ReportMetadataResponse {
   };
 }
 
+// General Ledger & Chart of Accounts Interfaces
+export interface GlAccountItem {
+  glAccountId: string;
+  accountCode: string;
+  accountName: string;
+  description: string;
+  glAccountTypeId: string;
+  glAccountTypeDesc: string;
+  glAccountClassId: string;
+  glAccountClassDesc: string;
+  parentGlAccountId: string;
+  isAssigned: boolean;
+}
+
+export interface GlAccountsResponse {
+  accounts: GlAccountItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export interface GlAccountDetail {
+  glAccountId: string;
+  accountCode: string;
+  accountName: string;
+  description: string;
+  glAccountTypeId: string;
+  glAccountTypeDesc: string;
+  glAccountClassId: string;
+  glAccountClassDesc: string;
+  parentGlAccountId: string;
+  parentAccountName: string;
+  glResourceTypeId: string;
+  isAssigned: boolean;
+  totalDebits: number;
+  totalCredits: number;
+  balance: number;
+  normalSide: string;
+}
+
+export interface GlAccountEntryItem {
+  acctgTransId: string;
+  acctgTransEntrySeqId: string;
+  transactionDate: string;
+  acctgTransTypeId: string;
+  transTypeDescription: string;
+  debitCreditFlag: 'D' | 'C';
+  amount: number;
+  currencyUomId: string;
+  description: string;
+  partyId?: string;
+  partyName?: string;
+}
+
+export interface GlAccountDetailResponse {
+  account: GlAccountDetail;
+  recentEntries: GlAccountEntryItem[];
+}
+
+export interface CreateGlAccountPayload {
+  glAccountId?: string;
+  accountCode: string;
+  accountName: string;
+  glAccountClassId: string;
+  glAccountTypeId?: string;
+  glResourceTypeId?: string;
+  parentGlAccountId?: string;
+  description?: string;
+  organizationPartyId?: string;
+}
+
+export interface UpdateGlAccountPayload {
+  glAccountId: string;
+  accountName?: string;
+  description?: string;
+  glAccountClassId?: string;
+  glAccountTypeId?: string;
+  glResourceTypeId?: string;
+  parentGlAccountId?: string;
+  organizationPartyId?: string;
+  isAssigned?: string;
+}
+
+export interface AcctgTransListItem {
+  acctgTransId: string;
+  acctgTransTypeId: string;
+  acctgTransTypeDesc: string;
+  glFiscalTypeId: string;
+  glFiscalTypeDesc: string;
+  transactionDate: string;
+  isPosted: string;
+  postedDate?: string;
+  description: string;
+  voucherRef?: string;
+  invoiceId?: string;
+  paymentId?: string;
+  totalDebit: number;
+  totalCredit: number;
+  entryCount: number;
+}
+
+export interface AcctgTransactionsResponse {
+  transactions: AcctgTransListItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export interface AcctgTransDetailHeader {
+  acctgTransId: string;
+  acctgTransTypeId: string;
+  acctgTransTypeDesc: string;
+  glFiscalTypeId: string;
+  glFiscalTypeDesc: string;
+  transactionDate: string;
+  isPosted: string;
+  postedDate?: string;
+  description: string;
+  voucherRef?: string;
+  invoiceId?: string;
+  paymentId?: string;
+  createdByUserLogin?: string;
+  lastModifiedByUserLogin?: string;
+}
+
+export interface AcctgTransLineItem {
+  acctgTransEntrySeqId: string;
+  glAccountId: string;
+  accountCode: string;
+  accountName: string;
+  debitCreditFlag: 'D' | 'C';
+  amount: number;
+  currencyUomId: string;
+  description: string;
+  partyId?: string;
+  partyName?: string;
+}
+
+export interface AcctgTransDetailResponse {
+  transaction: AcctgTransDetailHeader;
+  entries: AcctgTransLineItem[];
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+}
+
+export interface JournalEntryLinePayload {
+  glAccountId: string;
+  debitCreditFlag: 'D' | 'C';
+  amount: number;
+  description?: string;
+  partyId?: string;
+  currencyUomId?: string;
+}
+
+export interface CreateJournalEntryPayload {
+  transactionDate?: string;
+  acctgTransTypeId?: string;
+  glFiscalTypeId?: string;
+  description?: string;
+  voucherRef?: string;
+  isPosted?: string;
+  organizationPartyId?: string;
+  entries: JournalEntryLinePayload[];
+}
+
+export interface GlMetadataResponse {
+  metadata: {
+    glAccountClasses: { glAccountClassId: string; description: string; parentClassId: string }[];
+    glAccountTypes: { glAccountTypeId: string; description: string }[];
+    glResourceTypes: { glResourceTypeId: string; description: string }[];
+    acctgTransTypes: { acctgTransTypeId: string; description: string }[];
+    glFiscalTypes: { glFiscalTypeId: string; description: string }[];
+    organizations: { partyId: string; name: string }[];
+    accounts: { glAccountId: string; accountCode: string; accountName: string; glAccountClassId: string }[];
+  };
+}
+
 /**
  * Base fetch function to call OFBiz endpoints, strip '//' prefix, and handle errors.
  */
@@ -572,5 +750,83 @@ export const api = {
   // 24. Report Metadata
   getReportMetadata: async (): Promise<ReportMetadataResponse> => {
     return requestApi<ReportMetadataResponse>('getReportMetadata');
+  },
+
+  // 25. Get GL Accounts (Chart of Accounts)
+  getGlAccounts: async (filters: Record<string, any> = {}): Promise<GlAccountsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getGlAccounts?${query}` : 'getGlAccounts';
+    return requestApi<GlAccountsResponse>(endpoint);
+  },
+
+  // 26. Get GL Account Details
+  getGlAccountDetails: async (glAccountId: string, organizationPartyId: string = 'Company'): Promise<GlAccountDetailResponse> => {
+    return requestApi<GlAccountDetailResponse>(`getGlAccountDetails?glAccountId=${encodeURIComponent(glAccountId)}&organizationPartyId=${encodeURIComponent(organizationPartyId)}`);
+  },
+
+  // 27. Create GL Account
+  createGlAccount: async (payload: CreateGlAccountPayload): Promise<{ glAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ glAccountId: string; _EVENT_MESSAGE_?: string }>('createGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 28. Update GL Account
+  updateGlAccount: async (payload: UpdateGlAccountPayload): Promise<{ glAccountId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ glAccountId: string; _EVENT_MESSAGE_?: string }>('updateGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 29. Assign GL Account to Organization
+  assignGlAccountToOrg: async (glAccountId: string, assign: 'Y' | 'N', organizationPartyId: string = 'Company'): Promise<{ glAccountId: string; isAssigned: boolean; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ glAccountId: string; isAssigned: boolean; _EVENT_MESSAGE_?: string }>('assignGlAccountToOrg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glAccountId, assign, organizationPartyId }),
+    });
+  },
+
+  // 30. Get Accounting Transactions (Journal Entries)
+  getAcctgTransactions: async (filters: Record<string, any> = {}): Promise<AcctgTransactionsResponse> => {
+    const query = toFormData(filters);
+    const endpoint = query ? `getAcctgTransactions?${query}` : 'getAcctgTransactions';
+    return requestApi<AcctgTransactionsResponse>(endpoint);
+  },
+
+  // 31. Get Accounting Transaction Details
+  getAcctgTransDetails: async (acctgTransId: string): Promise<AcctgTransDetailResponse> => {
+    return requestApi<AcctgTransDetailResponse>(`getAcctgTransDetails?acctgTransId=${encodeURIComponent(acctgTransId)}`);
+  },
+
+  // 32. Create Journal Entry (Balanced debit/credit)
+  createJournalEntry: async (payload: CreateJournalEntryPayload): Promise<{ acctgTransId: string; isPosted: string; _EVENT_MESSAGE_?: string }> => {
+    const bodyObj: Record<string, any> = {
+      ...payload,
+      entries: JSON.stringify(payload.entries),
+    };
+    return requestApi<{ acctgTransId: string; isPosted: string; _EVENT_MESSAGE_?: string }>('createJournalEntry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(bodyObj),
+    });
+  },
+
+  // 33. Post Journal Entry to General Ledger
+  postJournalEntry: async (acctgTransId: string): Promise<{ acctgTransId: string; isPosted: string; postedDate: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ acctgTransId: string; isPosted: string; postedDate: string; _EVENT_MESSAGE_?: string }>('postJournalEntry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ acctgTransId }),
+    });
+  },
+
+  // 34. Get GL Metadata
+  getGlMetadata: async (): Promise<GlMetadataResponse> => {
+    return requestApi<GlMetadataResponse>('getGlMetadata');
   },
 };

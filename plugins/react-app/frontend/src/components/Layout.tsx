@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker } from 'lucide-react';
+import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText } from 'lucide-react';
 import { ViewType } from '../App';
 
 interface LayoutProps {
@@ -11,6 +11,8 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
   const isInvoiceView = currentView === 'invoices' || currentView === 'create-invoice' || currentView === 'invoice-detail';
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
+  const isJournalView = currentView === 'journal-entries' || currentView === 'create-journal-entry';
+  const isAccountsView = currentView === 'chart-of-accounts';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
@@ -62,6 +64,18 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             label="Payments" 
             active={isPaymentView} 
             onClick={() => onNavigate('payments')} 
+          />
+          <SidebarItem 
+            icon={<BookOpen size={20} />} 
+            label="Hesap Planı" 
+            active={isAccountsView} 
+            onClick={() => onNavigate('chart-of-accounts')} 
+          />
+          <SidebarItem 
+            icon={<ScrollText size={20} />} 
+            label="Yevmiye Fişleri" 
+            active={isJournalView} 
+            onClick={() => onNavigate('journal-entries')} 
           />
           <SidebarItem 
             icon={<PieChart size={20} />} 

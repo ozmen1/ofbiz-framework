@@ -8,6 +8,9 @@ import PaymentList from './components/PaymentList'
 import CreatePayment from './components/CreatePayment'
 import PaymentDetail from './components/PaymentDetail'
 import FinancialReports from './components/FinancialReports'
+import ChartOfAccounts from './components/ChartOfAccounts'
+import JournalEntries from './components/JournalEntries'
+import CreateJournalEntry from './components/CreateJournalEntry'
 import TestPage from './components/TestPage'
 import './index.css'
 
@@ -20,12 +23,16 @@ export type ViewType =
   | 'create-payment' 
   | 'payment-detail' 
   | 'reports'
+  | 'chart-of-accounts'
+  | 'journal-entries'
+  | 'create-journal-entry'
   | 'test-page';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
+  const [activeJournalTransId, setActiveJournalTransId] = useState<string | null>(null);
 
   const handleNavigate = (view: ViewType, id?: string) => {
     setCurrentView(view);
@@ -33,6 +40,8 @@ function App() {
       setActiveInvoiceId(id);
     } else if (view === 'payment-detail' && id !== undefined) {
       setActivePaymentId(id);
+    } else if (view === 'journal-entries' && id !== undefined) {
+      setActiveJournalTransId(id);
     }
   };
 
@@ -77,6 +86,25 @@ function App() {
           paymentId={activePaymentId} 
           onBack={() => handleNavigate('payments')} 
           onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
+        />
+      )}
+
+      {/* General Ledger & Chart of Accounts Views */}
+      {currentView === 'chart-of-accounts' && (
+        <ChartOfAccounts 
+          onSelectTransaction={(id) => handleNavigate('journal-entries', id)} 
+        />
+      )}
+      {currentView === 'journal-entries' && (
+        <JournalEntries 
+          onCreateNew={() => handleNavigate('create-journal-entry')}
+          initialSelectedId={activeJournalTransId}
+        />
+      )}
+      {currentView === 'create-journal-entry' && (
+        <CreateJournalEntry 
+          onBack={() => handleNavigate('journal-entries')}
+          onSuccess={(newId) => handleNavigate('journal-entries', newId)}
         />
       )}
 

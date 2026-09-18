@@ -186,6 +186,77 @@
         <response name="success" type="request" value="json"/>
         <response name="error" type="request" value="json"/>
     </request-map>
+
+    <!-- General Ledger & Chart of Accounts Endpoints -->
+    <request-map uri="getGlAccounts">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="getGlAccounts"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="getGlAccountDetails">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="getGlAccountDetails"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="createGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="createGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="updateGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="updateGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="assignGlAccountToOrg">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="assignGlAccountToOrg"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="getAcctgTransactions">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="getAcctgTransactions"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="getAcctgTransDetails">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="getAcctgTransDetails"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="createJournalEntry">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="createJournalEntry"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="postJournalEntry">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="postJournalEntry"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="getGlMetadata">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="getGlMetadata"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
     
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
