@@ -24,8 +24,19 @@ function App() {
     <Layout currentView={currentView} onNavigate={handleNavigate}>
       {currentView === 'dashboard' && <AccountingDashboard />}
       {currentView === 'invoices' && <InvoiceList onViewInvoice={(id) => handleNavigate('invoice-detail', id)} />}
-      {currentView === 'create-invoice' && <CreateInvoice onCancel={() => handleNavigate('invoices')} onSave={() => handleNavigate('invoices')} />}
-      {currentView === 'invoice-detail' && <InvoiceDetail invoiceId={activeInvoiceId} onBack={() => handleNavigate('invoices')} />}
+      {currentView === 'create-invoice' && (
+        <CreateInvoice 
+          onCancel={() => handleNavigate('invoices')} 
+          onSave={(newId) => newId ? handleNavigate('invoice-detail', newId) : handleNavigate('invoices')} 
+        />
+      )}
+      {currentView === 'invoice-detail' && (
+        <InvoiceDetail 
+          invoiceId={activeInvoiceId} 
+          onBack={() => handleNavigate('invoices')} 
+          onViewInvoice={(newId) => handleNavigate('invoice-detail', newId)}
+        />
+      )}
       {currentView === 'test-page' && <TestPage />}
     </Layout>
   )

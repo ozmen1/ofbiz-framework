@@ -3,7 +3,7 @@ build/
 gradle/wrapper/gradle-wrapper.jar
 applications/*/build
 framework/*/build
-/plugins/
+/plugins/*
 !/plugins/react-app/
 runtime/git-rebase/*
 runtime/SvnInfo.ftl

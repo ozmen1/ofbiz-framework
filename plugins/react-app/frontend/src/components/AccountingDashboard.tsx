@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-
 import { Users, FileText, DollarSign, Clock } from 'lucide-react';
+import { api } from '../services/api';
 
 interface Invoice {
   invoiceId: string;
@@ -31,24 +31,13 @@ const AccountingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/react-app/control/getAccountingSummary')
-      .then(res => res.text())
-      .then(text => {
-        console.log("Gelen Ham Veri:", text); // BURASI ÇOK ÖNEMLİ: Gelen HTML'in ne olduğunu göreceğiz.
-        console.log("Gelen Ham Veri:", text);
-        
-        if (text.trim().startsWith('<!DOCTYPE')) {
-          console.error("Dikkat: JSON yerine HTML sayfası geldi!");
-          return;
-        }
-        
-        const cleanJson = text.startsWith('//') ? text.substring(2) : text;
-        const json = JSON.parse(cleanJson);
+    api.getAccountingSummary()
+      .then(json => {
         setData(json.accountingData);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Yakalanamayan Hata:", err);
+        console.error("Dashboard veri çekme hatası:", err);
         setLoading(false);
       });
   }, []);
