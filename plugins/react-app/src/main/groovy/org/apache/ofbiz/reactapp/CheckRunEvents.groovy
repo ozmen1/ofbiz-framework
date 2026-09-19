@@ -63,6 +63,21 @@ String getPartyName(def delegator, String partyId) {
     return partyId
 }
 
+String getPaymentFinAccountId(def delegator, GenericValue payment) {
+    if (!payment) return null
+    try {
+        if (payment.paymentMethodId) {
+            GenericValue pm = EntityQuery.use(delegator).from("PaymentMethod").where("paymentMethodId", payment.paymentMethodId).queryOne()
+            if (pm && pm.finAccountId) return pm.finAccountId
+        }
+        if (payment.finAccountTransId) {
+            GenericValue fat = EntityQuery.use(delegator).from("FinAccountTrans").where("finAccountTransId", payment.finAccountTransId).queryOne()
+            if (fat && fat.finAccountId) return fat.finAccountId
+        }
+    } catch (Exception ignored) {}
+    return null
+}
+
 String numberToWordsEnglish(BigDecimal amount) {
     if (!amount) return "Zero Dollars"
     long dollars = amount.longValue()
@@ -168,7 +183,7 @@ String getCheckRuns() {
         List<GenericValue> rawGroups = EntityQuery.use(delegator)
             .from("PaymentGroup")
             .where("paymentGroupTypeId", "CHECK_RUN")
-            .orderBy("-fromDate")
+            .orderBy("-createdStamp")
             .queryList()
 
         List checkRuns = []
@@ -180,8 +195,7 @@ String getCheckRuns() {
         for (GenericValue pg : rawGroups) {
             String pgId = pg.paymentGroupId
             String pgName = pg.paymentGroupName ?: ("Check Run #" + pgId)
-            Timestamp fromDate = pg.fromDate
-            Timestamp thruDate = pg.thruDate
+            Timestamp createdDate = pg.getTimestamp("createdStamp") ?: pg.getTimestamp("createdTxStamp")
 
             // Fetch members
             List<GenericValue> members = EntityQuery.use(delegator)
@@ -194,8 +208,21 @@ String getCheckRuns() {
             BigDecimal groupTotal = BigDecimal.ZERO
             String samplePaymentMethod = null
             String sampleFinAccount = null
+            Timestamp earliestMemberFrom = null
+            Timestamp latestMemberThru = null
+            boolean allMembersExpired = !members.isEmpty()
 
             for (GenericValue m : members) {
+                if (m.fromDate && (earliestMemberFrom == null || m.fromDate.before(earliestMemberFrom))) {
+                    earliestMemberFrom = m.fromDate
+                }
+                if (m.thruDate && (latestMemberThru == null || m.thruDate.after(latestMemberThru))) {
+                    latestMemberThru = m.thruDate
+                }
+                if (!m.thruDate) {
+                    allMembersExpired = false
+                }
+
                 GenericValue payment = EntityQuery.use(delegator)
                     .from("Payment")
                     .where("paymentId", m.paymentId)
@@ -212,11 +239,14 @@ String getCheckRuns() {
                     if (!samplePaymentMethod && payment.paymentMethodId) {
                         samplePaymentMethod = payment.paymentMethodId
                     }
-                    if (!sampleFinAccount && payment.finAccountId) {
-                        sampleFinAccount = payment.finAccountId
+                    if (!sampleFinAccount) {
+                        sampleFinAccount = getPaymentFinAccountId(delegator, payment)
                     }
                 }
             }
+
+            Timestamp fromDate = earliestMemberFrom ?: createdDate
+            Timestamp thruDate = allMembersExpired ? latestMemberThru : null
 
             totalChecksIssued += (checkCount - voidCount)
             totalVoidedChecks += voidCount
@@ -347,7 +377,7 @@ String getCheckRunDetail() {
                     statusId: payment.statusId,
                     statusDesc: statusDesc,
                     paymentMethodId: payment.paymentMethodId,
-                    finAccountId: payment.finAccountId,
+                    finAccountId: getPaymentFinAccountId(delegator, payment),
                     comments: payment.comments,
                     appliedInvoices: appliedInvoices,
                     memberFromDate: m.fromDate ? m.fromDate.toString().substring(0, 19) : null,
@@ -356,12 +386,30 @@ String getCheckRunDetail() {
             }
         }
 
+        Timestamp createdDate = pg.getTimestamp("createdStamp") ?: pg.getTimestamp("createdTxStamp")
+        Timestamp detailFromDate = null
+        Timestamp detailThruDate = null
+        boolean allExpired = !members.isEmpty()
+        for (GenericValue m : members) {
+            if (m.fromDate && (detailFromDate == null || m.fromDate.before(detailFromDate))) {
+                detailFromDate = m.fromDate
+            }
+            if (m.thruDate && (detailThruDate == null || m.thruDate.after(detailThruDate))) {
+                detailThruDate = m.thruDate
+            }
+            if (!m.thruDate) {
+                allExpired = false
+            }
+        }
+        if (!detailFromDate) detailFromDate = createdDate
+        if (!allExpired) detailThruDate = null
+
         request.setAttribute("checkRun", [
             paymentGroupId: pg.paymentGroupId,
             paymentGroupName: pg.paymentGroupName ?: ("Check Run #" + pg.paymentGroupId),
             paymentGroupTypeId: pg.paymentGroupTypeId,
-            fromDate: pg.fromDate ? pg.fromDate.toString().substring(0, 19) : null,
-            thruDate: pg.thruDate ? pg.thruDate.toString().substring(0, 19) : null,
+            fromDate: detailFromDate ? detailFromDate.toString().substring(0, 19) : null,
+            thruDate: detailThruDate ? detailThruDate.toString().substring(0, 19) : null,
             totalAmount: totalAmount.doubleValue(),
             checkCount: checks.size(),
             checks: checks
@@ -591,11 +639,16 @@ String cancelCheckRun() {
             return "error"
         }
 
-        // Mark payment group thruDate
-        GenericValue pg = EntityQuery.use(delegator).from("PaymentGroup").where("paymentGroupId", paymentGroupId).queryOne()
-        if (pg) {
-            pg.thruDate = UtilDateTime.nowTimestamp()
-            pg.store()
+        // Expire all member records in PaymentGroupMember
+        Timestamp now = UtilDateTime.nowTimestamp()
+        List<GenericValue> activeMembers = EntityQuery.use(delegator)
+            .from("PaymentGroupMember")
+            .where("paymentGroupId", paymentGroupId)
+            .filterByDate()
+            .queryList()
+        for (GenericValue m : activeMembers) {
+            m.thruDate = now
+            m.store()
         }
 
         request.setAttribute("_EVENT_MESSAGE_", "Check Run #" + paymentGroupId + " and all member checks have been voided/cancelled.")
@@ -696,8 +749,9 @@ String getCheckPrintData() {
             // Bank details
             String bankName = "Corporate Checking Account"
             String bankAccountNum = "XXXX-XXXX-8821"
-            if (payment.finAccountId) {
-                GenericValue fa = EntityQuery.use(delegator).from("FinAccount").where("finAccountId", payment.finAccountId).queryOne()
+            String finAcctId = getPaymentFinAccountId(delegator, payment)
+            if (finAcctId) {
+                GenericValue fa = EntityQuery.use(delegator).from("FinAccount").where("finAccountId", finAcctId).queryOne()
                 if (fa) {
                     bankName = fa.finAccountName ?: fa.finAccountId
                     bankAccountNum = fa.finAccountCode ?: fa.finAccountId
