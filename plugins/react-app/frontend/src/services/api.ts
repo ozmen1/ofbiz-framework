@@ -915,6 +915,150 @@ export interface MassChangeInvoiceStatusResponse {
   _EVENT_MESSAGE_?: string;
 }
 
+// ═════════════════════════════════════════════════════════════════
+// FAZ 9: TAX SETTLEMENT / VAT RETURNS & PARTY STATEMENTS
+// ═════════════════════════════════════════════════════════════════
+
+export interface TaxSettlementSummary {
+  taxAuthPartyId: string;
+  taxAuthGeoId: string;
+  taxAuthPartyName: string;
+  fromDate: string;
+  thruDate: string;
+  totalTaxableSales: number;
+  totalTaxCollected: number;
+  totalTaxablePurchases: number;
+  totalTaxPaid: number;
+  netTaxDue: number;
+  isPayable: boolean;
+  lineItemCount: number;
+}
+
+export interface TaxSettlementRateGroup {
+  taxAuthRateSeqId: string;
+  rateName: string;
+  taxableSales: number;
+  taxCollected: number;
+  taxablePurchases: number;
+  taxPaid: number;
+  netTax: number;
+}
+
+export interface TaxSettlementLineItem {
+  invoiceId: string;
+  invoiceItemSeqId: string;
+  invoiceTypeId: string;
+  invoiceDate: string;
+  partyId: string;
+  partyName: string;
+  statusId: string;
+  description: string;
+  taxableBase: number;
+  taxAmount: number;
+  currencyUomId: string;
+  isSales: boolean;
+}
+
+export interface TaxAuthorityReportResponse {
+  summary: TaxSettlementSummary;
+  rateBreakdown: TaxSettlementRateGroup[];
+  lineItems: TaxSettlementLineItem[];
+}
+
+export interface PartyTaxAuthInfoItem {
+  partyId: string;
+  partyName: string;
+  taxAuthPartyId: string;
+  taxAuthGeoId: string;
+  partyTaxId: string;
+  isExempt: string;
+  isNexus: string;
+  fromDate: string;
+  thruDate: string;
+}
+
+export interface CreatePartyTaxAuthInfoPayload {
+  partyId: string;
+  taxAuthPartyId: string;
+  taxAuthGeoId: string;
+  partyTaxId?: string;
+  isExempt?: string;
+  isNexus?: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface TaxAuthorityCategoryItem {
+  taxAuthPartyId: string;
+  taxAuthGeoId: string;
+  productCategoryId: string;
+  categoryName: string;
+  description?: string;
+}
+
+export interface PartyStatementSummary {
+  partyId: string;
+  partyName: string;
+  totalInvoiced: number;
+  totalPaid: number;
+  openBalance: number;
+  fromDate?: string;
+  thruDate?: string;
+  entryCount: number;
+}
+
+export interface PartyAgingSummary {
+  current: number;
+  days1_30: number;
+  days31_60: number;
+  days61_90: number;
+  days90Plus: number;
+  totalOverdue: number;
+}
+
+export interface PartyStatementEntry {
+  id: string;
+  entryType: 'INVOICE' | 'PAYMENT';
+  refNum: string;
+  entryDate: string;
+  description: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+  statusId: string;
+  currencyUomId: string;
+}
+
+export interface PartyOpenInvoiceItem {
+  invoiceId: string;
+  invoiceTypeId: string;
+  invoiceDate: string;
+  dueDate: string;
+  total: number;
+  outstandingAmount: number;
+  daysOverdue: number;
+  currencyUomId: string;
+  statusId: string;
+}
+
+export interface PartyUnappliedPaymentItem {
+  paymentId: string;
+  paymentTypeId: string;
+  effectiveDate: string;
+  amount: number;
+  unappliedAmount: number;
+  statusId: string;
+  currencyUomId: string;
+}
+
+export interface PartyFinancialStatementResponse {
+  party: PartyStatementSummary;
+  aging: PartyAgingSummary;
+  entries: PartyStatementEntry[];
+  openInvoices: PartyOpenInvoiceItem[];
+  unappliedPayments: PartyUnappliedPaymentItem[];
+}
+
 // 2. Fixed Assets
 export interface FixedAssetItem {
   fixedAssetId: string;
@@ -2155,6 +2299,66 @@ export const api = {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: toFormData(formattedPayload),
     });
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // FAZ 9: TAX SETTLEMENT & PARTY STATEMENT API METHODS
+  // ═════════════════════════════════════════════════════════════════
+
+  getTaxAuthorityReport: async (taxAuthPartyId: string, taxAuthGeoId: string, fromDate?: string, thruDate?: string): Promise<TaxAuthorityReportResponse> => {
+    const q = new URLSearchParams({ taxAuthPartyId, taxAuthGeoId });
+    if (fromDate) q.append('fromDate', fromDate);
+    if (thruDate) q.append('thruDate', thruDate);
+    return requestApi<TaxAuthorityReportResponse>(`getTaxAuthorityReport?${q.toString()}`);
+  },
+
+  getPartyTaxAuthInfos: async (taxAuthPartyId: string, taxAuthGeoId: string): Promise<{ taxAuthParties: PartyTaxAuthInfoItem[] }> => {
+    const q = new URLSearchParams({ taxAuthPartyId, taxAuthGeoId });
+    return requestApi<{ taxAuthParties: PartyTaxAuthInfoItem[] }>(`getPartyTaxAuthInfos?${q.toString()}`);
+  },
+
+  createPartyTaxAuthInfo: async (payload: CreatePartyTaxAuthInfoPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createPartyTaxAuthInfo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  deletePartyTaxAuthInfo: async (partyId: string, taxAuthPartyId: string, taxAuthGeoId: string, fromDate: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('deletePartyTaxAuthInfo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ partyId, taxAuthPartyId, taxAuthGeoId, fromDate }),
+    });
+  },
+
+  getTaxAuthorityCategories: async (taxAuthPartyId: string, taxAuthGeoId: string): Promise<{ categories: TaxAuthorityCategoryItem[] }> => {
+    const q = new URLSearchParams({ taxAuthPartyId, taxAuthGeoId });
+    return requestApi<{ categories: TaxAuthorityCategoryItem[] }>(`getTaxAuthorityCategories?${q.toString()}`);
+  },
+
+  createTaxAuthorityCategory: async (taxAuthPartyId: string, taxAuthGeoId: string, productCategoryId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createTaxAuthorityCategory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ taxAuthPartyId, taxAuthGeoId, productCategoryId }),
+    });
+  },
+
+  deleteTaxAuthorityCategory: async (taxAuthPartyId: string, taxAuthGeoId: string, productCategoryId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('deleteTaxAuthorityCategory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ taxAuthPartyId, taxAuthGeoId, productCategoryId }),
+    });
+  },
+
+  getPartyFinancialStatement: async (partyId: string, fromDate?: string, thruDate?: string): Promise<PartyFinancialStatementResponse> => {
+    const q = new URLSearchParams({ partyId });
+    if (fromDate) q.append('fromDate', fromDate);
+    if (thruDate) q.append('thruDate', thruDate);
+    return requestApi<PartyFinancialStatementResponse>(`getPartyFinancialStatement?${q.toString()}`);
   },
 
   // 53. Get Fixed Assets

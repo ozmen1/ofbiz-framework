@@ -1272,6 +1272,56 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- Phase 9: Tax Settlement / VAT Returns & Party Financial Statements -->
+    <request-map uri="getTaxAuthorityReport">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="getTaxAuthorityReport"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPartyTaxAuthInfos">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="getPartyTaxAuthInfos"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createPartyTaxAuthInfo">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="createPartyTaxAuthInfo"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deletePartyTaxAuthInfo">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="deletePartyTaxAuthInfo"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getTaxAuthorityCategories">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="getTaxAuthorityCategories"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createTaxAuthorityCategory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="createTaxAuthorityCategory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteTaxAuthorityCategory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/TaxSettlementEvents.groovy" invoke="deleteTaxAuthorityCategory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPartyFinancialStatement">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PartyStatementEvents.groovy" invoke="getPartyFinancialStatement"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>

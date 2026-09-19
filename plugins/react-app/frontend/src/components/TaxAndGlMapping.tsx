@@ -14,8 +14,10 @@ import {
   AlertCircle,
   X,
   Globe,
-  Settings
+  Settings,
+  FileText,
 } from 'lucide-react';
+import { TaxAuthorityExtendedModal } from './TaxAuthorityExtendedModal';
 import {
   api,
   TaxAuthorityItem,
@@ -67,6 +69,8 @@ export const TaxAndGlMapping: React.FC = () => {
   const [showPaymentMapModal, setShowPaymentMapModal] = useState(false);
   const [showDefaultMapModal, setShowDefaultMapModal] = useState(false);
   const [showAuthGlModal, setShowAuthGlModal] = useState(false);
+  const [showExtTaxAuthModal, setShowExtTaxAuthModal] = useState(false);
+  const [selectedExtTaxAuth, setSelectedExtTaxAuth] = useState<TaxAuthorityItem | null>(null);
 
   // Form states
   const [rateForm, setRateForm] = useState<CreateTaxRatePayload>({
@@ -778,12 +782,25 @@ export const TaxAndGlMapping: React.FC = () => {
                       <td className="py-3 px-4 text-center font-bold text-slate-200">{a.rateCount}</td>
                       <td className="py-3 px-4 text-center font-bold text-slate-200">{a.glAccountCount}</td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleSelectAuthority(a)}
-                          className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors cursor-pointer"
-                        >
-                          {locale === 'tr' ? 'İncele & GL Eşle' : 'Inspect & Map GL'}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleSelectAuthority(a)}
+                            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 transition-colors cursor-pointer"
+                          >
+                            {locale === 'tr' ? 'İncele & GL Eşle' : 'Inspect & Map GL'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedExtTaxAuth(a);
+                              setShowExtTaxAuthModal(true);
+                            }}
+                            className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-lg text-xs font-medium border border-indigo-500/30 transition-colors flex items-center gap-1 cursor-pointer"
+                            title={locale === 'tr' ? 'KDV Beyannamesi & Mükellef Sicili' : 'VAT Return & Taxpayer Registry'}
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>{locale === 'tr' ? 'Beyanname' : 'Tax Return'}</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1063,6 +1080,17 @@ export const TaxAndGlMapping: React.FC = () => {
                       <span className="text-slate-200">{selectedAuthority.requireTaxIdForExemption === 'Y' ? translations.common.yes : translations.common.no}</span>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedExtTaxAuth(selectedAuthority);
+                      setShowExtTaxAuthModal(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-xl text-xs font-semibold border border-indigo-500/30 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>{locale === 'tr' ? 'KDV Beyannamesi, Mükellefler & Kategoriler' : 'VAT Return, Taxpayers & Categories'}</span>
+                  </button>
 
                   {/* Linked GL Accounts Section */}
                   <div className="space-y-3">
@@ -1628,6 +1656,17 @@ export const TaxAndGlMapping: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Tax Authority Extended Modal (VAT Returns & Taxpayer Registry) */}
+      <TaxAuthorityExtendedModal
+        authority={selectedExtTaxAuth}
+        isOpen={showExtTaxAuthModal}
+        onClose={() => {
+          setShowExtTaxAuthModal(false);
+          setSelectedExtTaxAuth(null);
+        }}
+        onUpdated={loadAllData}
+      />
     </div>
   );
 };

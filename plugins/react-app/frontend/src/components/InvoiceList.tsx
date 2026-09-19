@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { api, InvoiceListItem } from '../services/api';
 import { useTranslation } from '../i18n';
+import { PartyStatementModal } from './PartyStatementModal';
 
 const getStatusBadgeClass = (statusId: string): string => {
   switch (statusId) {
@@ -61,6 +62,8 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+  const [selectedStatementPartyId, setSelectedStatementPartyId] = useState<string | null>(null);
+  const [showStatementModal, setShowStatementModal] = useState<boolean>(false);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -404,8 +407,36 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                     <td className="ds-td-primary">#{inv.invoiceId}</td>
                     <td className="ds-td">{(inv.invoiceTypeId || '').replace(/_/g, ' ')}</td>
                     <td className="ds-td-muted">{inv.invoiceDate || '-'}</td>
-                    <td className="ds-td">{inv.partyIdFrom || '-'}</td>
-                    <td className="ds-td">{inv.partyIdTo || '-'}</td>
+                    <td className="ds-td">
+                      {inv.partyIdFrom ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStatementPartyId(inv.partyIdFrom);
+                            setShowStatementModal(true);
+                          }}
+                          className="text-slate-300 hover:text-indigo-400 hover:underline transition-colors inline-flex items-center gap-1 font-mono text-xs cursor-pointer"
+                          title={locale === 'tr' ? 'Cari Hesap Ekstresini Görüntüle' : 'View Party Statement'}
+                        >
+                          <span>{inv.partyIdFrom}</span>
+                        </button>
+                      ) : '-'}
+                    </td>
+                    <td className="ds-td">
+                      {inv.partyIdTo ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStatementPartyId(inv.partyIdTo);
+                            setShowStatementModal(true);
+                          }}
+                          className="text-slate-300 hover:text-indigo-400 hover:underline transition-colors inline-flex items-center gap-1 font-mono text-xs cursor-pointer"
+                          title={locale === 'tr' ? 'Cari Hesap Ekstresini Görüntüle' : 'View Party Statement'}
+                        >
+                          <span>{inv.partyIdTo}</span>
+                        </button>
+                      ) : '-'}
+                    </td>
                     <td className="ds-td">
                       <span className={getStatusBadgeClass(inv.statusId)}>
                         {getStatusIcon(inv.statusId)}
@@ -422,7 +453,21 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                       <div className="inline-flex items-center gap-1">
                         <button
                           type="button"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
+                          onClick={() => {
+                            const target = inv.partyIdTo || inv.partyIdFrom;
+                            if (target) {
+                              setSelectedStatementPartyId(target);
+                              setShowStatementModal(true);
+                            }
+                          }}
+                          title={locale === 'tr' ? 'Cari Hesap Ekstresi' : 'Party Statement'}
+                        >
+                          <FileText size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
                           onClick={() => handleCopyInvoice(inv.invoiceId)}
                           title={tBatch.copyInvoice}
                         >
@@ -430,7 +475,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                         </button>
                         <button
                           type="button"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors cursor-pointer"
                           onClick={() => onViewInvoice && onViewInvoice(inv.invoiceId)}
                           title={translations.common.details}
                         >
@@ -455,6 +500,15 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
         </div>
       </div>
 
+      {/* Party Statement Modal (Customer/Vendor Ledger & Aging) */}
+      <PartyStatementModal
+        partyId={selectedStatementPartyId}
+        isOpen={showStatementModal}
+        onClose={() => {
+          setShowStatementModal(false);
+          setSelectedStatementPartyId(null);
+        }}
+      />
     </div>
   );
 };

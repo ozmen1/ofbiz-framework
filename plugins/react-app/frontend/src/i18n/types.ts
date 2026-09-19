@@ -1442,4 +1442,117 @@ export interface Translations {
     copySuccess: string;
     batchSuccess: string;
   };
+  taxSettlement: {
+    modalTitle: string;
+    modalSubtitle: string;
+    tabs: {
+      report: string;
+      parties: string;
+      categories: string;
+      glAccounts: string;
+    };
+    report: {
+      dateRange: string;
+      allDates: string;
+      filter: string;
+      totalSalesBase: string;
+      outputTax: string;
+      totalPurchasesBase: string;
+      inputTax: string;
+      netTaxDue: string;
+      payable: string;
+      carriedForward: string;
+      ratesBreakdown: string;
+      rateName: string;
+      salesTax: string;
+      purchaseTax: string;
+      netAmount: string;
+      invoicesList: string;
+      invoiceId: string;
+      invoiceDate: string;
+      party: string;
+      taxableBase: string;
+      taxAmount: string;
+      type: string;
+      printReport: string;
+      noItems: string;
+    };
+    parties: {
+      title: string;
+      newParty: string;
+      partyId: string;
+      taxId: string;
+      isExempt: string;
+      isNexus: string;
+      fromDate: string;
+      thruDate: string;
+      noParties: string;
+      deleteConfirm: string;
+    };
+    categories: {
+      title: string;
+      newCategory: string;
+      categoryId: string;
+      categoryName: string;
+      description: string;
+      noCategories: string;
+      deleteConfirm: string;
+    };
+  };
+  partyStatement: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      summary: string;
+      ledger: string;
+      openInvoices: string;
+      unappliedPayments: string;
+    };
+    summary: {
+      totalInvoiced: string;
+      totalPaid: string;
+      openBalance: string;
+      agingTitle: string;
+      current: string;
+      days1_30: string;
+      days31_60: string;
+      days61_90: string;
+      days90Plus: string;
+      totalOverdue: string;
+    };
+    ledger: {
+      dateRange: string;
+      allDates: string;
+      filter: string;
+      date: string;
+      type: string;
+      refNum: string;
+      description: string;
+      debit: string;
+      credit: string;
+      balance: string;
+      printLedger: string;
+      noTransactions: string;
+      invoice: string;
+      payment: string;
+    };
+    openInvoices: {
+      title: string;
+      invoiceId: string;
+      date: string;
+      dueDate: string;
+      total: string;
+      outstanding: string;
+      daysOverdue: string;
+      noOpenInvoices: string;
+    };
+    unappliedPayments: {
+      title: string;
+      paymentId: string;
+      date: string;
+      amount: string;
+      unapplied: string;
+      noUnapplied: string;
+    };
+  };
 }
