@@ -3,7 +3,7 @@ import {
   Layers, Search, RefreshCw, Plus, Eye, Edit3,
   CheckCircle2, Clock, X, AlertCircle, Loader2,
   Briefcase, Landmark, Building2, FileText, Check,
-  BarChart3, TrendingUp, Zap
+  BarChart3, TrendingUp, Zap, Trash2
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import {
@@ -27,6 +27,8 @@ import {
   CreateAgreementPayload
 } from '../services/api';
 import { FixedAssetLifecycleModal } from './FixedAssetLifecycleModal';
+import { BudgetVarianceModal } from './BudgetVarianceModal';
+import { AgreementExtendedModal } from './AgreementExtendedModal';
 
 type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements';
 
@@ -135,6 +137,10 @@ export const AdvancedAccounting: React.FC = () => {
     justification: ''
   });
 
+  // Phase 7: Budget Variance Modal
+  const [selectedVarianceBudgetId, setSelectedVarianceBudgetId] = useState<string | null>(null);
+  const [showVarianceModal, setShowVarianceModal] = useState<boolean>(false);
+
   // ==========================================
   // TAB 4: AGREEMENTS STATE
   // ==========================================
@@ -147,6 +153,8 @@ export const AdvancedAccounting: React.FC = () => {
   const [showCreateAgrModal, setShowCreateAgrModal] = useState<boolean>(false);
   const [showAgrDetailModal, setShowAgrDetailModal] = useState<boolean>(false);
   const [selectedAgrDetail, setSelectedAgrDetail] = useState<AgreementDetailResponse | null>(null);
+  const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
+  const [showAgreementExtendedModal, setShowAgreementExtendedModal] = useState<boolean>(false);
   const [createAgrForm, setCreateAgrForm] = useState<CreateAgreementPayload>({
     agreementTypeId: 'SALES_AGREEMENT',
     partyIdFrom: 'Company',
@@ -493,6 +501,21 @@ export const AdvancedAccounting: React.FC = () => {
       if (selectedBgtDetail && selectedBgtDetail.budget.budgetId === budgetId) {
         handleOpenBgtDetail(budgetId);
       }
+      fetchBudgets();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveBudgetItem = async (budgetId: string, budgetItemSeqId: string) => {
+    if (!window.confirm(translations.budgetAndAgreement.budget.deleteItemConfirm)) return;
+    try {
+      setLoading(true);
+      const res = await api.removeBudgetItem(budgetId, budgetItemSeqId);
+      triggerSuccess(res._EVENT_MESSAGE_ || (isTr ? 'Bütçe kalemi silindi.' : 'Item removed.'));
+      handleOpenBgtDetail(budgetId);
       fetchBudgets();
     } catch (e: any) {
       setError(e.message);
@@ -1111,13 +1134,25 @@ export const AdvancedAccounting: React.FC = () => {
                             </span>
                           </td>
                           <td className="ds-td-right">
-                            <button
-                              onClick={() => handleOpenBgtDetail(b.budgetId)}
-                              className="ds-btn-primary py-1 px-2.5 text-xs inline-flex items-center gap-1.5"
-                            >
-                              <Eye size={13} />
-                              {t.budgets.detail}
-                            </button>
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedVarianceBudgetId(b.budgetId);
+                                  setShowVarianceModal(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 transition-colors"
+                                title={translations.budgetAndAgreement.budget.varianceTitle}
+                              >
+                                <BarChart3 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleOpenBgtDetail(b.budgetId)}
+                                className="ds-btn-primary py-1 px-2.5 text-xs inline-flex items-center gap-1.5"
+                              >
+                                <Eye size={13} />
+                                {t.budgets.detail}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1217,13 +1252,25 @@ export const AdvancedAccounting: React.FC = () => {
                           {ag.thruDate ? ` - ${ag.thruDate.substring(0, 10)}` : (isTr ? ' (Süresiz)' : ' (Indefinite)')}
                         </td>
                         <td className="ds-td-right">
-                          <button
-                            onClick={() => handleOpenAgrDetail(ag.agreementId)}
-                            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
-                            title={t.agreements.detail}
-                          >
-                            <Eye size={15} />
-                          </button>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setSelectedAgreementId(ag.agreementId);
+                                setShowAgreementExtendedModal(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 transition-colors"
+                              title={translations.budgetAndAgreement.agreement.extendedTitle}
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenAgrDetail(ag.agreementId)}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/50 transition-colors"
+                              title={t.agreements.detail}
+                            >
+                              <FileText size={15} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1857,6 +1904,16 @@ export const AdvancedAccounting: React.FC = () => {
               >
                 {isTr ? 'Reddet (Rejected)' : 'Reject'}
               </button>
+              <button
+                onClick={() => {
+                  setSelectedVarianceBudgetId(selectedBgtDetail.budget.budgetId);
+                  setShowVarianceModal(true);
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition-colors cursor-pointer ml-auto flex items-center gap-1.5"
+              >
+                <BarChart3 size={14} />
+                {translations.budgetAndAgreement.budget.varianceReportBtn}
+              </button>
             </div>
 
             {/* Budget Items Header with Add Button */}
@@ -1897,6 +1954,7 @@ export const AdvancedAccounting: React.FC = () => {
                       <th className="ds-th">{isTr ? 'Kalem Türü' : 'Item Type'}</th>
                       <th className="ds-th">{t.budgets.purpose}</th>
                       <th className="ds-th-right">{tc.amount}</th>
+                      <th className="ds-th-right">{tc.actions}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1907,6 +1965,15 @@ export const AdvancedAccounting: React.FC = () => {
                         <td className="ds-td-muted">{item.purpose || item.justification || '-'}</td>
                         <td className="ds-td-right font-bold text-emerald-400">
                           {fmt(item.amount)}
+                        </td>
+                        <td className="ds-td-right">
+                          <button
+                            onClick={() => handleRemoveBudgetItem(selectedBgtDetail.budget.budgetId, item.budgetItemSeqId)}
+                            className="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-800 transition-colors"
+                            title={isTr ? 'Kalemi Sil' : 'Remove Item'}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -2489,6 +2556,36 @@ export const AdvancedAccounting: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ========================================== */}
+      {/* BUDGET VARIANCE & REVISIONS MODAL          */}
+      {/* ========================================== */}
+      <BudgetVarianceModal
+        budgetId={selectedVarianceBudgetId}
+        isOpen={showVarianceModal}
+        onClose={() => {
+          setShowVarianceModal(false);
+          setSelectedVarianceBudgetId(null);
+        }}
+        onBudgetUpdated={() => {
+          fetchBudgets();
+        }}
+      />
+
+      {/* ========================================== */}
+      {/* AGREEMENT EXTENDED DETAILS MODAL           */}
+      {/* ========================================== */}
+      <AgreementExtendedModal
+        agreementId={selectedAgreementId}
+        isOpen={showAgreementExtendedModal}
+        onClose={() => {
+          setShowAgreementExtendedModal(false);
+          setSelectedAgreementId(null);
+        }}
+        onAgreementUpdated={() => {
+          fetchAgreements();
+        }}
+      />
     </div>
   );
 };

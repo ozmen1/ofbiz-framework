@@ -1306,4 +1306,67 @@ export interface Translations {
       noIdents: string;
     };
   };
+  budgetAndAgreement: {
+    budget: {
+      varianceTitle: string;
+      varianceSubtitle: string;
+      totalBudget: string;
+      totalActual: string;
+      totalVariance: string;
+      overallUsage: string;
+      onTrack: string;
+      warning: string;
+      overBudget: string;
+      revisionsTitle: string;
+      newRevision: string;
+      revisionSeq: string;
+      dateRevised: string;
+      revisionReason: string;
+      revisedAmount: string;
+      noRevisions: string;
+      workflowTitle: string;
+      approve: string;
+      review: string;
+      reject: string;
+      draft: string;
+      approved: string;
+      reviewed: string;
+      rejected: string;
+      deleteItemConfirm: string;
+      editItem: string;
+      varianceReportBtn: string;
+      revisionsBtn: string;
+    };
+    agreement: {
+      extendedTitle: string;
+      tabs: {
+        overview: string;
+        items: string;
+        terms: string;
+        productPrices: string;
+        parties: string;
+        statusHistory: string;
+      };
+      newProductPrice: string;
+      product: string;
+      contractPrice: string;
+      noProductPrices: string;
+      newItem: string;
+      newTerm: string;
+      termType: string;
+      termDays: string;
+      termValue: string;
+      changeStatus: string;
+      active: string;
+      cancelled: string;
+      terminated: string;
+      inProcess: string;
+      noItems: string;
+      noTerms: string;
+      noParties: string;
+      statusDate: string;
+      statusUser: string;
+      comments: string;
+    };
+  };
 }

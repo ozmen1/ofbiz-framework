@@ -1159,6 +1159,154 @@ export interface UpdateAgreementPayload {
 }
 
 // ==========================================
+// PHASE 7: BUDGET VARIANCE, REVISIONS & AGREEMENT EXTENDED DETAILS
+// ==========================================
+
+export interface BudgetVarianceItem {
+  budgetItemSeqId: string;
+  budgetItemTypeId: string;
+  budgetItemTypeDesc: string;
+  purpose: string;
+  justification: string;
+  budgetAmount: number;
+  actualAmount: number;
+  varianceAmount: number;
+  usagePercentage: number;
+  statusIndicator: 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET';
+}
+
+export interface BudgetVarianceReportResponse {
+  budgetId: string;
+  totalBudget: number;
+  totalActual: number;
+  totalVariance: number;
+  overallUsagePct: number;
+  items: BudgetVarianceItem[];
+}
+
+export interface BudgetRevisionImpactItem {
+  budgetItemSeqId: string;
+  revisedAmount: number;
+  addDeleteFlag: string;
+}
+
+export interface BudgetRevisionItem {
+  budgetId: string;
+  revisionSeqId: string;
+  dateRevised: string;
+  revisionReason: string;
+  impacts: BudgetRevisionImpactItem[];
+}
+
+export interface CreateBudgetRevisionPayload {
+  budgetId: string;
+  budgetItemSeqId: string;
+  revisedAmount: number;
+  revisionReason?: string;
+  comments?: string;
+}
+
+export interface UpdateBudgetItemPayload {
+  budgetId: string;
+  budgetItemSeqId: string;
+  amount?: number;
+  purpose?: string;
+  justification?: string;
+  budgetItemTypeId?: string;
+}
+
+export interface AgreementItemRecord {
+  agreementItemSeqId: string;
+  agreementItemTypeId: string;
+  agreementItemTypeDesc: string;
+  currencyUomId: string;
+  agreementText: string;
+}
+
+export interface AgreementTermRecord {
+  agreementTermId: string;
+  agreementItemSeqId: string;
+  termTypeId: string;
+  termTypeDesc: string;
+  termValue: number;
+  termDays: number;
+  textValue: string;
+  description: string;
+}
+
+export interface AgreementProductPriceRecord {
+  agreementId: string;
+  agreementItemSeqId: string;
+  productId: string;
+  productName: string;
+  price: number;
+}
+
+export interface AgreementPartyRecord {
+  agreementId: string;
+  agreementItemSeqId: string;
+  partyId: string;
+  partyName: string;
+}
+
+export interface AgreementStatusHistoryRecord {
+  agreementStatusId: string;
+  statusId: string;
+  statusDate: string;
+  comments: string;
+  setByUserLoginId: string;
+}
+
+export interface AgreementExtendedDetailResponse {
+  agreement: {
+    agreementId: string;
+    agreementTypeId: string;
+    agreementTypeDesc: string;
+    partyIdFrom: string;
+    partyFromDesc: string;
+    partyIdTo: string;
+    partyToDesc: string;
+    description: string;
+    textData: string;
+    statusId: string;
+    agreementDate: string;
+    fromDate: string;
+    thruDate: string;
+  };
+  items: AgreementItemRecord[];
+  terms: AgreementTermRecord[];
+  productPrices: AgreementProductPriceRecord[];
+  parties: AgreementPartyRecord[];
+  statuses: AgreementStatusHistoryRecord[];
+}
+
+export interface CreateAgreementItemPayload {
+  agreementId: string;
+  agreementItemTypeId?: string;
+  currencyUomId?: string;
+  agreementText?: string;
+}
+
+export interface CreateAgreementTermPayload {
+  agreementId: string;
+  agreementItemSeqId?: string;
+  termTypeId?: string;
+  termValue?: number;
+  termDays?: number;
+  description?: string;
+  textValue?: string;
+}
+
+export interface CreateAgreementProductPricePayload {
+  agreementId: string;
+  agreementItemSeqId?: string;
+  productId: string;
+  price: number;
+  currencyUomId?: string;
+}
+
+
+// ==========================================
 // FAZ 6: TAX AND GL MAPPINGS INTERFACES
 // ==========================================
 
@@ -2030,6 +2178,103 @@ export const api = {
       body: toFormData(payload),
     });
   },
+
+  // ==========================================
+  // PHASE 7: BUDGET VARIANCE, REVISIONS & AGREEMENT EXTENDED DETAILS
+  // ==========================================
+
+  getBudgetVarianceReport: async (budgetId: string): Promise<BudgetVarianceReportResponse> => {
+    return requestApi<BudgetVarianceReportResponse>(`getBudgetVarianceReport?budgetId=${encodeURIComponent(budgetId)}`);
+  },
+
+  getBudgetRevisions: async (budgetId: string): Promise<{ revisions: BudgetRevisionItem[] }> => {
+    return requestApi<{ revisions: BudgetRevisionItem[] }>(`getBudgetRevisions?budgetId=${encodeURIComponent(budgetId)}`);
+  },
+
+  createBudgetRevision: async (payload: CreateBudgetRevisionPayload): Promise<{ revisionSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ revisionSeqId: string; _EVENT_MESSAGE_?: string }>('createBudgetRevision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  updateBudgetItem: async (payload: UpdateBudgetItemPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('updateBudgetItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeBudgetItem: async (budgetId: string, budgetItemSeqId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeBudgetItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ budgetId, budgetItemSeqId }),
+    });
+  },
+
+  getAgreementExtendedDetails: async (agreementId: string): Promise<AgreementExtendedDetailResponse> => {
+    return requestApi<AgreementExtendedDetailResponse>(`getAgreementExtendedDetails?agreementId=${encodeURIComponent(agreementId)}`);
+  },
+
+  createAgreementItem: async (payload: CreateAgreementItemPayload): Promise<{ agreementItemSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createAgreementItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeAgreementItem: async (agreementId: string, agreementItemSeqId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeAgreementItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ agreementId, agreementItemSeqId }),
+    });
+  },
+
+  createAgreementTerm: async (payload: CreateAgreementTermPayload): Promise<{ agreementTermId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createAgreementTerm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeAgreementTerm: async (agreementTermId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeAgreementTerm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ agreementTermId }),
+    });
+  },
+
+  createAgreementProductPrice: async (payload: CreateAgreementProductPricePayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createAgreementProductPrice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeAgreementProductPrice: async (agreementId: string, productId: string, agreementItemSeqId: string = '00001'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeAgreementProductPrice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ agreementId, productId, agreementItemSeqId }),
+    });
+  },
+
+  setAgreementStatus: async (agreementId: string, statusId: string, comments?: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('setAgreementStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ agreementId, statusId, comments }),
+    });
+  },
+
 
   // ==========================================
   // FAZ 6: TAX AND GL MAPPING METHODS
