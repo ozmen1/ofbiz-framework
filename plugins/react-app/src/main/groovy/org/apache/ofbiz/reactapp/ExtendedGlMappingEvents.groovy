@@ -37,9 +37,9 @@ String getVarianceReasonGlAccounts() {
         List<Map> result = []
         for (GenericValue gv : list) {
             GenericValue vr = EntityQuery.use(delegator).from("VarianceReason")
-                    .where("varianceReasonId", gv.varianceReasonId).queryOne()
+                    .where("varianceReasonId", gv.varianceReasonId).cache(true).queryOne()
             GenericValue gla = EntityQuery.use(delegator).from("GlAccount")
-                    .where("glAccountId", gv.glAccountId).queryOne()
+                    .where("glAccountId", gv.glAccountId).cache(true).queryOne()
 
             result.add([
                     varianceReasonId: gv.varianceReasonId,
@@ -156,15 +156,15 @@ String getPartyGlAccounts() {
         List<Map> result = []
         for (GenericValue gv : list) {
             GenericValue party = EntityQuery.use(delegator).from("PartyNameView")
-                    .where("partyId", gv.partyId).queryOne()
+                    .where("partyId", gv.partyId).cache(true).queryOne()
             String partyName = party ? (party.groupName ?: "${party.firstName ?: ''} ${party.lastName ?: ''}".trim()) : gv.partyId
 
             GenericValue role = EntityQuery.use(delegator).from("RoleType")
-                    .where("roleTypeId", gv.roleTypeId).queryOne()
+                    .where("roleTypeId", gv.roleTypeId).cache(true).queryOne()
             GenericValue glType = EntityQuery.use(delegator).from("GlAccountType")
-                    .where("glAccountTypeId", gv.glAccountTypeId).queryOne()
+                    .where("glAccountTypeId", gv.glAccountTypeId).cache(true).queryOne()
             GenericValue gla = EntityQuery.use(delegator).from("GlAccount")
-                    .where("glAccountId", gv.glAccountId).queryOne()
+                    .where("glAccountId", gv.glAccountId).cache(true).queryOne()
 
             result.add([
                     organizationPartyId: gv.organizationPartyId,
@@ -299,7 +299,7 @@ String getCreditCardTypeGlAccounts() {
         List<Map> result = []
         for (GenericValue gv : list) {
             GenericValue gla = EntityQuery.use(delegator).from("GlAccount")
-                    .where("glAccountId", gv.glAccountId).queryOne()
+                    .where("glAccountId", gv.glAccountId).cache(true).queryOne()
 
             result.add([
                     cardType: gv.cardType,
@@ -406,28 +406,29 @@ String getExtendedGlMetadata() {
     def delegator = binding.getVariable("delegator") ?: request.getAttribute("delegator")
     def request = binding.getVariable("request")
     try {
-        List<GenericValue> vrList = EntityQuery.use(delegator).from("VarianceReason").orderBy("description").queryList()
+        List<GenericValue> vrList = EntityQuery.use(delegator).from("VarianceReason").cache(true).orderBy("description").queryList()
         List<Map> varianceReasons = vrList.collect { [id: it.varianceReasonId, description: it.description ?: it.varianceReasonId] }
 
         List<GenericValue> roleList = EntityQuery.use(delegator).from("RoleType")
                 .where(org.apache.ofbiz.entity.condition.EntityCondition.makeCondition("roleTypeId",
                         org.apache.ofbiz.entity.condition.EntityOperator.IN,
                         ["CUSTOMER", "SUPPLIER", "BILL_TO_CUSTOMER", "BILL_FROM_VENDOR", "_NA_"]))
+                .cache(true)
                 .orderBy("description").queryList()
         List<Map> roleTypes = roleList.collect { [id: it.roleTypeId, description: it.description ?: it.roleTypeId] }
 
-        List<GenericValue> glTypeList = EntityQuery.use(delegator).from("GlAccountType").orderBy("description").queryList()
+        List<GenericValue> glTypeList = EntityQuery.use(delegator).from("GlAccountType").cache(true).orderBy("description").queryList()
         List<Map> glAccountTypes = glTypeList.collect { [id: it.glAccountTypeId, description: it.description ?: it.glAccountTypeId] }
 
         List<String> cardTypes = ["CCT_VISA", "CCT_MASTERCARD", "CCT_AMERICANEXPRESS", "CCT_DISCOVER", "CCT_DINERSCLUB"]
 
-        List<GenericValue> fatList = EntityQuery.use(delegator).from("FixedAssetType").orderBy("description").queryList()
+        List<GenericValue> fatList = EntityQuery.use(delegator).from("FixedAssetType").cache(true).orderBy("description").queryList()
         List<Map> fixedAssetTypes = fatList.collect { [id: it.fixedAssetTypeId, description: it.description ?: it.fixedAssetTypeId] }
 
-        List<GenericValue> fatyList = EntityQuery.use(delegator).from("FinAccountType").orderBy("description").queryList()
+        List<GenericValue> fatyList = EntityQuery.use(delegator).from("FinAccountType").cache(true).orderBy("description").queryList()
         List<Map> finAccountTypes = fatyList.collect { [id: it.finAccountTypeId, description: it.description ?: it.finAccountTypeId] }
 
-        List<GenericValue> catList = EntityQuery.use(delegator).from("ProductCategory").orderBy("categoryName").maxRows(100).queryList()
+        List<GenericValue> catList = EntityQuery.use(delegator).from("ProductCategory").cache(true).orderBy("categoryName").maxRows(100).queryList()
         List<Map> productCategories = catList.collect { [id: it.productCategoryId, description: (it.categoryName ?: it.description) ?: it.productCategoryId] }
 
         request.setAttribute("metadata", [
@@ -462,12 +463,12 @@ String getFixedAssetTypeGlAccounts() {
         List<Map> result = []
         for (GenericValue gv : list) {
             GenericValue fat = gv.fixedAssetTypeId && !"_NA_".equals(gv.fixedAssetTypeId) ?
-                    EntityQuery.use(delegator).from("FixedAssetType").where("fixedAssetTypeId", gv.fixedAssetTypeId).queryOne() : null
-            GenericValue agla = gv.assetGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.assetGlAccountId).queryOne() : null
-            GenericValue accgla = gv.accDepGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.accDepGlAccountId).queryOne() : null
-            GenericValue dgla = gv.depGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.depGlAccountId).queryOne() : null
-            GenericValue pgla = gv.profitGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.profitGlAccountId).queryOne() : null
-            GenericValue lgla = gv.lossGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.lossGlAccountId).queryOne() : null
+                    EntityQuery.use(delegator).from("FixedAssetType").where("fixedAssetTypeId", gv.fixedAssetTypeId).cache(true).queryOne() : null
+            GenericValue agla = gv.assetGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.assetGlAccountId).cache(true).queryOne() : null
+            GenericValue accgla = gv.accDepGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.accDepGlAccountId).cache(true).queryOne() : null
+            GenericValue dgla = gv.depGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.depGlAccountId).cache(true).queryOne() : null
+            GenericValue pgla = gv.profitGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.profitGlAccountId).cache(true).queryOne() : null
+            GenericValue lgla = gv.lossGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.lossGlAccountId).cache(true).queryOne() : null
 
             result.add([
                     fixedAssetTypeId: gv.fixedAssetTypeId,
@@ -597,8 +598,8 @@ String getFinAccountTypeGlAccounts() {
 
         List<Map> result = []
         for (GenericValue gv : list) {
-            GenericValue fat = EntityQuery.use(delegator).from("FinAccountType").where("finAccountTypeId", gv.finAccountTypeId).queryOne()
-            GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).queryOne()
+            GenericValue fat = EntityQuery.use(delegator).from("FinAccountType").where("finAccountTypeId", gv.finAccountTypeId).cache(true).queryOne()
+            GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).cache(true).queryOne()
 
             result.add([
                     finAccountTypeId: gv.finAccountTypeId,
@@ -713,9 +714,9 @@ String getProductCategoryGlAccounts() {
 
         List<Map> result = []
         for (GenericValue gv : list) {
-            GenericValue pc = EntityQuery.use(delegator).from("ProductCategory").where("productCategoryId", gv.productCategoryId).queryOne()
-            GenericValue gat = EntityQuery.use(delegator).from("GlAccountType").where("glAccountTypeId", gv.glAccountTypeId).queryOne()
-            GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).queryOne()
+            GenericValue pc = EntityQuery.use(delegator).from("ProductCategory").where("productCategoryId", gv.productCategoryId).cache(true).queryOne()
+            GenericValue gat = EntityQuery.use(delegator).from("GlAccountType").where("glAccountTypeId", gv.glAccountTypeId).cache(true).queryOne()
+            GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).cache(true).queryOne()
 
             result.add([
                     productCategoryId: gv.productCategoryId,

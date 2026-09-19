@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -50,6 +50,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
   const [activeTab, setActiveTab] = useState<TabType>('variance');
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -85,6 +86,15 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
   const [finAccountForm, setFinAccountForm] = useState({ finAccountTypeId: '', glAccountId: '' });
   const [categoryGlForm, setCategoryGlForm] = useState({ productCategoryId: '', glAccountTypeId: '', glAccountId: '' });
 
+  // Memoized GL account select options to eliminate 4,600+ DOM re-allocations on keystroke
+  const glAccountOptions = useMemo(() => {
+    return glAccounts.map((acc) => (
+      <option key={acc.glAccountId} value={acc.glAccountId}>
+        {acc.accountCode} - {acc.accountName}
+      </option>
+    ));
+  }, [glAccounts]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -105,6 +115,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
       setFinAccountList(fnaRes.finAccountTypeGlAccounts || []);
       setCategoryGlList(pcRes.productCategoryGlAccounts || []);
       setMetadata(mRes.metadata || null);
+      setDataLoaded(true);
     } catch (err: any) {
       console.error('Failed to load extended GL mappings:', err);
       setError(err?.message || (isTr ? 'Gelişmiş eşlemeler yüklenemedi.' : 'Failed to load mappings.'));
@@ -114,10 +125,10 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
   }, [isTr]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !dataLoaded) {
       fetchData();
     }
-  }, [isOpen, fetchData]);
+  }, [isOpen, dataLoaded, fetchData]);
 
   if (!isOpen) return null;
 
@@ -339,10 +350,10 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm isolate">
-      <div className="ds-card max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-700/60 bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 isolate">
+      <div className="max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl rounded-2xl border border-slate-700/80 bg-slate-900 text-slate-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Layers className="w-5 h-5" />
@@ -356,14 +367,14 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
             <button
               onClick={fetchData}
               disabled={loading}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
               title={tc.refresh}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -371,10 +382,10 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-800 px-6 bg-slate-950/40 overflow-x-auto">
+        <div className="flex border-b border-slate-800 px-6 bg-slate-950 overflow-x-auto">
           <button
             onClick={() => setActiveTab('variance')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'variance'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -388,7 +399,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </button>
           <button
             onClick={() => setActiveTab('party')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'party'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -402,7 +413,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </button>
           <button
             onClick={() => setActiveTab('creditCard')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'creditCard'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -416,7 +427,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </button>
           <button
             onClick={() => setActiveTab('fixedAsset')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'fixedAsset'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -430,7 +441,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </button>
           <button
             onClick={() => setActiveTab('finAccount')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'finAccount'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -444,7 +455,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </button>
           <button
             onClick={() => setActiveTab('categoryGl')}
-            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3 px-3.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === 'categoryGl'
                 ? 'border-indigo-500 text-indigo-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -474,8 +485,17 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* TAB 1: Variance Reason */}
-          {activeTab === 'variance' && (
+          {loading && !dataLoaded ? (
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+              <div className="ds-spinner"></div>
+              <p className="text-xs text-slate-400 font-medium tracking-wide">
+                {isTr ? 'Gelişmiş GL eşlemeleri yükleniyor...' : 'Loading extended GL mappings...'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* TAB 1: Variance Reason */}
+              {activeTab === 'variance' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <p className="text-xs text-slate-400">{t.variance.reason}</p>
@@ -836,10 +856,12 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
               )}
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end items-center px-6 py-4 border-t border-slate-800 bg-slate-900/90">
+        <div className="flex justify-end items-center px-6 py-4 border-t border-slate-800 bg-slate-900">
           <button onClick={onClose} className="ds-btn-secondary text-xs">
             {tc.close}
           </button>
@@ -848,8 +870,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 1: Add Variance Reason GL */}
       {showAddVarianceModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.variance.newMapping}</h3>
             <form onSubmit={handleSaveVariance} className="space-y-4 text-xs">
               <div>
@@ -878,11 +900,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   required
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -905,8 +923,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 2: Add Party GL */}
       {showAddPartyModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.party.newMapping}</h3>
             <form onSubmit={handleSaveParty} className="space-y-4 text-xs">
               <div>
@@ -962,11 +980,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   required
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -989,8 +1003,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 3: Add Credit Card GL */}
       {showAddCardModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.creditCard.newMapping}</h3>
             <form onSubmit={handleSaveCard} className="space-y-4 text-xs">
               <div>
@@ -1018,11 +1032,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   required
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1045,8 +1055,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 4: Add Fixed Asset GL */}
       {showAddFixedAssetModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-lg w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-lg w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.fixedAsset.newMapping}</h3>
             <form onSubmit={handleSaveFixedAsset} className="space-y-3.5 text-xs">
               <div>
@@ -1075,11 +1085,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                     className="ds-select w-full font-mono text-[11px]"
                   >
                     <option value="">{tc.select}</option>
-                    {glAccounts.map((acc) => (
-                      <option key={acc.glAccountId} value={acc.glAccountId}>
-                        {acc.accountCode} - {acc.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
 
@@ -1091,11 +1097,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                     className="ds-select w-full font-mono text-[11px]"
                   >
                     <option value="">{tc.select}</option>
-                    {glAccounts.map((acc) => (
-                      <option key={acc.glAccountId} value={acc.glAccountId}>
-                        {acc.accountCode} - {acc.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
               </div>
@@ -1109,11 +1111,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                     className="ds-select w-full font-mono text-[11px]"
                   >
                     <option value="">{tc.select}</option>
-                    {glAccounts.map((acc) => (
-                      <option key={acc.glAccountId} value={acc.glAccountId}>
-                        {acc.accountCode} - {acc.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
 
@@ -1125,11 +1123,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                     className="ds-select w-full font-mono text-[11px]"
                   >
                     <option value="">{tc.select}</option>
-                    {glAccounts.map((acc) => (
-                      <option key={acc.glAccountId} value={acc.glAccountId}>
-                        {acc.accountCode} - {acc.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
               </div>
@@ -1142,11 +1136,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   className="ds-select w-full font-mono text-[11px]"
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1169,8 +1159,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 5: Add Fin Account Type GL */}
       {showAddFinAccountModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.finAccountType.newMapping}</h3>
             <form onSubmit={handleSaveFinAccount} className="space-y-4 text-xs">
               <div>
@@ -1199,11 +1189,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   required
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1226,8 +1212,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
 
       {/* MODAL 6: Add Product Category GL */}
       {showAddCategoryGlModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full p-6 rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-4">{t.categoryGl.newMapping}</h3>
             <form onSubmit={handleSaveCategoryGl} className="space-y-4 text-xs">
               <div>
@@ -1273,11 +1259,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
                   required
                 >
                   <option value="">{tc.select}</option>
-                  {glAccounts.map((acc) => (
-                    <option key={acc.glAccountId} value={acc.glAccountId}>
-                      {acc.accountCode} - {acc.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
