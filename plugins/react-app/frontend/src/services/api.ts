@@ -814,6 +814,107 @@ export interface UpdateBillingAccountPayload {
   thruDate?: string;
 }
 
+// ═════════════════════════════════════════════════════════════════
+// FAZ 8: BILLING ACCOUNT STATEMENT, ROLES, TERMS & MASS INVOICE INTERFACES
+// ═════════════════════════════════════════════════════════════════
+
+export interface BillingAccountStatementEntry {
+  id: string;
+  entryType: 'INVOICE' | 'PAYMENT';
+  refNum: string;
+  entryDate: string;
+  description: string;
+  partyId?: string;
+  partyName?: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+  statusId?: string;
+  currencyUomId: string;
+}
+
+export interface BillingAccountAppliedPaymentItem {
+  paymentApplicationId: string;
+  paymentId: string;
+  invoiceId?: string;
+  amountApplied: number;
+  effectiveDate?: string;
+  paymentTypeId?: string;
+  paymentMethodTypeId?: string;
+  partyIdFrom?: string;
+  partyNameFrom?: string;
+  statusId?: string;
+}
+
+export interface BillingAccountStatementSummary {
+  billingAccountId: string;
+  accountLimit: number;
+  totalDebits: number;
+  totalCredits: number;
+  netBalance: number;
+  availableBalance: number;
+  utilizationPercent: number;
+  currencyUomId: string;
+  description?: string;
+  fromDate?: string;
+  thruDate?: string;
+  entryCount: number;
+}
+
+export interface BillingAccountStatementResponse {
+  account: {
+    billingAccountId: string;
+    accountLimit: number;
+    accountBalance: number;
+    availableBalance: number;
+    netAccountBalance: number;
+    accountCurrencyUomId: string;
+    description: string;
+    fromDate: string;
+    thruDate: string;
+  };
+  summary: BillingAccountStatementSummary;
+  entries: BillingAccountStatementEntry[];
+  roles: BillingAccountRoleItem[];
+  terms: BillingAccountTermItem[];
+  appliedPayments: BillingAccountAppliedPaymentItem[];
+}
+
+export interface CreateBillingAccountRolePayload {
+  billingAccountId: string;
+  partyId: string;
+  roleTypeId: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface CreateBillingAccountTermPayload {
+  billingAccountId: string;
+  termTypeId: string;
+  termValue?: number;
+  termDays?: number;
+  description?: string;
+  uomId?: string;
+}
+
+export interface ApplyPaymentToBillingAccountPayload {
+  billingAccountId: string;
+  paymentId: string;
+  amountApplied: number;
+}
+
+export interface MassChangeInvoiceStatusPayload {
+  invoiceIds: string | string[];
+  statusId: string;
+}
+
+export interface MassChangeInvoiceStatusResponse {
+  successCount: number;
+  failureCount: number;
+  errors?: string[];
+  _EVENT_MESSAGE_?: string;
+}
+
 // 2. Fixed Assets
 export interface FixedAssetItem {
   fixedAssetId: string;
@@ -1982,6 +2083,77 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: toFormData(payload),
+    });
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // FAZ 8: BILLING ACCOUNT STATEMENT, ROLES, TERMS & MASS INVOICE API METHODS
+  // ═════════════════════════════════════════════════════════════════
+
+  getBillingAccountStatement: async (billingAccountId: string, fromDate?: string, thruDate?: string): Promise<BillingAccountStatementResponse> => {
+    const q = new URLSearchParams({ billingAccountId });
+    if (fromDate) q.append('fromDate', fromDate);
+    if (thruDate) q.append('thruDate', thruDate);
+    return requestApi<BillingAccountStatementResponse>(`getBillingAccountStatement?${q.toString()}`);
+  },
+
+  createBillingAccountRole: async (payload: CreateBillingAccountRolePayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createBillingAccountRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeBillingAccountRole: async (billingAccountId: string, partyId: string, roleTypeId: string, fromDate: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeBillingAccountRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ billingAccountId, partyId, roleTypeId, fromDate }),
+    });
+  },
+
+  createBillingAccountTerm: async (payload: CreateBillingAccountTermPayload): Promise<{ billingAccountTermId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createBillingAccountTerm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeBillingAccountTerm: async (billingAccountTermId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeBillingAccountTerm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ billingAccountTermId }),
+    });
+  },
+
+  applyPaymentToBillingAccount: async (payload: ApplyPaymentToBillingAccountPayload): Promise<{ paymentApplicationId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('applyPaymentToBillingAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeBillingAccountPaymentApplication: async (paymentApplicationId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('removeBillingAccountPaymentApplication', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentApplicationId }),
+    });
+  },
+
+  massChangeInvoiceStatus: async (payload: MassChangeInvoiceStatusPayload): Promise<MassChangeInvoiceStatusResponse> => {
+    const formattedPayload = {
+      invoiceIds: Array.isArray(payload.invoiceIds) ? JSON.stringify(payload.invoiceIds) : payload.invoiceIds,
+      statusId: payload.statusId,
+    };
+    return requestApi<MassChangeInvoiceStatusResponse>('massChangeInvoiceStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(formattedPayload),
     });
   },
 

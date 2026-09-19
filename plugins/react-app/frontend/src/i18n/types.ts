@@ -1369,4 +1369,77 @@ export interface Translations {
       comments: string;
     };
   };
+  billingAccountExtended: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      overview: string;
+      statement: string;
+      roles: string;
+      terms: string;
+      payments: string;
+    };
+    statement: {
+      dateRange: string;
+      allDates: string;
+      filter: string;
+      totalDebits: string;
+      totalCredits: string;
+      netBalance: string;
+      availableCredit: string;
+      utilization: string;
+      runningBalance: string;
+      entryDate: string;
+      entryType: string;
+      refNum: string;
+      description: string;
+      debit: string;
+      credit: string;
+      balance: string;
+      noEntries: string;
+      printStatement: string;
+      invoice: string;
+      payment: string;
+    };
+    roles: {
+      title: string;
+      newRole: string;
+      party: string;
+      roleType: string;
+      fromDate: string;
+      thruDate: string;
+      noRoles: string;
+      deleteRoleConfirm: string;
+    };
+    terms: {
+      title: string;
+      newTerm: string;
+      termType: string;
+      termDays: string;
+      termValue: string;
+      description: string;
+      noTerms: string;
+      deleteTermConfirm: string;
+    };
+    payments: {
+      title: string;
+      applyPayment: string;
+      paymentId: string;
+      amountApplied: string;
+      effectiveDate: string;
+      partyFrom: string;
+      noPayments: string;
+      removeApplicationConfirm: string;
+    };
+  };
+  invoiceBatch: {
+    selectedCount: string;
+    clearSelection: string;
+    approveSelected: string;
+    readySelected: string;
+    cancelSelected: string;
+    copyInvoice: string;
+    copySuccess: string;
+    batchSuccess: string;
+  };
 }

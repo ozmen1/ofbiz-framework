@@ -3,7 +3,7 @@ import {
   Layers, Search, RefreshCw, Plus, Eye, Edit3,
   CheckCircle2, Clock, X, AlertCircle, Loader2,
   Briefcase, Landmark, Building2, FileText, Check,
-  BarChart3, TrendingUp, Zap, Trash2
+  BarChart3, TrendingUp, Zap, Trash2, CreditCard
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import {
@@ -29,6 +29,7 @@ import {
 import { FixedAssetLifecycleModal } from './FixedAssetLifecycleModal';
 import { BudgetVarianceModal } from './BudgetVarianceModal';
 import { AgreementExtendedModal } from './AgreementExtendedModal';
+import { BillingAccountExtendedModal } from './BillingAccountExtendedModal';
 
 type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements';
 
@@ -62,6 +63,8 @@ export const AdvancedAccounting: React.FC = () => {
   const [showEditBaModal, setShowEditBaModal] = useState<boolean>(false);
   const [showBaDetailModal, setShowBaDetailModal] = useState<boolean>(false);
   const [selectedBaDetail, setSelectedBaDetail] = useState<BillingAccountDetailResponse | null>(null);
+  const [selectedExtendedBaId, setSelectedExtendedBaId] = useState<string | null>(null);
+  const [showExtendedBaModal, setShowExtendedBaModal] = useState<boolean>(false);
   const [editingBa, setEditingBa] = useState<BillingAccountItem | null>(null);
   const [createBaForm, setCreateBaForm] = useState<CreateBillingAccountPayload>({
     accountLimit: 10000,
@@ -831,6 +834,16 @@ export const AdvancedAccounting: React.FC = () => {
                         </td>
                         <td className="ds-td-right">
                           <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setSelectedExtendedBaId(ba.billingAccountId);
+                                setShowExtendedBaModal(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 border border-slate-700/50 transition-colors"
+                              title={isTr ? 'Cari Hesap Ekstresi & Şartlar' : 'Statement & Terms'}
+                            >
+                              <CreditCard size={15} />
+                            </button>
                             <button
                               onClick={() => handleOpenBaDetail(ba.billingAccountId)}
                               className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
@@ -2584,6 +2597,21 @@ export const AdvancedAccounting: React.FC = () => {
         }}
         onAgreementUpdated={() => {
           fetchAgreements();
+        }}
+      />
+
+      {/* ========================================== */}
+      {/* BILLING ACCOUNT EXTENDED DETAILS MODAL     */}
+      {/* ========================================== */}
+      <BillingAccountExtendedModal
+        billingAccountId={selectedExtendedBaId}
+        isOpen={showExtendedBaModal}
+        onClose={() => {
+          setShowExtendedBaModal(false);
+          setSelectedExtendedBaId(null);
+        }}
+        onAccountUpdated={() => {
+          fetchBillingAccounts();
         }}
       />
     </div>
