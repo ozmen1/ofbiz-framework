@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import {
-  LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
+  LayoutDashboard, FileText, CreditCard, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal, ShieldCheck, FileCheck, BadgePercent
+  Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
+  ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
+  ShoppingCart, Factory, Warehouse, Calculator, Sparkles
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -13,6 +15,34 @@ interface LayoutProps {
   onNavigate: (view: ViewType) => void;
   isPending?: boolean;
 }
+
+const isAccountingView = (view: ViewType): boolean => {
+  return [
+    'dashboard',
+    'invoices',
+    'create-invoice',
+    'invoice-detail',
+    'payments',
+    'create-payment',
+    'payment-detail',
+    'payment-groups',
+    'financial-accounts',
+    'deposit-slips',
+    'chart-of-accounts',
+    'journal-entries',
+    'create-journal-entry',
+    'fiscal-periods',
+    'reports',
+    'advanced-accounting',
+    'tax-and-gl-mapping',
+    'fx-rates',
+    'cost-centers',
+    'accounting-preferences',
+    'payment-gateways',
+    'check-run',
+    'commission-run',
+  ].includes(view);
+};
 
 function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean {
   if (!itemView) return false;
@@ -28,86 +58,55 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { locale, setLocale, translations } = useTranslation();
 
+  // Accordion state for expandable modules
+  const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
+    accounting: true,
+    orders: false,
+    manufacturing: false,
+    inventory: false,
+  });
+
+  const toggleModule = (moduleKey: string) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleKey]: !prev[moduleKey]
+    }));
+  };
+
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
 
   // Dinamik Sayfa Meta Bilgileri (Memoized to prevent object re-creation on pointer events)
   const pageMetaMap: Record<ViewType, { title: string; subtitle: string }> = useMemo(() => ({
-    'dashboard':            translations.pages.dashboard,
-    'invoices':             translations.pages.invoices,
-    'create-invoice':       translations.pages.createInvoice,
-    'invoice-detail':       translations.pages.invoiceDetail,
-    'payments':             translations.pages.payments,
-    'create-payment':       translations.pages.createPayment,
-    'payment-detail':       translations.pages.paymentDetail,
-    'payment-groups':       translations.pages.paymentGroups,
-    'financial-accounts':   translations.pages.financialAccounts,
-    'deposit-slips':        translations.pages.depositSlips,
-    'chart-of-accounts':    translations.pages.chartOfAccounts,
-    'journal-entries':      translations.pages.journalEntries,
-    'create-journal-entry': translations.pages.createJournalEntry,
-    'fiscal-periods':       translations.pages.fiscalPeriods,
-    'reports':              translations.pages.reports,
-    'advanced-accounting':  translations.pages.advancedAccounting,
-    'tax-and-gl-mapping':   translations.pages.taxAndGlMapping,
-    'fx-rates':             translations.pages.fxRates,
-    'cost-centers':         translations.pages.costCenters,
+    'dashboard':              translations.pages.dashboard,
+    'invoices':               translations.pages.invoices,
+    'create-invoice':         translations.pages.createInvoice,
+    'invoice-detail':         translations.pages.invoiceDetail,
+    'payments':               translations.pages.payments,
+    'create-payment':         translations.pages.createPayment,
+    'payment-detail':         translations.pages.paymentDetail,
+    'payment-groups':         translations.pages.paymentGroups,
+    'financial-accounts':     translations.pages.financialAccounts,
+    'deposit-slips':          translations.pages.depositSlips,
+    'chart-of-accounts':      translations.pages.chartOfAccounts,
+    'journal-entries':        translations.pages.journalEntries,
+    'create-journal-entry':   translations.pages.createJournalEntry,
+    'fiscal-periods':         translations.pages.fiscalPeriods,
+    'reports':                translations.pages.reports,
+    'advanced-accounting':    translations.pages.advancedAccounting,
+    'tax-and-gl-mapping':     translations.pages.taxAndGlMapping,
+    'fx-rates':               translations.pages.fxRates,
+    'cost-centers':           translations.pages.costCenters,
     'accounting-preferences': translations.pages.accountingPreferences,
-    'payment-gateways':     translations.pages.paymentGateways,
-    'check-run':            translations.pages.checkRun,
-    'commission-run':       translations.pages.commissionRun,
-    'test-page':            translations.pages.testPage,
+    'payment-gateways':       translations.pages.paymentGateways,
+    'check-run':              translations.pages.checkRun,
+    'commission-run':         translations.pages.commissionRun,
+    'test-page':              translations.pages.testPage,
+    'orders':                 translations.pages.orders,
+    'manufacturing':          translations.pages.manufacturing,
+    'inventory':              translations.pages.inventory,
   }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
-
-  // Dinamik Menü Grupları (Memoized)
-  const navGroups = useMemo(() => [
-    {
-      label: translations.nav.mainMenu,
-      items: [
-        { icon: <LayoutDashboard size={18} />, label: translations.nav.dashboard, view: 'dashboard' as ViewType },
-      ]
-    },
-    {
-      label: translations.nav.accounting,
-      items: [
-        { icon: <FileText   size={18} />, label: translations.nav.invoices,       view: 'invoices'           as ViewType },
-        { icon: <CreditCard size={18} />, label: translations.nav.payments,       view: 'payments'           as ViewType },
-        { icon: <Layers2    size={18} />, label: translations.nav.paymentGroups,   view: 'payment-groups'     as ViewType },
-        { icon: <Landmark   size={18} />, label: translations.nav.cashAndBank,     view: 'financial-accounts' as ViewType },
-        { icon: <Building2  size={18} />, label: translations.nav.depositSlips,    view: 'deposit-slips'      as ViewType },
-        { icon: <FileCheck  size={18} />, label: translations.nav.checkRun,        view: 'check-run'          as ViewType },
-        { icon: <BadgePercent size={18} />, label: translations.nav.commissionRun, view: 'commission-run'     as ViewType },
-        { icon: <ShieldCheck size={18} />, label: translations.nav.paymentGateways, view: 'payment-gateways' as ViewType },
-      ]
-    },
-    {
-      label: translations.nav.generalLedger,
-      items: [
-        { icon: <BookOpen   size={18} />, label: translations.nav.chartOfAccounts, view: 'chart-of-accounts'  as ViewType },
-        { icon: <ScrollText size={18} />, label: translations.nav.journalEntries,   view: 'journal-entries'    as ViewType },
-        { icon: <Calendar   size={18} />, label: translations.nav.fiscalPeriods,    view: 'fiscal-periods'     as ViewType },
-        { icon: <PieChart   size={18} />, label: translations.nav.reports,          view: 'reports'            as ViewType },
-      ]
-    },
-    {
-      label: translations.nav.advancedAccounting,
-      items: [
-        { icon: <Layers     size={18} />, label: translations.nav.assetsAndBudget, view: 'advanced-accounting' as ViewType },
-        { icon: <Percent    size={18} />, label: translations.nav.taxAndGl,         view: 'tax-and-gl-mapping'  as ViewType },
-        { icon: <TrendingUp size={18} />, label: translations.nav.fxRates,          view: 'fx-rates'            as ViewType },
-        { icon: <Target     size={18} />, label: translations.nav.costCenters,      view: 'cost-centers'        as ViewType },
-        { icon: <SlidersHorizontal size={18} />, label: translations.nav.accountingPreferences, view: 'accounting-preferences' as ViewType },
-      ]
-    },
-    {
-      label: translations.nav.system,
-      items: [
-        { icon: <Beaker   size={18} />, label: translations.nav.apiTest, view: 'test-page' as ViewType },
-        { icon: <Settings size={18} />, label: translations.nav.settings, view: null as any },
-      ]
-    }
-  ], [translations]);
 
   const handleNavClick = (view: ViewType) => {
     onNavigate(view);
@@ -196,8 +195,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
         {/* Logo & Mobile Close */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <PieChart size={20} className="text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Sparkles size={20} className="text-white" />
             </div>
             <div>
               <span className="text-sm font-bold text-white tracking-tight">{translations.nav.appName}</span>
@@ -213,35 +212,358 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
           </button>
         </div>
 
-        {/* Nav Grupları (Rendered as semantic button elements for sub-16ms pointer response) */}
-        <nav className="flex-1 px-3 py-4 space-y-5">
-          {navGroups.map(group => (
-            <div key={group.label}>
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map(item => {
-                  const active = isNavActive(item.view, currentView);
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => { if (item.view) handleNavClick(item.view); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
-                        active
-                          ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
-                      }`}
-                    >
-                      <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+        {/* ── Menü Navigasyonu ── */}
+        <nav className="flex-1 px-3 py-4 space-y-6">
+          {/* 1. Genel Bakış / Dashboard */}
+          <div>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">
+              {translations.nav.mainMenu}
+            </p>
+            <button
+              type="button"
+              onClick={() => handleNavClick('dashboard')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
+                currentView === 'dashboard'
+                  ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+              }`}
+            >
+              <LayoutDashboard size={18} className={currentView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'} />
+              <span className="truncate">{translations.nav.dashboard}</span>
+            </button>
+          </div>
+
+          {/* 2. Kurumsal Modüller (ERP Modules) */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
+              {translations.nav.modules}
+            </p>
+
+            {/* ── MODÜL 1: MUHASEBE & FİNANS (Genişletilebilir Akordiyon) ── */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+              {/* Modül Başlık Butonu */}
+              <button
+                type="button"
+                onClick={() => toggleModule('accounting')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  isAccountingView(currentView)
+                    ? 'text-indigo-300 bg-indigo-500/10'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                    <Calculator size={16} />
+                  </div>
+                  <span>{translations.nav.accounting}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    {translations.nav.activeModule}
+                  </span>
+                  {expandedModules.accounting ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {/* Muhasebe Alt Menüleri */}
+              {expandedModules.accounting && (
+                <div className="px-2 py-2 space-y-4 bg-slate-950/30 border-t border-slate-800/60">
+                  {/* A. İşlemler */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1">
+                      {translations.nav.operations}
+                    </p>
+                    <div className="space-y-0.5">
+                      {[
+                        { icon: <FileText size={16} />, label: translations.nav.invoices, view: 'invoices' as ViewType },
+                        { icon: <CreditCard size={16} />, label: translations.nav.payments, view: 'payments' as ViewType },
+                        { icon: <Layers2 size={16} />, label: translations.nav.paymentGroups, view: 'payment-groups' as ViewType },
+                        { icon: <Landmark size={16} />, label: translations.nav.cashAndBank, view: 'financial-accounts' as ViewType },
+                        { icon: <Building2 size={16} />, label: translations.nav.depositSlips, view: 'deposit-slips' as ViewType },
+                        { icon: <FileCheck size={16} />, label: translations.nav.checkRun, view: 'check-run' as ViewType },
+                        { icon: <BadgePercent size={16} />, label: translations.nav.commissionRun, view: 'commission-run' as ViewType },
+                        { icon: <ShieldCheck size={16} />, label: translations.nav.paymentGateways, view: 'payment-gateways' as ViewType },
+                      ].map(item => {
+                        const active = isNavActive(item.view, currentView);
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => handleNavClick(item.view)}
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                              active
+                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                            }`}
+                          >
+                            <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* B. Genel Muhasebe (General Ledger) */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1">
+                      {translations.nav.generalLedger}
+                    </p>
+                    <div className="space-y-0.5">
+                      {[
+                        { icon: <BookOpen size={16} />, label: translations.nav.chartOfAccounts, view: 'chart-of-accounts' as ViewType },
+                        { icon: <ScrollText size={16} />, label: translations.nav.journalEntries, view: 'journal-entries' as ViewType },
+                        { icon: <Calendar size={16} />, label: translations.nav.fiscalPeriods, view: 'fiscal-periods' as ViewType },
+                        { icon: <TrendingUp size={16} />, label: translations.nav.reports, view: 'reports' as ViewType },
+                      ].map(item => {
+                        const active = isNavActive(item.view, currentView);
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => handleNavClick(item.view)}
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                              active
+                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                            }`}
+                          >
+                            <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* C. Bütçe, Varlık & Yapılandırma */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1">
+                      {translations.nav.advancedAccounting}
+                    </p>
+                    <div className="space-y-0.5">
+                      {[
+                        { icon: <Layers size={16} />, label: translations.nav.assetsAndBudget, view: 'advanced-accounting' as ViewType },
+                        { icon: <Target size={16} />, label: translations.nav.costCenters, view: 'cost-centers' as ViewType },
+                        { icon: <Percent size={16} />, label: translations.nav.taxAndGl, view: 'tax-and-gl-mapping' as ViewType },
+                        { icon: <TrendingUp size={16} />, label: translations.nav.fxRates, view: 'fx-rates' as ViewType },
+                        { icon: <SlidersHorizontal size={16} />, label: translations.nav.accountingPreferences, view: 'accounting-preferences' as ViewType },
+                      ].map(item => {
+                        const active = isNavActive(item.view, currentView);
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => handleNavClick(item.view)}
+                            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                              active
+                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                            }`}
+                          >
+                            <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
+
+            {/* ── MODÜL 2: SİPARİŞ YÖNETİMİ (Order Management) ── */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleModule('orders');
+                  handleNavClick('orders');
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  currentView === 'orders'
+                    ? 'text-amber-300 bg-amber-500/10'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                    <ShoppingCart size={16} />
+                  </div>
+                  <span>{translations.nav.orderManagement}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    {translations.nav.comingSoon}
+                  </span>
+                  {expandedModules.orders ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {expandedModules.orders && (
+                <div className="px-2 py-2 space-y-0.5 bg-slate-950/30 border-t border-slate-800/60">
+                  {[
+                    { label: translations.nav.salesOrders, view: 'orders' as ViewType },
+                    { label: translations.nav.purchaseOrders, view: 'orders' as ViewType },
+                    { label: translations.nav.orderQuotes, view: 'orders' as ViewType },
+                  ].map(sub => (
+                    <button
+                      key={sub.label}
+                      type="button"
+                      onClick={() => handleNavClick(sub.view)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-400 hover:text-amber-300 hover:bg-slate-800/50 text-left transition-all cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60"></span>
+                      <span className="truncate">{sub.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── MODÜL 3: ÜRETİM YÖNETİMİ (Manufacturing) ── */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleModule('manufacturing');
+                  handleNavClick('manufacturing');
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  currentView === 'manufacturing'
+                    ? 'text-emerald-300 bg-emerald-500/10'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Factory size={16} />
+                  </div>
+                  <span>{translations.nav.manufacturing}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {translations.nav.comingSoon}
+                  </span>
+                  {expandedModules.manufacturing ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {expandedModules.manufacturing && (
+                <div className="px-2 py-2 space-y-0.5 bg-slate-950/30 border-t border-slate-800/60">
+                  {[
+                    { label: translations.nav.productionRuns, view: 'manufacturing' as ViewType },
+                    { label: translations.nav.billOfMaterials, view: 'manufacturing' as ViewType },
+                    { label: translations.nav.routings, view: 'manufacturing' as ViewType },
+                  ].map(sub => (
+                    <button
+                      key={sub.label}
+                      type="button"
+                      onClick={() => handleNavClick(sub.view)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-400 hover:text-emerald-300 hover:bg-slate-800/50 text-left transition-all cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60"></span>
+                      <span className="truncate">{sub.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── MODÜL 4: DEPO & STOK (Inventory / Facility) ── */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleModule('inventory');
+                  handleNavClick('inventory');
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  currentView === 'inventory'
+                    ? 'text-cyan-300 bg-cyan-500/10'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
+                    <Warehouse size={16} />
+                  </div>
+                  <span>{translations.nav.inventory}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    {translations.nav.comingSoon}
+                  </span>
+                  {expandedModules.inventory ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {expandedModules.inventory && (
+                <div className="px-2 py-2 space-y-0.5 bg-slate-950/30 border-t border-slate-800/60">
+                  {[
+                    { label: translations.nav.facilities, view: 'inventory' as ViewType },
+                    { label: translations.nav.inventoryTransfers, view: 'inventory' as ViewType },
+                    { label: translations.nav.physicalInventory, view: 'inventory' as ViewType },
+                  ].map(sub => (
+                    <button
+                      key={sub.label}
+                      type="button"
+                      onClick={() => handleNavClick(sub.view)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-400 hover:text-cyan-300 hover:bg-slate-800/50 text-left transition-all cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/60"></span>
+                      <span className="truncate">{sub.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Sistem & Araçlar */}
+          <div>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">
+              {translations.nav.system}
+            </p>
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => handleNavClick('test-page')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
+                  currentView === 'test-page'
+                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                }`}
+              >
+                <Beaker size={18} className={currentView === 'test-page' ? 'text-indigo-400' : 'text-slate-500'} />
+                <span className="truncate">{translations.nav.apiTest}</span>
+              </button>
+
+              <button
+                type="button"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 border border-transparent text-left cursor-not-allowed opacity-75"
+              >
+                <Settings size={18} className="text-slate-600" />
+                <span className="truncate">{translations.nav.settings}</span>
+              </button>
+            </div>
+          </div>
         </nav>
 
         {/* Dil Seçici (Mobil Drawer İçin) ve Logout */}
@@ -295,20 +617,20 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               <LanguageToggle />
             </div>
 
-            {/* Quick Action Button */}
+            {/* Quick Action Button for Accounting */}
             {isPaymentView ? (
               <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
                 <Plus size={16} /> 
                 <span className="hidden sm:inline">{translations.nav.newPayment}</span>
                 <span className="sm:hidden">{translations.nav.newPayment.split(' ')[1] || 'Payment'}</span>
               </button>
-            ) : (
+            ) : isAccountingView(currentView) ? (
               <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
                 <Plus size={16} /> 
                 <span className="hidden sm:inline">{translations.nav.newInvoice}</span>
                 <span className="sm:hidden">{translations.nav.newInvoice.split(' ')[1] || 'Invoice'}</span>
               </button>
-            )}
+            ) : null}
           </div>
         </header>
 

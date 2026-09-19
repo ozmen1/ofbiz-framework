@@ -31,6 +31,7 @@ const PaymentGateways = lazy(() => import('./components/PaymentGateways').then(m
 const CheckRun = lazy(() => import('./components/CheckRun').then(m => ({ default: m.CheckRun })))
 const CommissionRun = lazy(() => import('./components/CommissionRun').then(m => ({ default: m.CommissionRun })))
 const TestPage = lazy(() => import('./components/TestPage'))
+const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
 
 export type ViewType = 
   | 'dashboard' 
@@ -56,7 +57,10 @@ export type ViewType =
   | 'payment-gateways'
   | 'check-run'
   | 'commission-run'
-  | 'test-page';
+  | 'test-page'
+  | 'orders'
+  | 'manufacturing'
+  | 'inventory';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -194,6 +198,15 @@ function App() {
 
       case 'test-page':
         return <TestPage />;
+
+      case 'orders':
+        return <ModulePlaceholder moduleKey="orders" onNavigate={handleNavigate} />;
+
+      case 'manufacturing':
+        return <ModulePlaceholder moduleKey="manufacturing" onNavigate={handleNavigate} />;
+
+      case 'inventory':
+        return <ModulePlaceholder moduleKey="inventory" onNavigate={handleNavigate} />;
 
       default:
         return <AccountingDashboard />;

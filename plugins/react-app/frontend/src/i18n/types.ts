@@ -58,6 +58,24 @@ export interface Translations {
     generalLedger: string;
     advancedAccounting: string;
     system: string;
+    modules: string;
+    accountingOverview: string;
+    operations: string;
+    orderManagement: string;
+    salesOrders: string;
+    purchaseOrders: string;
+    orderQuotes: string;
+    manufacturing: string;
+    productionRuns: string;
+    billOfMaterials: string;
+    routings: string;
+    inventory: string;
+    facilities: string;
+    inventoryTransfers: string;
+    physicalInventory: string;
+    comingSoon: string;
+    planned: string;
+    activeModule: string;
     dashboard: string;
     invoices: string;
     payments: string;
@@ -107,6 +125,9 @@ export interface Translations {
     checkRun: { title: string; subtitle: string };
     commissionRun: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
+    orders: { title: string; subtitle: string };
+    manufacturing: { title: string; subtitle: string };
+    inventory: { title: string; subtitle: string };
   };
   dashboard: {
     totalRevenue: string;
@@ -1661,5 +1682,18 @@ export interface Translations {
     currency: string;
     noCalcs: string;
     deleteConfirm: string;
+  };
+  modulePlaceholder: {
+    statusBadge: string;
+    backToAccounting: string;
+    featuresTitle: string;
+    ofbizIntegration: string;
+    ofbizIntegrationDesc: string;
+    ordersDescription: string;
+    ordersFeatures: string[];
+    manufacturingDescription: string;
+    manufacturingFeatures: string[];
+    inventoryDescription: string;
+    inventoryFeatures: string[];
   };
 }
