@@ -229,6 +229,140 @@ Her modül ekranı 5 temel UI katmanından oluşur:
 5. **Kayar Çekmece (Slide-Over Drawer - Framer Motion):** Bir satıra tıklandığında sayfa yenilenmeden sağdan kayarak açılan detay çekmecesi. Alt kalemler (items), durum tarihçesi (history) ve ilişkili kayıtlar burada listelenir.
 6. **İşlem Modalları (Action Modals):** Ekleme, düzenleme, durum değiştirme ve işlem gerçekleştirme formları. Gönderim esnasında loading animasyonu ve form kilitleme uygulanır.
 
+### 3. Çoklu Dil (Localization / i18n) Mimarisi ve Standartları
+
+Projede Türkçe ve İngilizce tam dil desteği `plugins/react-app/frontend/src/i18n/` dizininde tip güvenli (type-safe) bir yapıyla sağlanır.
+
+> [!IMPORTANT]
+> **Kural:** Arayüzde hiçbir sayfada, bileşende, modalda veya bildirim mesajında **kesinlikle sabit (hardcoded) metin yazılmamalıdır**. Tüm metinler `useTranslation` hook'u üzerinden çekilmelidir.
+
+#### Dizin Yapısı ve İş Akışı:
+```
+src/i18n/
+├── types.ts          # Tüm sözlük anahtarlarının ve modüllerin TypeScript tip sözleşmesi
+├── I18nContext.tsx   # React Context sağlayıcısı, dil değiştirme (tr/en) ve localStorage kalıcılığı
+└── locales/
+    ├── tr.ts         # Türkçe kurumsal ERP/muhasebe terminolojisi sözlüğü
+    └── en.ts         # Standart İngilizce OFBiz terminolojisi sözlüğü
+```
+
+#### Yeni Bir Modül Eklerken i18n Adımları:
+1. **Tip Tanımı (`src/i18n/types.ts`):**
+   ```typescript
+   export interface Translations {
+     // ...
+     orders: {
+       title: string;
+       createNew: string;
+       orderNumber: string;
+       customer: string;
+       status: string;
+       totalAmount: string;
+       // ...
+     };
+   }
+   ```
+2. **Türkçe Sözlük (`src/i18n/locales/tr.ts`):**
+   ```typescript
+   orders: {
+     title: 'Sipariş Yönetimi',
+     createNew: 'Yeni Sipariş',
+     orderNumber: 'Sipariş No',
+     customer: 'Müşteri',
+     status: 'Durum',
+     totalAmount: 'Toplam Tutar',
+   }
+   ```
+3. **İngilizce Sözlük (`src/i18n/locales/en.ts`):**
+   ```typescript
+   orders: {
+     title: 'Order Management',
+     createNew: 'New Order',
+     orderNumber: 'Order #',
+     customer: 'Customer',
+     status: 'Status',
+     totalAmount: 'Total Amount',
+   }
+   ```
+4. **Bileşende Kullanım:**
+   ```tsx
+   import React from 'react';
+   import { useTranslation } from '../i18n/I18nContext';
+
+   export const OrderList: React.FC = () => {
+     const { translations, locale } = useTranslation();
+     const t = translations.orders;
+
+     const formatCurrency = (amount: number) =>
+       new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+         style: 'currency',
+         currency: locale === 'tr' ? 'TRY' : 'USD'
+       }).format(amount);
+
+     return (
+       <div className="space-y-5">
+         <div className="ds-page-header">
+           <h1 className="ds-page-title">{t.title}</h1>
+           <button className="ds-btn-primary">{t.createNew}</button>
+         </div>
+       </div>
+     );
+   };
+   ```
+
+> [!WARNING]
+> **TypeScript `noUnusedLocals` Uyarısı:** Projedeki tsconfig yapılandırması kullanılmayan değişkenlerde derleme hatası (`npm run build`) verir. Destructuring yaparken yalnızca kod içinde referans verilen anahtarları çekin (örn. `locale` kullanılmıyorsa sadece `const { translations } = useTranslation();` yapın).
+
+---
+
+### 4. Birleşik Tasarım Sistemi (Design System) & Responsive Standartları
+
+Tüm ekranlarda tek bir görsel kimlik ve kullanıcı deneyimi sunulması için `src/design-system.css` içerisinde tanımlanan token sınıfları ve Tailwind CSS karanlık paleti (`slate-950`, `slate-900`, `slate-800`, `indigo-500/600`) kullanılmalıdır.
+
+#### A. Standart DS Sınıf Kataloğu:
+| Kategori | Sınıf Adı | Açıklama / Kullanım Yeri |
+| :--- | :--- | :--- |
+| **Kartlar** | `.ds-card` | Standart içerik kartı (kenarlık, gölge, arka plan) |
+| | `.ds-stat-card` | KPI gösterge kutusu (`border-l-4 border-l-indigo-500`) |
+| **Tablolar** | `.ds-table` | Standart veri tablosu (`min-w-[640px]`) |
+| | `.ds-thead-row` | Başlık satırı stili |
+| | `.ds-th` | Sütun başlığı hücresi |
+| | `.ds-tbody-row` | Satır hover efekti ve alt kenarlık |
+| | `.ds-td` | Standart veri hücresi |
+| | `.ds-td-mono` | Kod/ID hücreleri için tek aralıklı (monospace) font |
+| | `.ds-td-right` | Sayısal/tutarsal sağa hizalı veri hücresi |
+| **Butonlar** | `.ds-btn-primary` | Vurgulu işlem butonu (İndigo dolgu, beyaz yazı) |
+| | `.ds-btn-secondary`| İkincil aksiyon butonu (Slate çerçeve ve dolgu) |
+| | `.ds-btn-danger` | İptal/silme butonu (Kırmızı dolgu/kenarlık) |
+| | `.ds-btn-ghost` | Şeffaf, hafif ikon veya geri butonu |
+| **Formlar** | `.ds-label` | Alan başlık etiketi (küçük, gri, yarı kalın) |
+| | `.ds-input` | Standart form giriş kutusu |
+| | `.ds-select` | Seçim açılır kutusu |
+| **Rozetler** | `.ds-badge` | Durum etiketi tabanı (yuvarlatılmış, küçük font) |
+| | `.ds-badge-green/blue/yellow/red/purple/slate` | Renk varyantları |
+| **Modallar** | `.ds-overlay` | Karartmalı arka plan (`p-3 sm:p-6 overflow-y-auto`) |
+| | `.ds-modal` | Diyalog kutusu (`max-h-[85vh] sm:max-h-[90vh] my-auto`) |
+| **Durumlar** | `.ds-spinner` | Yükleniyor halkası |
+| | `.ds-empty` | Boş veri durumu taşıyıcısı |
+
+#### B. Mobil ve Masaüstü Duyarlılık (Responsive Kuralları):
+1. **Tabloların Sarmalanması (ZORUNLU):**
+   Her `<table>` etiketi mutlaka `<div className="overflow-x-auto">` içine alınmalıdır. Tablolara eklenen `.ds-table` sınıfı minimum genişlik koruması (`min-w-[600px]`) sağlayarak küçük ekranlarda sütunların ezilmesini önler ve yatay kaydırma imkanı tanır.
+2. **Form Alanları Izgarası (Grid Layout):**
+   Form alanları masaüstünde çok sütunlu, mobil cihazlarda ise tek sütunlu olmalıdır:
+   ```tsx
+   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+     <div>
+       <label className="ds-label">{t.field}</label>
+       <input className="ds-input" />
+     </div>
+   </div>
+   ```
+3. **Modallarda Dikey Taşma Güvenliği:**
+   Mobil klavyeler ve küçük dikey ekran yükseklikleri için modallarda daima `max-h-[85vh] sm:max-h-[90vh] overflow-y-auto` yapısı kullanılmalıdır.
+4. **Sekmeler (Tabs):**
+   Çok sekmeli görünümlerde `.ds-tab-bar` kullanılmalı, sekme sayısı fazlaysa `overflow-x-auto` ile yatay kaydırma desteklenmelidir.
+
 ---
 
 ## 6. Diğer Modüllere Uygulama Rehberi (Cookbook)
@@ -268,8 +402,11 @@ Yeni bir modül geliştirirken bu adımları sırayla işaretleyin:
 3. [ ] **Backend Groovy Event:** `plugins/react-app/src/main/groovy/.../<Modul>Events.groovy` yazıldı.
 4. [ ] **Controller Senkronizasyonu:** Hem `frontend/public/.../controller.xml` hem `webapp/react-app/.../controller.xml` güncellendi.
 5. [ ] **URL Whitelist:** `framework/webapp/config/url.properties` içine endpoint'ler eklendi.
-6. [ ] **Frontend API:** `api.ts` içine interface'ler ve çağrı fonksiyonları eklendi.
-7. [ ] **Frontend UI:** `src/components/<Modul>.tsx` bileşeni oluşturuldu, `App.tsx` ve `Layout.tsx` rotalarına bağlandı.
-8. [ ] **Derleme:** `cd plugins/react-app/frontend && npm run build` çalıştırıldı.
-9. [ ] **Canlı Doğrulama:** `curl` ile JSON yanıtı ve PostgreSQL üzerinden veritabanı kayıtları doğrulandı.
-10. [ ] **Git Commit:** `git status` ve `git commit` yapıldı.
+6. [ ] **Frontend API:** `api.ts` içine TypeScript interface'leri ve API çağrı fonksiyonları eklendi.
+7. [ ] **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına modül sözlükleri eklendi; sabit (hardcoded) metin bırakılmadı; para/tarih biçimlendirmesinde `locale` kullanıldı.
+8. [ ] **Tasarım Sistemi & Responsive:** `src/design-system.css` token sınıfları (`.ds-card`, `.ds-table`, `.ds-btn-*`, `.ds-badge`, vb.) kullanıldı; tüm tablolar `<div className="overflow-x-auto">` ile sarıldı; modal ve form ızgaraları mobil ekranda doğrulandı.
+9. [ ] **Frontend UI & Entegrasyon:** `src/components/<Modul>.tsx` bileşeni oluşturuldu, `App.tsx` ve `Layout.tsx` rotalarına ve menüye bağlandı.
+10. [ ] **Derleme:** `cd plugins/react-app/frontend && npm run build` hatasız çalıştırıldı (TypeScript `noUnusedLocals` ve controller kopyası doğrulandı).
+11. [ ] **Canlı Doğrulama:** `curl` ile JSON yanıtı ve PostgreSQL üzerinden veritabanı kayıtları doğrulandı.
+12. [ ] **Git Commit:** `git status` ve `git commit` yapıldı.
+

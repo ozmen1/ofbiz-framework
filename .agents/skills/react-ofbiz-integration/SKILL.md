@@ -152,15 +152,29 @@ const cleanJson = (text: string) => {
 
 ---
 
-## 8. Frontend UI/UX Tasarım Kalıbı
+## 8. Frontend UI/UX, Birleşik Tasarım Dili ve Çoklu Dil (i18n) Standartları
 
-Her modül sayfası şu 5 katmanlı modern bileşen mimarisini takip etmelidir:
-1. **KPI Metrik Kartları (Metrics Row):** Toplam kayıt, bekleyen onaylar, parasal büyüklükler.
-2. **Sekmeli Yapı (Tabbed Layout):** Modülün temel alt varlıkları arasında geçiş.
-3. **Filtre Çubuğu (Filter & Search):** Arama kutusu, durum filtreleri ve "Yeni Kayıt" butonu.
-4. **Veri Tablosu (Data Table):** Durum rozetleri, para birimi (`₺`/`$`) ve tarih biçimlendirmeleri.
-5. **Kayar Çekmece (Slide-Over Drawer - Framer Motion):** Tıklanan kaydın detayını, kalemlerini ve durum geçmişini sayfa değiştirmeden inceleme.
-6. **Form Modalları (Modals):** Validasyonlu, buton kilitlemeli ve işlem sonrası anlık tablo tazeleyen açılır pencereler.
+Her modül sayfası şu temel tasarım ilkelerine kesinlikle uymalıdır:
+
+### A. Birleşik Tasarım Sistemi (Design System)
+* Tüm stil tanımları `plugins/react-app/frontend/src/design-system.css` token'ları ve Tailwind CSS karanlık teması (`slate-950/900/800`, `indigo-500/600`) ile yapılmalıdır.
+* Dağınık CSS sınıfları veya satır içi stiller (`style={{}}`) kullanılmamalıdır.
+* Standart sınıflar: `.ds-card`, `.ds-stat-card`, `.ds-table`, `.ds-thead-row`, `.ds-th`, `.ds-tbody-row`, `.ds-td`, `.ds-btn-primary`, `.ds-btn-secondary`, `.ds-btn-danger`, `.ds-input`, `.ds-select`, `.ds-label`, `.ds-badge`, `.ds-overlay`, `.ds-modal`, `.ds-empty`, `.ds-spinner`.
+
+### B. Mobil ve Masaüstü Duyarlılık (Responsive Tasarım)
+* **Tablo Yatay Kaydırma:** Mobilde hücre kırılmasını önlemek için her `<table>` mutlaka `<div className="overflow-x-auto">` ile sarmalanmalıdır.
+* **Modallar:** Küçük ekranlarda ekranın altına taşmaları önlemek için `.ds-overlay` (`overflow-y-auto p-3 sm:p-6`) ve `.ds-modal` (`max-h-[85vh] sm:max-h-[90vh] my-auto`) kullanılmalıdır.
+* **Form Gridleri:** Form alanları mobilde dikey, masaüstünde çift sütun (`grid grid-cols-1 sm:grid-cols-2 gap-4`) olmalıdır.
+* **Sekmeler:** `.ds-tab-bar` sınıfı ile yatay kaydırılabilir olmalıdır (`overflow-x-auto flex-nowrap`).
+
+### C. Çoklu Dil (Localization / i18n) Standartları
+* Arayüzde **ASLA sabit (hardcoded) metin bırakılmamalıdır**.
+* Yeni bir alan, tablo başlığı, filtre veya buton eklendiğinde:
+  1. `src/i18n/types.ts` içine tip tanımını ekleyin.
+  2. `src/i18n/locales/tr.ts` içine Türkçe karşılığını ekleyin.
+  3. `src/i18n/locales/en.ts` içine İngilizce karşılığını ekleyin.
+  4. Bileşende `const { translations, locale } = useTranslation();` kullanarak `translations.<modul>.<anahtar>` üzerinden çekin.
+  5. Para birimi ve tarih biçimlendirmelerinde aktif `locale` parametresi ('tr' -> 'tr-TR', 'en' -> 'en-US') kullanılmalıdır.
 
 ---
 
@@ -185,7 +199,9 @@ React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sı
 4. **Controller Runtime:** `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` dosyasına ekleyin.
 5. **URL İzinleri:** `framework/webapp/config/url.properties` dosyasında `http.request-map.list`'e ekleyin.
 6. **Frontend API:** `api.ts` içinde TypeScript modellerini ve endpoint fonksiyonlarını yazın.
-7. **Frontend UI:** Bileşeni oluşturup `App.tsx` ve `Layout.tsx` rotalarına ekleyin.
-8. **Build:** `cd plugins/react-app/frontend && npm run build` çalıştırarak derleyin.
-9. **Canlı Doğrulama:** `curl` ile JSON yanıtını ve PostgreSQL üzerinden veritabanı yansımasını test edin.
-10. **Git Commit:** Hooks atlanarak temiz bir commit mesajıyla kaydedin.
+7. **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına yeni modül metinlerini ekleyin.
+8. **Frontend UI:** Bileşeni `design-system.css` ve `overflow-x-auto` responsive standartlarına uygun oluşturup `App.tsx` ve `Layout.tsx` rotalarına ekleyin.
+9. **Build:** `cd plugins/react-app/frontend && npm run build` çalıştırarak derleyin (0 TypeScript/Rollup hatası).
+10. **Canlı Doğrulama:** `curl` ile JSON yanıtını ve PostgreSQL üzerinden veritabanı yansımasını test edin.
+11. **Git Commit:** Hooks atlanarak temiz bir commit mesajıyla kaydedin.
+

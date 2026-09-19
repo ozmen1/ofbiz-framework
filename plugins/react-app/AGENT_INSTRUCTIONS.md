@@ -74,16 +74,40 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
    - OFBiz JSON yanıtlarının başındaki `//` güvenlik önekini `rawText.startsWith('//') ? rawText.substring(2) : rawText` ile temizleyin.
 3. **Kimlik Doğrulama (Authentication):**
    - OFBiz'den dönen kimlik doğrulama token'ları (örn. JWT veya Session Cookie) frontend tarafında Context API, Redux veya Zustand aracılığıyla global state'te güvenli bir şekilde saklanmalıdır. API isteklerine Authorization header'ı olarak eklenmelidir.
-4. **Stil ve Tasarım:**
-   - Modern ve responsive bir arayüz geliştirilmelidir (Tercihen TailwindCSS veya Material UI kullanılabilir, projedeki `package.json` dosyasını kontrol et).
-   - "Placeholder" tasarımlardan kaçınılmalı, gerçekçi, bitmiş bir ürün görünümü sunulmalıdır.
-5. **Dosya Değişiklikleri ve Build Kontrolü:**
-   - Yeni bir sayfa veya bileşen eklendiğinde `src/components` veya `src/pages` klasör mimarisine uy.
+4. **Stil, Birleşik Tasarım Dili (Design System) ve Responsive Standartları:**
+   - Uygulamanın tüm sayfalarında tek bir tasarım dili (`src/design-system.css`) ve Tailwind CSS karanlık tema paleti (`slate-950`, `slate-900`, `slate-800`, `indigo-500/600`) kullanılmalıdır.
+   - Satır içi stillerden (`style={{}}`), eski `glass-card` veya dağınık CSS değişkenlerinden kaçınılmalıdır.
+   - Standart DS token'ları zorunludur:
+     - Kartlar: `.ds-card`, istatistik kartları: `.ds-stat-card`
+     - Tablolar: `.ds-table`, `.ds-thead-row`, `.ds-th`, `.ds-tbody-row`, `.ds-td`, `.ds-td-mono`, `.ds-td-right`
+     - Butonlar: `.ds-btn-primary`, `.ds-btn-secondary`, `.ds-btn-danger`, `.ds-btn-ghost`
+     - Formlar: `.ds-label`, `.ds-input`, `.ds-select`
+     - Durumlar: `.ds-badge`, `.ds-badge-green/blue/yellow/red/purple/slate`
+     - Yükleme & Boş Durum: `.ds-spinner`, `.ds-empty`
+     - Modallar: `.ds-overlay`, `.ds-modal`
+   - **Mobil & Masaüstü Duyarlılığı (Responsive Kuralları):**
+     - **Tablolar:** Tüm `<table>` elementleri mobilde taşmaları önlemek için mutlaka `<div className="overflow-x-auto">` içine alınmalıdır.
+     - **Modallar:** Mobilde ekran altına taşmaması için `.ds-overlay` (`overflow-y-auto p-3 sm:p-6`) ve `.ds-modal` (`max-h-[85vh] sm:max-h-[90vh] my-auto`) kullanılmalıdır.
+     - **Form Gridleri:** Alanlar mobilde tek sütun, tablette/masaüstünde çift sütun (`grid grid-cols-1 sm:grid-cols-2 gap-4`) olmalıdır.
+     - **Sekmeler:** Yatay kaydırılabilir `.ds-tab-bar` kullanılmalı, mobilde taşma yapmamalıdır.
+
+5. **Çoklu Dil (Localization / i18n) Standartları:**
+   - Yeni bir ekran, form, buton, tablo veya bildirim geliştirildiğinde **KESİNLİKLE sabit (hardcoded) metin yazılmamalıdır**.
+   - Projedeki `src/i18n/` modülü kullanılmalıdır:
+     1. `src/i18n/types.ts`: Yeni modül veya anahtar için TypeScript şemasını tanımlayın.
+     2. `src/i18n/locales/tr.ts`: Türkçe kurumsal muhasebe/ERP karşılığını ekleyin.
+     3. `src/i18n/locales/en.ts`: Standart İngilizce OFBiz karşılığını ekleyin.
+     4. Bileşende `const { translations, locale } = useTranslation();` hook'unu kullanarak `translations.<modul>.<anahtar>` üzerinden çağırın.
+     5. Tarih ve Para Birimi: Biçimlendirmelerde mutlaka `locale` parametresi dikkate alınmalıdır (`tr-TR` veya `en-US`).
+
+6. **Dosya Değişiklikleri ve Build Kontrolü:**
+   - Yeni bir sayfa veya bileşen eklendiğinde `src/components` mimarisine uy.
+   - TypeScript `noUnusedLocals` denetimi devrededir; kullanılmayan değişkenleri (`t`, `locale`, vb.) import veya destructuring'de bırakmayın.
    - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
-6. **Backend Groovy Event ve İşlem (Transaction) Bütünlüğü:**
+7. **Backend Groovy Event ve İşlem (Transaction) Bütünlüğü:**
    - Groovy event metodlarında `EntityQuery.from(...).where(...)` kullanırken koşul listesi boş olduğunda `where(null)` çağırmayın (`if (!conditions.isEmpty()) query = query.where(...)`).
    - Servis çalıştırmadan önce `secas.xml` içindeki ECA kurallarını denetleyin. Otomatik tetiklenen bir alt servisi (ör. durum oluşturma) tekrar çağırıp mükerrerlik hatasıyla JTA transaction'ın `rollback-only` olmasını engelleyin.
-7. **HTTP Port & Ağ İzinleri:**
+8. **HTTP Port & Ağ İzinleri:**
    - `framework/webapp/config/url.properties` içindeki `http.request-map.list` listesine eklenen tüm endpoint'leri tanımlayın (`no.http=N`).
    - `framework/security/config/security.properties` içindeki `host-headers-allowed` listesinde yerel alt ağların (`192.168.*`) bulunduğundan emin olun.
 
