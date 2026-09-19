@@ -264,6 +264,47 @@ String getFinAccountDetails() {
             }
         }
 
+        // Account roles
+        List<GenericValue> rolesGv = EntityQuery.use(delegator).from("FinAccountRole")
+                .where("finAccountId", finAccountId)
+                .orderBy("-fromDate")
+                .queryList()
+
+        List<Map> roles = []
+        for (GenericValue r : rolesGv) {
+            GenericValue rt = EntityQuery.use(delegator).from("RoleType").where("roleTypeId", r.roleTypeId).queryOne()
+            roles.add([
+                    finAccountId: r.finAccountId,
+                    partyId: r.partyId,
+                    partyName: getPartyName(delegator, r.partyId),
+                    roleTypeId: r.roleTypeId,
+                    roleTypeDesc: rt?.description ?: r.roleTypeId,
+                    fromDate: r.fromDate ? r.fromDate.toString() : "",
+                    thruDate: r.thruDate ? r.thruDate.toString() : ""
+            ])
+        }
+
+        // Account authorizations / holds
+        List<GenericValue> authsGv = EntityQuery.use(delegator).from("FinAccountAuth")
+                .where("finAccountId", finAccountId)
+                .orderBy("-authorizationDate")
+                .queryList()
+
+        Timestamp nowTs = UtilDateTime.nowTimestamp()
+        List<Map> authorizations = []
+        for (GenericValue a : authsGv) {
+            boolean isExpired = (a.thruDate != null && a.thruDate.before(nowTs))
+            authorizations.add([
+                    finAccountAuthId: a.finAccountAuthId,
+                    finAccountId: a.finAccountId,
+                    amount: a.amount ?: BigDecimal.ZERO,
+                    authorizationDate: a.authorizationDate ? a.authorizationDate.toString() : "",
+                    fromDate: a.fromDate ? a.fromDate.toString() : "",
+                    thruDate: a.thruDate ? a.thruDate.toString() : "",
+                    isExpired: isExpired
+            ])
+        }
+
         Map accountData = [
                 finAccountId: fa.finAccountId,
                 finAccountName: fa.finAccountName ?: fa.finAccountId,
@@ -288,6 +329,8 @@ String getFinAccountDetails() {
         request.setAttribute("account", accountData)
         request.setAttribute("transactions", transactionList)
         request.setAttribute("reconciliations", reconciliations)
+        request.setAttribute("roles", roles)
+        request.setAttribute("authorizations", authorizations)
         return "success"
     } catch (Exception e) {
         Debug.logError(e, "Error in getFinAccountDetails: " + e.getMessage(), MODULE)
@@ -1144,12 +1187,20 @@ String getFinAccountMetadata() {
                 [uomId: 'GBP', description: 'British Pound (£)']
         ]
 
+        // Role Types
+        List<GenericValue> roleList = EntityQuery.use(delegator).from("RoleType")
+                .where(EntityCondition.makeCondition("roleTypeId", EntityOperator.IN,
+                        ["ACCOUNT_MANAGER", "MANAGER", "OWNER", "AUTHORIZED_REP", "ADMIN", "CLERK", "CASHIER", "_NA_"]))
+                .orderBy("description").queryList()
+        List<Map> roleTypes = roleList.collect { [roleTypeId: it.roleTypeId, description: it.description ?: it.roleTypeId] }
+
         Map meta = [
                 finAccountTypes: types,
                 finAccountTransTypes: transTypes,
                 finAccountStatuses: statuses,
                 glAccounts: glAccounts,
                 currencies: currencies,
+                roleTypes: roleTypes,
                 organizations: [
                         [partyId: "Company", name: "Company (Ana Şirket)"]
                 ]
@@ -1159,6 +1210,170 @@ String getFinAccountMetadata() {
         return "success"
     } catch (Exception e) {
         Debug.logError(e, "Error in getFinAccountMetadata: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * createFinAccountRole
+ */
+String createFinAccountRole() {
+    def delegator = binding.getVariable("delegator")
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String finAccountId = parameters.finAccountId?.trim()
+        String partyId = parameters.partyId?.trim()
+        String roleTypeId = parameters.roleTypeId?.trim()
+        String fromDateStr = parameters.fromDate?.trim()
+        String thruDateStr = parameters.thruDate?.trim()
+
+        if (UtilValidate.isEmpty(finAccountId) || UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(roleTypeId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "finAccountId, partyId ve roleTypeId zorunludur.")
+            return "error"
+        }
+
+        Timestamp fromDate = parseTimestamp(fromDateStr) ?: UtilDateTime.nowTimestamp()
+        Timestamp thruDate = parseTimestamp(thruDateStr)
+
+        GenericValue uL = getSystemUserLogin()
+        Map inMap = [
+                finAccountId: finAccountId,
+                partyId: partyId,
+                roleTypeId: roleTypeId,
+                fromDate: fromDate,
+                thruDate: thruDate,
+                userLogin: uL
+        ]
+
+        dispatcher.runSync("createFinAccountRole", inMap)
+        request.setAttribute("_EVENT_MESSAGE_", "Hesap yetkili rolü başarıyla eklendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createFinAccountRole: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * deleteFinAccountRole
+ */
+String deleteFinAccountRole() {
+    def delegator = binding.getVariable("delegator")
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String finAccountId = parameters.finAccountId?.trim()
+        String partyId = parameters.partyId?.trim()
+        String roleTypeId = parameters.roleTypeId?.trim()
+        String fromDateStr = parameters.fromDate?.trim()
+
+        if (UtilValidate.isEmpty(finAccountId) || UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(roleTypeId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "finAccountId, partyId ve roleTypeId zorunludur.")
+            return "error"
+        }
+
+        Timestamp fromDate = parseTimestamp(fromDateStr)
+        if (!fromDate) {
+            request.setAttribute("_ERROR_MESSAGE_", "fromDate zorunludur.")
+            return "error"
+        }
+
+        GenericValue uL = getSystemUserLogin()
+        dispatcher.runSync("deleteFinAccountRole", [
+                finAccountId: finAccountId,
+                partyId: partyId,
+                roleTypeId: roleTypeId,
+                fromDate: fromDate,
+                userLogin: uL
+        ])
+
+        request.setAttribute("_EVENT_MESSAGE_", "Hesap yetkili rolü kaldırıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deleteFinAccountRole: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * createFinAccountAuth
+ */
+String createFinAccountAuth() {
+    def delegator = binding.getVariable("delegator")
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String finAccountId = parameters.finAccountId?.trim()
+        String amountStr = parameters.amount?.trim()
+        String thruDateStr = parameters.thruDate?.trim()
+
+        if (UtilValidate.isEmpty(finAccountId) || UtilValidate.isEmpty(amountStr)) {
+            request.setAttribute("_ERROR_MESSAGE_", "finAccountId ve amount zorunludur.")
+            return "error"
+        }
+
+        BigDecimal amount = new BigDecimal(amountStr)
+        Timestamp nowTs = UtilDateTime.nowTimestamp()
+        Timestamp thruDate = parseTimestamp(thruDateStr)
+
+        GenericValue uL = getSystemUserLogin()
+        Map inMap = [
+                finAccountId: finAccountId,
+                amount: amount,
+                authorizationDate: nowTs,
+                fromDate: nowTs,
+                thruDate: thruDate,
+                userLogin: uL
+        ]
+
+        Map res = dispatcher.runSync("createFinAccountAuth", inMap)
+        request.setAttribute("finAccountAuthId", res.finAccountAuthId)
+        request.setAttribute("_EVENT_MESSAGE_", "Provizyon / blokaj kaydı oluşturuldu.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createFinAccountAuth: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * expireFinAccountAuth
+ */
+String expireFinAccountAuth() {
+    def delegator = binding.getVariable("delegator")
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String finAccountAuthId = parameters.finAccountAuthId?.trim()
+        if (UtilValidate.isEmpty(finAccountAuthId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "finAccountAuthId zorunludur.")
+            return "error"
+        }
+
+        GenericValue uL = getSystemUserLogin()
+        dispatcher.runSync("expireFinAccountAuth", [
+                finAccountAuthId: finAccountAuthId,
+                expireDateTime: UtilDateTime.nowTimestamp(),
+                userLogin: uL
+        ])
+
+        request.setAttribute("_EVENT_MESSAGE_", "Provizyon / blokaj kaydı sonlandırıldı (serbest bırakıldı).")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in expireFinAccountAuth: " + e.getMessage(), MODULE)
         request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
         return "error"
     }

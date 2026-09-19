@@ -537,6 +537,25 @@ export interface Translations {
       recSaved: string;
       confirmDelete: string;
     };
+    rolesAndAuth: {
+      rolesTab: string;
+      authTab: string;
+      addRole: string;
+      addAuth: string;
+      partyId: string;
+      roleType: string;
+      fromDate: string;
+      thruDate: string;
+      amount: string;
+      authDate: string;
+      active: string;
+      expired: string;
+      expireBtn: string;
+      noRoles: string;
+      noAuths: string;
+      deleteRoleConfirm: string;
+      expireAuthConfirm: string;
+    };
   };
   advancedAccounting: {
     title: string;
@@ -1562,6 +1581,9 @@ export interface Translations {
       varianceReasons: string;
       partyGl: string;
       creditCardGl: string;
+      fixedAssetGl: string;
+      finAccountGl: string;
+      categoryGl: string;
     };
     variance: {
       newMapping: string;
@@ -1583,6 +1605,32 @@ export interface Translations {
     creditCard: {
       newMapping: string;
       cardType: string;
+      glAccount: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+    fixedAsset: {
+      newMapping: string;
+      assetType: string;
+      assetGl: string;
+      accDepGl: string;
+      depGl: string;
+      profitGl: string;
+      lossGl: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+    finAccountType: {
+      newMapping: string;
+      finAccountType: string;
+      glAccount: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+    categoryGl: {
+      newMapping: string;
+      category: string;
+      glAccountType: string;
       glAccount: string;
       noMappings: string;
       deleteConfirm: string;

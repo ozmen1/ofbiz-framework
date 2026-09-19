@@ -574,10 +574,57 @@ export interface FinAccountTransItem {
   statusDesc: string;
 }
 
+export interface FinAccountRoleItem {
+  finAccountId: string;
+  partyId: string;
+  partyName?: string;
+  roleTypeId: string;
+  roleTypeDesc: string;
+  fromDate: string;
+  thruDate?: string;
+}
+
+export interface FinAccountAuthItem {
+  finAccountAuthId: string;
+  finAccountId: string;
+  amount: number;
+  authorizationDate: string;
+  fromDate: string;
+  thruDate?: string;
+  isExpired: boolean;
+}
+
+export interface CreateFinAccountRolePayload {
+  finAccountId: string;
+  partyId: string;
+  roleTypeId: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface DeleteFinAccountRolePayload {
+  finAccountId: string;
+  partyId: string;
+  roleTypeId: string;
+  fromDate: string;
+}
+
+export interface CreateFinAccountAuthPayload {
+  finAccountId: string;
+  amount: number;
+  thruDate?: string;
+}
+
+export interface ExpireFinAccountAuthPayload {
+  finAccountAuthId: string;
+}
+
 export interface FinAccountDetailResponse {
   account: FinAccountDetail;
   transactions: FinAccountTransItem[];
   reconciliations: any[];
+  roles?: FinAccountRoleItem[];
+  authorizations?: FinAccountAuthItem[];
 }
 
 export interface FinAccountTransactionsResponse {
@@ -691,6 +738,7 @@ export interface FinAccountMetadataResponse {
     glAccounts: { glAccountId: string; accountCode: string; accountName: string; glAccountClassId: string }[];
     currencies: { uomId: string; description: string }[];
     organizations: { partyId: string; name: string }[];
+    roleTypes?: { roleTypeId: string; description: string }[];
   };
 }
 
@@ -3274,6 +3322,90 @@ export const api = {
       body: toFormData({ costComponentCalcId }),
     });
   },
+
+  // Phase 11: Extended Asset/FinAccount/Category GL & FinAccount Role/Auth
+  getFixedAssetTypeGlAccounts: async (): Promise<{ fixedAssetTypeGlAccounts: FixedAssetTypeGlAccountItem[] }> => {
+    return requestApi<{ fixedAssetTypeGlAccounts: FixedAssetTypeGlAccountItem[] }>('getFixedAssetTypeGlAccounts');
+  },
+  createFixedAssetTypeGlAccount: async (payload: CreateFixedAssetTypeGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createFixedAssetTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteFixedAssetTypeGlAccount: async (payload: DeleteFixedAssetTypeGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteFixedAssetTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getFinAccountTypeGlAccounts: async (): Promise<{ finAccountTypeGlAccounts: FinAccountTypeGlAccountItem[] }> => {
+    return requestApi<{ finAccountTypeGlAccounts: FinAccountTypeGlAccountItem[] }>('getFinAccountTypeGlAccounts');
+  },
+  createFinAccountTypeGlAccount: async (payload: CreateFinAccountTypeGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createFinAccountTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteFinAccountTypeGlAccount: async (payload: DeleteFinAccountTypeGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteFinAccountTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getProductCategoryGlAccounts: async (): Promise<{ productCategoryGlAccounts: ProductCategoryGlAccountItem[] }> => {
+    return requestApi<{ productCategoryGlAccounts: ProductCategoryGlAccountItem[] }>('getProductCategoryGlAccounts');
+  },
+  createProductCategoryGlAccount: async (payload: CreateProductCategoryGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createProductCategoryGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteProductCategoryGlAccount: async (payload: DeleteProductCategoryGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteProductCategoryGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  createFinAccountRole: async (payload: CreateFinAccountRolePayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createFinAccountRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteFinAccountRole: async (payload: DeleteFinAccountRolePayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteFinAccountRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  createFinAccountAuth: async (payload: CreateFinAccountAuthPayload): Promise<{ finAccountAuthId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ finAccountAuthId: string; _EVENT_MESSAGE_?: string }>('createFinAccountAuth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  expireFinAccountAuth: async (payload: ExpireFinAccountAuthPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('expireFinAccountAuth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
 };
 
 // ==========================================
@@ -3991,6 +4123,9 @@ export interface ExtendedGlMetadataResponse {
     roleTypes: Array<{ id: string; description: string }>;
     glAccountTypes: Array<{ id: string; description: string }>;
     cardTypes: string[];
+    fixedAssetTypes?: Array<{ id: string; description: string }>;
+    finAccountTypes?: Array<{ id: string; description: string }>;
+    productCategories?: Array<{ id: string; description: string }>;
   };
 }
 
@@ -4030,6 +4165,90 @@ export interface CreateCostComponentCalcPayload {
 
 export interface UpdateCostComponentCalcPayload extends CreateCostComponentCalcPayload {
   costComponentCalcId: string;
+}
+
+// Phase 11 Interfaces
+export interface FixedAssetTypeGlAccountItem {
+  fixedAssetTypeId: string;
+  fixedAssetTypeDesc: string;
+  fixedAssetId: string;
+  organizationPartyId: string;
+  assetGlAccountId?: string;
+  assetAccountName?: string;
+  assetAccountCode?: string;
+  accDepGlAccountId?: string;
+  accDepAccountName?: string;
+  accDepAccountCode?: string;
+  depGlAccountId?: string;
+  depAccountName?: string;
+  depAccountCode?: string;
+  profitGlAccountId?: string;
+  profitAccountName?: string;
+  profitAccountCode?: string;
+  lossGlAccountId?: string;
+  lossAccountName?: string;
+  lossAccountCode?: string;
+}
+
+export interface CreateFixedAssetTypeGlAccountPayload {
+  fixedAssetTypeId: string;
+  fixedAssetId?: string;
+  organizationPartyId?: string;
+  assetGlAccountId?: string;
+  accDepGlAccountId?: string;
+  depGlAccountId?: string;
+  profitGlAccountId?: string;
+  lossGlAccountId?: string;
+}
+
+export interface DeleteFixedAssetTypeGlAccountPayload {
+  fixedAssetTypeId: string;
+  fixedAssetId?: string;
+  organizationPartyId?: string;
+}
+
+export interface FinAccountTypeGlAccountItem {
+  finAccountTypeId: string;
+  finAccountTypeDesc: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName?: string;
+  accountCode?: string;
+}
+
+export interface CreateFinAccountTypeGlAccountPayload {
+  finAccountTypeId: string;
+  organizationPartyId?: string;
+  glAccountId: string;
+}
+
+export interface DeleteFinAccountTypeGlAccountPayload {
+  finAccountTypeId: string;
+  organizationPartyId?: string;
+}
+
+export interface ProductCategoryGlAccountItem {
+  productCategoryId: string;
+  categoryName: string;
+  organizationPartyId: string;
+  glAccountTypeId: string;
+  glAccountTypeDesc: string;
+  glAccountId: string;
+  accountName?: string;
+  accountCode?: string;
+}
+
+export interface CreateProductCategoryGlAccountPayload {
+  productCategoryId: string;
+  organizationPartyId?: string;
+  glAccountTypeId: string;
+  glAccountId: string;
+}
+
+export interface DeleteProductCategoryGlAccountPayload {
+  productCategoryId: string;
+  organizationPartyId?: string;
+  glAccountTypeId: string;
 }
 
 

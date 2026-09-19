@@ -380,7 +380,7 @@ class ExtendedGlMappingEvents {
 
     /**
      * 10. getExtendedGlMetadata
-     * Returns dropdown metadata for variance reasons, roles, card types, GL account types
+     * Returns dropdown metadata for variance reasons, roles, card types, GL account types, fixed asset types, fin account types, categories
      */
     static String getExtendedGlMetadata(request, response) {
         def delegator = request.getAttribute("delegator")
@@ -400,15 +400,389 @@ class ExtendedGlMappingEvents {
 
             List<String> cardTypes = ["CCT_VISA", "CCT_MASTERCARD", "CCT_AMERICANEXPRESS", "CCT_DISCOVER", "CCT_DINERSCLUB"]
 
+            List<GenericValue> fatList = EntityQuery.use(delegator).from("FixedAssetType").orderBy("description").queryList()
+            List<Map> fixedAssetTypes = fatList.collect { [id: it.fixedAssetTypeId, description: it.description ?: it.fixedAssetTypeId] }
+
+            List<GenericValue> fatyList = EntityQuery.use(delegator).from("FinAccountType").orderBy("description").queryList()
+            List<Map> finAccountTypes = fatyList.collect { [id: it.finAccountTypeId, description: it.description ?: it.finAccountTypeId] }
+
+            List<GenericValue> catList = EntityQuery.use(delegator).from("ProductCategory").orderBy("categoryName").maxRows(100).queryList()
+            List<Map> productCategories = catList.collect { [id: it.productCategoryId, description: (it.categoryName ?: it.description) ?: it.productCategoryId] }
+
             request.setAttribute("metadata", [
                     varianceReasons: varianceReasons,
                     roleTypes: roleTypes,
                     glAccountTypes: glAccountTypes,
-                    cardTypes: cardTypes
+                    cardTypes: cardTypes,
+                    fixedAssetTypes: fixedAssetTypes,
+                    finAccountTypes: finAccountTypes,
+                    productCategories: productCategories
             ])
             return "success"
         } catch (Exception e) {
             Debug.logError(e, "Error in getExtendedGlMetadata: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 11. getFixedAssetTypeGlAccounts
+     */
+    static String getFixedAssetTypeGlAccounts(request, response) {
+        def delegator = request.getAttribute("delegator")
+        try {
+            List<GenericValue> list = EntityQuery.use(delegator)
+                    .from("FixedAssetTypeGlAccount")
+                    .orderBy("fixedAssetTypeId")
+                    .queryList()
+
+            List<Map> result = []
+            for (GenericValue gv : list) {
+                GenericValue fat = gv.fixedAssetTypeId && !"_NA_".equals(gv.fixedAssetTypeId) ?
+                        EntityQuery.use(delegator).from("FixedAssetType").where("fixedAssetTypeId", gv.fixedAssetTypeId).queryOne() : null
+                GenericValue agla = gv.assetGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.assetGlAccountId).queryOne() : null
+                GenericValue accgla = gv.accDepGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.accDepGlAccountId).queryOne() : null
+                GenericValue dgla = gv.depGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.depGlAccountId).queryOne() : null
+                GenericValue pgla = gv.profitGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.profitGlAccountId).queryOne() : null
+                GenericValue lgla = gv.lossGlAccountId ? EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.lossGlAccountId).queryOne() : null
+
+                result.add([
+                        fixedAssetTypeId: gv.fixedAssetTypeId,
+                        fixedAssetTypeDesc: fat?.description ?: (gv.fixedAssetTypeId ?: "_NA_"),
+                        fixedAssetId: gv.fixedAssetId ?: "_NA_",
+                        organizationPartyId: gv.organizationPartyId,
+                        assetGlAccountId: gv.assetGlAccountId ?: "",
+                        assetAccountName: agla?.accountName ?: "",
+                        assetAccountCode: agla?.accountCode ?: "",
+                        accDepGlAccountId: gv.accDepGlAccountId ?: "",
+                        accDepAccountName: accgla?.accountName ?: "",
+                        accDepAccountCode: accgla?.accountCode ?: "",
+                        depGlAccountId: gv.depGlAccountId ?: "",
+                        depAccountName: dgla?.accountName ?: "",
+                        depAccountCode: dgla?.accountCode ?: "",
+                        profitGlAccountId: gv.profitGlAccountId ?: "",
+                        profitAccountName: pgla?.accountName ?: "",
+                        profitAccountCode: pgla?.accountCode ?: "",
+                        lossGlAccountId: gv.lossGlAccountId ?: "",
+                        lossAccountName: lgla?.accountName ?: "",
+                        lossAccountCode: lgla?.accountCode ?: ""
+                ])
+            }
+
+            request.setAttribute("fixedAssetTypeGlAccounts", result)
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in getFixedAssetTypeGlAccounts: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 12. createFixedAssetTypeGlAccount
+     */
+    static String createFixedAssetTypeGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def dispatcher = request.getAttribute("dispatcher")
+        def parameters = request.getParameterMap()
+
+        try {
+            String fixedAssetTypeId = parameters.fixedAssetTypeId?.trim() ?: "_NA_"
+            String fixedAssetId = parameters.fixedAssetId?.trim() ?: "_NA_"
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+            String assetGlAccountId = parameters.assetGlAccountId?.trim()
+            String accDepGlAccountId = parameters.accDepGlAccountId?.trim()
+            String depGlAccountId = parameters.depGlAccountId?.trim()
+            String profitGlAccountId = parameters.profitGlAccountId?.trim()
+            String lossGlAccountId = parameters.lossGlAccountId?.trim()
+
+            GenericValue userLogin = delegator.findOne("UserLogin", [userLoginId: "system"], true)
+            Map inMap = [
+                    fixedAssetTypeId: fixedAssetTypeId,
+                    fixedAssetId: fixedAssetId,
+                    organizationPartyId: organizationPartyId,
+                    assetGlAccountId: assetGlAccountId ?: null,
+                    accDepGlAccountId: accDepGlAccountId ?: null,
+                    depGlAccountId: depGlAccountId ?: null,
+                    profitGlAccountId: profitGlAccountId ?: null,
+                    lossGlAccountId: lossGlAccountId ?: null,
+                    userLogin: userLogin
+            ]
+
+            GenericValue existing = EntityQuery.use(delegator).from("FixedAssetTypeGlAccount")
+                    .where("fixedAssetTypeId", fixedAssetTypeId, "fixedAssetId", fixedAssetId, "organizationPartyId", organizationPartyId)
+                    .queryOne()
+
+            if (existing) {
+                dispatcher.runSync("updateFixedAssetTypeGlAccount", inMap)
+            } else {
+                dispatcher.runSync("createFixedAssetTypeGlAccount", inMap)
+            }
+
+            request.setAttribute("_EVENT_MESSAGE_", "Sabit kıymet türü muhasebe hesabı kaydedildi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in createFixedAssetTypeGlAccount: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 13. deleteFixedAssetTypeGlAccount
+     */
+    static String deleteFixedAssetTypeGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def dispatcher = request.getAttribute("dispatcher")
+        def parameters = request.getParameterMap()
+
+        try {
+            String fixedAssetTypeId = parameters.fixedAssetTypeId?.trim() ?: "_NA_"
+            String fixedAssetId = parameters.fixedAssetId?.trim() ?: "_NA_"
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+
+            GenericValue userLogin = delegator.findOne("UserLogin", [userLoginId: "system"], true)
+            dispatcher.runSync("deleteFixedAssetTypeGlAccount", [
+                    fixedAssetTypeId: fixedAssetTypeId,
+                    fixedAssetId: fixedAssetId,
+                    organizationPartyId: organizationPartyId,
+                    userLogin: userLogin
+            ])
+
+            request.setAttribute("_EVENT_MESSAGE_", "Sabit kıymet türü muhasebe hesabı silindi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in deleteFixedAssetTypeGlAccount: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 14. getFinAccountTypeGlAccounts
+     */
+    static String getFinAccountTypeGlAccounts(request, response) {
+        def delegator = request.getAttribute("delegator")
+        try {
+            List<GenericValue> list = EntityQuery.use(delegator)
+                    .from("FinAccountTypeGlAccount")
+                    .orderBy("finAccountTypeId")
+                    .queryList()
+
+            List<Map> result = []
+            for (GenericValue gv : list) {
+                GenericValue fat = EntityQuery.use(delegator).from("FinAccountType").where("finAccountTypeId", gv.finAccountTypeId).queryOne()
+                GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).queryOne()
+
+                result.add([
+                        finAccountTypeId: gv.finAccountTypeId,
+                        finAccountTypeDesc: fat?.description ?: gv.finAccountTypeId,
+                        organizationPartyId: gv.organizationPartyId,
+                        glAccountId: gv.glAccountId,
+                        accountName: gla?.accountName ?: "",
+                        accountCode: gla?.accountCode ?: gv.glAccountId
+                ])
+            }
+
+            request.setAttribute("finAccountTypeGlAccounts", result)
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in getFinAccountTypeGlAccounts: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 15. createFinAccountTypeGlAccount
+     */
+    static String createFinAccountTypeGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def dispatcher = request.getAttribute("dispatcher")
+        def parameters = request.getParameterMap()
+
+        try {
+            String finAccountTypeId = parameters.finAccountTypeId?.trim()
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+            String glAccountId = parameters.glAccountId?.trim()
+
+            if (UtilValidate.isEmpty(finAccountTypeId) || UtilValidate.isEmpty(glAccountId)) {
+                request.setAttribute("_ERROR_MESSAGE_", "finAccountTypeId ve glAccountId zorunludur.")
+                return "error"
+            }
+
+            GenericValue userLogin = delegator.findOne("UserLogin", [userLoginId: "system"], true)
+            Map inMap = [
+                    finAccountTypeId: finAccountTypeId,
+                    organizationPartyId: organizationPartyId,
+                    glAccountId: glAccountId,
+                    userLogin: userLogin
+            ]
+
+            GenericValue existing = EntityQuery.use(delegator).from("FinAccountTypeGlAccount")
+                    .where("finAccountTypeId", finAccountTypeId, "organizationPartyId", organizationPartyId)
+                    .queryOne()
+
+            if (existing) {
+                dispatcher.runSync("updateFinAccountTypeGlAccount", inMap)
+            } else {
+                dispatcher.runSync("createFinAccountTypeGlAccount", inMap)
+            }
+
+            request.setAttribute("_EVENT_MESSAGE_", "Finansal hesap tipi muhasebe hesabı kaydedildi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in createFinAccountTypeGlAccount: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 16. deleteFinAccountTypeGlAccount
+     */
+    static String deleteFinAccountTypeGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def dispatcher = request.getAttribute("dispatcher")
+        def parameters = request.getParameterMap()
+
+        try {
+            String finAccountTypeId = parameters.finAccountTypeId?.trim()
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+
+            if (UtilValidate.isEmpty(finAccountTypeId)) {
+                request.setAttribute("_ERROR_MESSAGE_", "finAccountTypeId zorunludur.")
+                return "error"
+            }
+
+            GenericValue userLogin = delegator.findOne("UserLogin", [userLoginId: "system"], true)
+            dispatcher.runSync("deleteFinAccountTypeGlAccount", [
+                    finAccountTypeId: finAccountTypeId,
+                    organizationPartyId: organizationPartyId,
+                    userLogin: userLogin
+            ])
+
+            request.setAttribute("_EVENT_MESSAGE_", "Finansal hesap tipi muhasebe hesabı silindi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in deleteFinAccountTypeGlAccount: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 17. getProductCategoryGlAccounts
+     */
+    static String getProductCategoryGlAccounts(request, response) {
+        def delegator = request.getAttribute("delegator")
+        try {
+            List<GenericValue> list = EntityQuery.use(delegator)
+                    .from("ProductCategoryGlAccount")
+                    .orderBy("productCategoryId")
+                    .queryList()
+
+            List<Map> result = []
+            for (GenericValue gv : list) {
+                GenericValue pc = EntityQuery.use(delegator).from("ProductCategory").where("productCategoryId", gv.productCategoryId).queryOne()
+                GenericValue gat = EntityQuery.use(delegator).from("GlAccountType").where("glAccountTypeId", gv.glAccountTypeId).queryOne()
+                GenericValue gla = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", gv.glAccountId).queryOne()
+
+                result.add([
+                        productCategoryId: gv.productCategoryId,
+                        categoryName: pc?.categoryName ?: (pc?.description ?: gv.productCategoryId),
+                        organizationPartyId: gv.organizationPartyId,
+                        glAccountTypeId: gv.glAccountTypeId,
+                        glAccountTypeDesc: gat?.description ?: gv.glAccountTypeId,
+                        glAccountId: gv.glAccountId,
+                        accountName: gla?.accountName ?: "",
+                        accountCode: gla?.accountCode ?: gv.glAccountId
+                ])
+            }
+
+            request.setAttribute("productCategoryGlAccounts", result)
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in getProductCategoryGlAccounts: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 18. createProductCategoryGlAccount
+     */
+    static String createProductCategoryGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def parameters = request.getParameterMap()
+
+        try {
+            String productCategoryId = parameters.productCategoryId?.trim()
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+            String glAccountTypeId = parameters.glAccountTypeId?.trim()
+            String glAccountId = parameters.glAccountId?.trim()
+
+            if (UtilValidate.isEmpty(productCategoryId) || UtilValidate.isEmpty(glAccountTypeId) || UtilValidate.isEmpty(glAccountId)) {
+                request.setAttribute("_ERROR_MESSAGE_", "productCategoryId, glAccountTypeId ve glAccountId zorunludur.")
+                return "error"
+            }
+
+            GenericValue existing = EntityQuery.use(delegator).from("ProductCategoryGlAccount")
+                    .where("productCategoryId", productCategoryId, "organizationPartyId", organizationPartyId, "glAccountTypeId", glAccountTypeId)
+                    .queryOne()
+
+            if (existing) {
+                existing.set("glAccountId", glAccountId)
+                existing.store()
+            } else {
+                GenericValue gv = delegator.makeValue("ProductCategoryGlAccount", [
+                        productCategoryId: productCategoryId,
+                        organizationPartyId: organizationPartyId,
+                        glAccountTypeId: glAccountTypeId,
+                        glAccountId: glAccountId
+                ])
+                gv.create()
+            }
+
+            request.setAttribute("_EVENT_MESSAGE_", "Ürün kategorisi muhasebe hesabı kaydedildi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in createProductCategoryGlAccount: " + e.getMessage(), MODULE)
+            request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+            return "error"
+        }
+    }
+
+    /**
+     * 19. deleteProductCategoryGlAccount
+     */
+    static String deleteProductCategoryGlAccount(request, response) {
+        def delegator = request.getAttribute("delegator")
+        def parameters = request.getParameterMap()
+
+        try {
+            String productCategoryId = parameters.productCategoryId?.trim()
+            String organizationPartyId = parameters.organizationPartyId?.trim() ?: "Company"
+            String glAccountTypeId = parameters.glAccountTypeId?.trim()
+
+            if (UtilValidate.isEmpty(productCategoryId) || UtilValidate.isEmpty(glAccountTypeId)) {
+                request.setAttribute("_ERROR_MESSAGE_", "productCategoryId ve glAccountTypeId zorunludur.")
+                return "error"
+            }
+
+            GenericValue existing = EntityQuery.use(delegator).from("ProductCategoryGlAccount")
+                    .where("productCategoryId", productCategoryId, "organizationPartyId", organizationPartyId, "glAccountTypeId", glAccountTypeId)
+                    .queryOne()
+
+            if (existing) {
+                existing.remove()
+            }
+
+            request.setAttribute("_EVENT_MESSAGE_", "Ürün kategorisi muhasebe hesabı silindi.")
+            return "success"
+        } catch (Exception e) {
+            Debug.logError(e, "Error in deleteProductCategoryGlAccount: " + e.getMessage(), MODULE)
             request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
             return "error"
         }

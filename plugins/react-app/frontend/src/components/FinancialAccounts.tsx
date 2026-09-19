@@ -4,7 +4,8 @@ import {
   CheckCircle2, Clock, X, AlertCircle, Loader2, 
   ArrowUpRight, ArrowDownLeft, Eye, Edit3, Filter, 
   Wallet, FileSpreadsheet, Check, Link2, 
-  Unlink2, DollarSign, Ban, Building2
+  Unlink2, DollarSign, Ban, Building2,
+  ShieldCheck, Lock, Trash2
 } from 'lucide-react';
 import { 
   api, 
@@ -12,6 +13,8 @@ import {
   FinAccountDetail, 
   FinAccountTransItem, 
   GlReconciliationItem,
+  FinAccountRoleItem,
+  FinAccountAuthItem,
   FinAccountMetadataResponse,
   CreateFinAccountPayload,
   UpdateFinAccountPayload,
@@ -73,6 +76,21 @@ export const FinancialAccounts: React.FC = () => {
   // Selected Detail State
   const [selectedAccountDetail, setSelectedAccountDetail] = useState<FinAccountDetail | null>(null);
   const [accountTransList, setAccountTransList] = useState<FinAccountTransItem[]>([]);
+  const [accountRolesList, setAccountRolesList] = useState<FinAccountRoleItem[]>([]);
+  const [accountAuthsList, setAccountAuthsList] = useState<FinAccountAuthItem[]>([]);
+  const [detailSubTab, setDetailSubTab] = useState<'info' | 'trans' | 'roles' | 'auths'>('info');
+  const [showAddRoleModal, setShowAddRoleModal] = useState<boolean>(false);
+  const [showAddAuthModal, setShowAddAuthModal] = useState<boolean>(false);
+  const [roleForm, setRoleForm] = useState({
+    partyId: '',
+    roleTypeId: 'ACCOUNT_MANAGER',
+    fromDate: new Date().toISOString().substring(0, 10),
+    thruDate: '',
+  });
+  const [authForm, setAuthForm] = useState({
+    amount: 0,
+    thruDate: '',
+  });
   const [accountDetailLoading, setAccountDetailLoading] = useState<boolean>(false);
 
   // Form States
@@ -232,15 +250,113 @@ export const FinancialAccounts: React.FC = () => {
     setShowAccountDetailModal(true);
     setSelectedAccountDetail(null);
     setAccountTransList([]);
+    setAccountRolesList([]);
+    setAccountAuthsList([]);
+    setDetailSubTab('info');
 
     try {
       const res = await api.getFinAccountDetails(finAccountId);
       setSelectedAccountDetail(res.account);
       setAccountTransList(res.transactions || []);
+      setAccountRolesList(res.roles || []);
+      setAccountAuthsList(res.authorizations || []);
     } catch (err: any) {
       setError(err.message || (locale === 'tr' ? 'Hesap detayları yüklenemedi.' : 'Could not load account details.'));
     } finally {
       setAccountDetailLoading(false);
+    }
+  };
+
+  const handleAddRoleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAccountDetail || !roleForm.partyId) return;
+    setActionLoading(true);
+    try {
+      await api.createFinAccountRole({
+        finAccountId: selectedAccountDetail.finAccountId,
+        partyId: roleForm.partyId,
+        roleTypeId: roleForm.roleTypeId,
+        fromDate: roleForm.fromDate,
+        thruDate: roleForm.thruDate || undefined,
+      });
+      setShowAddRoleModal(false);
+      setRoleForm({ partyId: '', roleTypeId: 'ACCOUNT_MANAGER', fromDate: new Date().toISOString().substring(0, 10), thruDate: '' });
+      const res = await api.getFinAccountDetails(selectedAccountDetail.finAccountId);
+      setAccountRolesList(res.roles || []);
+      setSuccessMsg(locale === 'tr' ? 'Yetkili rolü başarıyla eklendi.' : 'Role assigned successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert((locale === 'tr' ? 'Rol eklenirken hata: ' : 'Error adding role: ') + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (r: FinAccountRoleItem) => {
+    if (!window.confirm(translations.financialAccounts.rolesAndAuth.deleteRoleConfirm)) return;
+    setActionLoading(true);
+    try {
+      await api.deleteFinAccountRole({
+        finAccountId: r.finAccountId,
+        partyId: r.partyId,
+        roleTypeId: r.roleTypeId,
+        fromDate: r.fromDate,
+      });
+      if (selectedAccountDetail) {
+        const res = await api.getFinAccountDetails(selectedAccountDetail.finAccountId);
+        setAccountRolesList(res.roles || []);
+      }
+      setSuccessMsg(locale === 'tr' ? 'Rol kaldırıldı.' : 'Role removed.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert((locale === 'tr' ? 'Rol kaldırılırken hata: ' : 'Error removing role: ') + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAddAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAccountDetail || authForm.amount <= 0) return;
+    setActionLoading(true);
+    try {
+      await api.createFinAccountAuth({
+        finAccountId: selectedAccountDetail.finAccountId,
+        amount: authForm.amount,
+        thruDate: authForm.thruDate || undefined,
+      });
+      setShowAddAuthModal(false);
+      setAuthForm({ amount: 0, thruDate: '' });
+      const res = await api.getFinAccountDetails(selectedAccountDetail.finAccountId);
+      setSelectedAccountDetail(res.account);
+      setAccountAuthsList(res.authorizations || []);
+      loadAccounts();
+      setSuccessMsg(locale === 'tr' ? 'Provizyon / blokaj kaydı oluşturuldu.' : 'Authorization recorded.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert((locale === 'tr' ? 'Blokaj oluşturulurken hata: ' : 'Error creating authorization: ') + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExpireAuth = async (authId: string) => {
+    if (!window.confirm(translations.financialAccounts.rolesAndAuth.expireAuthConfirm)) return;
+    setActionLoading(true);
+    try {
+      await api.expireFinAccountAuth({ finAccountAuthId: authId });
+      if (selectedAccountDetail) {
+        const res = await api.getFinAccountDetails(selectedAccountDetail.finAccountId);
+        setSelectedAccountDetail(res.account);
+        setAccountAuthsList(res.authorizations || []);
+        loadAccounts();
+      }
+      setSuccessMsg(locale === 'tr' ? 'Blokaj serbest bırakıldı.' : 'Hold released.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert((locale === 'tr' ? 'Blokaj sonlandırılırken hata: ' : 'Error releasing hold: ') + err.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1927,124 +2043,456 @@ export const FinancialAccounts: React.FC = () => {
                 <p className="text-slate-400 text-sm">{translations.common.loading}</p>
               </div>
             ) : selectedAccountDetail ? (
-              <div className="space-y-5">
+              <>
+                <div className="space-y-5">
                 
-                {/* Balance Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="ds-stat-card border border-indigo-500/30">
-                    <div className="ds-stat-label text-emerald-400">{translations.financialAccounts.accounts.actualBalance}</div>
-                    <div className="ds-stat-value text-emerald-400">
-                      {formatCurrency(selectedAccountDetail.actualBalance, selectedAccountDetail.currencyUomId || 'USD')}
-                    </div>
-                  </div>
-
-                  <div className="ds-stat-card">
-                    <div className="ds-stat-label text-blue-400">{translations.financialAccounts.accounts.availableBalance}</div>
-                    <div className="ds-stat-value text-blue-400">
-                      {formatCurrency(selectedAccountDetail.availableBalance, selectedAccountDetail.currencyUomId || 'USD')}
-                    </div>
-                  </div>
-
-                  <div className="ds-stat-card">
-                    <div className="ds-stat-label text-slate-400">{translations.financialAccounts.accounts.accountType}</div>
-                    <div className="text-base font-bold text-white mt-1">
-                      {selectedAccountDetail.finAccountTypeDesc || selectedAccountDetail.finAccountTypeId}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Account Properties */}
-                <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.accountId} / IBAN:</span>
-                    <strong className="text-white font-mono">{selectedAccountDetail.finAccountCode || '-'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.glAccount}:</span>
-                    <strong className="text-white">{selectedAccountDetail.postToGlAccountName || selectedAccountDetail.postToGlAccountId || '-'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.ownerParty}:</span>
-                    <strong className="text-white">{selectedAccountDetail.ownerPartyName || selectedAccountDetail.ownerPartyId || '-'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block mb-0.5">{translations.common.status}:</span>
-                    <span className={`ds-badge ${selectedAccountDetail.statusId === 'FNACT_ACTIVE' ? 'ds-badge-green' : 'ds-badge-red'}`}>
-                      {selectedAccountDetail.statusDesc}
+                {/* Detail Sub-Tabs */}
+                <div className="flex border-b border-slate-700/60 pb-1 gap-2 text-xs overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setDetailSubTab('info')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors font-medium whitespace-nowrap ${
+                      detailSubTab === 'info'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    {locale === 'tr' ? 'Hesap Özeti' : 'Account Summary'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailSubTab('trans')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5 whitespace-nowrap ${
+                      detailSubTab === 'trans'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{translations.financialAccounts.tabs.transactions}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 font-mono">
+                      {accountTransList.length}
                     </span>
-                  </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailSubTab('roles')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5 whitespace-nowrap ${
+                      detailSubTab === 'roles'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <ShieldCheck size={14} />
+                    <span>{translations.financialAccounts.rolesAndAuth.rolesTab}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 font-mono">
+                      {accountRolesList.length}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailSubTab('auths')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1.5 whitespace-nowrap ${
+                      detailSubTab === 'auths'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <Lock size={14} />
+                    <span>{translations.financialAccounts.rolesAndAuth.authTab}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 font-mono">
+                      {accountAuthsList.length}
+                    </span>
+                  </button>
                 </div>
 
-                {/* Account Transactions List */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold text-white">
-                      {locale === 'tr' ? 'Son Hesap Hareketleri' : 'Recent Account Transactions'} ({accountTransList.length})
-                    </h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'DEPOSIT'); }}
-                        className="ds-btn-secondary !px-2.5 !py-1 text-xs text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
-                      >
-                        + {locale === 'tr' ? 'Para Girişi' : 'Deposit'}
-                      </button>
-                      <button
-                        onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'WITHDRAWAL'); }}
-                        className="ds-btn-secondary !px-2.5 !py-1 text-xs text-red-400 hover:text-red-300 border-red-500/30"
-                      >
-                        - {locale === 'tr' ? 'Para Çıkışı' : 'Withdrawal'}
-                      </button>
-                    </div>
-                  </div>
+                {/* SUB-TAB 1: INFO */}
+                {detailSubTab === 'info' && (
+                  <div className="space-y-4">
+                    {/* Balance Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="ds-stat-card border border-indigo-500/30">
+                        <div className="ds-stat-label text-emerald-400">{translations.financialAccounts.accounts.actualBalance}</div>
+                        <div className="ds-stat-value text-emerald-400">
+                          {formatCurrency(selectedAccountDetail.actualBalance, selectedAccountDetail.currencyUomId || 'USD')}
+                        </div>
+                      </div>
 
-                  {accountTransList.length === 0 ? (
-                    <div className="ds-card p-8 text-center text-slate-500 text-xs">
-                      {locale === 'tr' ? 'Bu hesaba ait henüz bir işlem hareketi kaydedilmemiş.' : 'No transactions recorded for this account yet.'}
-                    </div>
-                  ) : (
-                    <div className="ds-card overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="ds-table text-xs">
-                          <thead>
-                            <tr className="ds-thead-row">
-                              <th className="ds-th">{translations.financialAccounts.transactions.transDate}</th>
-                              <th className="ds-th">{translations.financialAccounts.transactions.transId}</th>
-                              <th className="ds-th">{translations.financialAccounts.transactions.transType}</th>
-                              <th className="ds-th-right">{translations.financialAccounts.transactions.amount}</th>
-                              <th className="ds-th">{translations.financialAccounts.transactions.reason}</th>
-                              <th className="ds-th text-center">{translations.common.status}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {accountTransList.map(tr => {
-                              const isDep = tr.finAccountTransTypeId === 'DEPOSIT';
-                              return (
-                                <tr key={tr.finAccountTransId} className="ds-tbody-row">
-                                  <td className="ds-td-muted">{tr.transactionDate?.substring(0, 10)}</td>
-                                  <td className="ds-td-mono font-bold">#{tr.finAccountTransId}</td>
-                                  <td className="ds-td">{tr.finAccountTransTypeDesc || tr.finAccountTransTypeId}</td>
-                                  <td className={`ds-td-right font-bold ${isDep ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {isDep ? '+' : '-'}
-                                    {formatCurrency(tr.amount, selectedAccountDetail.currencyUomId || 'USD')}
-                                  </td>
-                                  <td className="ds-td-muted">{tr.comments || '-'}</td>
-                                  <td className="ds-td text-center">
-                                    <span className={`ds-badge ${tr.statusId === 'FINACT_TRNS_APPROVED' ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
-                                      {tr.statusDesc || tr.statusId}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                      <div className="ds-stat-card">
+                        <div className="ds-stat-label text-blue-400">{translations.financialAccounts.accounts.availableBalance}</div>
+                        <div className="ds-stat-value text-blue-400">
+                          {formatCurrency(selectedAccountDetail.availableBalance, selectedAccountDetail.currencyUomId || 'USD')}
+                        </div>
+                      </div>
+
+                      <div className="ds-stat-card">
+                        <div className="ds-stat-label text-slate-400">{translations.financialAccounts.accounts.accountType}</div>
+                        <div className="text-base font-bold text-white mt-1">
+                          {selectedAccountDetail.finAccountTypeDesc || selectedAccountDetail.finAccountTypeId}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* Account Properties */}
+                    <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.accountId} / IBAN:</span>
+                        <strong className="text-white font-mono">{selectedAccountDetail.finAccountCode || '-'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.glAccount}:</span>
+                        <strong className="text-white">{selectedAccountDetail.postToGlAccountName || selectedAccountDetail.postToGlAccountId || '-'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.ownerParty}:</span>
+                        <strong className="text-white">{selectedAccountDetail.ownerPartyName || selectedAccountDetail.ownerPartyId || '-'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">{translations.common.status}:</span>
+                        <span className={`ds-badge ${selectedAccountDetail.statusId === 'FNACT_ACTIVE' ? 'ds-badge-green' : 'ds-badge-red'}`}>
+                          {selectedAccountDetail.statusDesc}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB-TAB 2: TRANSACTIONS */}
+                {detailSubTab === 'trans' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-white">
+                        {locale === 'tr' ? 'Son Hesap Hareketleri' : 'Recent Account Transactions'} ({accountTransList.length})
+                      </h3>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'DEPOSIT'); }}
+                          className="ds-btn-secondary !px-2.5 !py-1 text-xs text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
+                        >
+                          + {locale === 'tr' ? 'Para Girişi' : 'Deposit'}
+                        </button>
+                        <button
+                          onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'WITHDRAWAL'); }}
+                          className="ds-btn-secondary !px-2.5 !py-1 text-xs text-red-400 hover:text-red-300 border-red-500/30"
+                        >
+                          - {locale === 'tr' ? 'Para Çıkışı' : 'Withdrawal'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {accountTransList.length === 0 ? (
+                      <div className="ds-card p-8 text-center text-slate-500 text-xs">
+                        {locale === 'tr' ? 'Bu hesaba ait henüz bir işlem hareketi kaydedilmemiş.' : 'No transactions recorded for this account yet.'}
+                      </div>
+                    ) : (
+                      <div className="ds-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="ds-table text-xs">
+                            <thead>
+                              <tr className="ds-thead-row">
+                                <th className="ds-th">{translations.financialAccounts.transactions.transDate}</th>
+                                <th className="ds-th">{translations.financialAccounts.transactions.transId}</th>
+                                <th className="ds-th">{translations.financialAccounts.transactions.transType}</th>
+                                <th className="ds-th-right">{translations.financialAccounts.transactions.amount}</th>
+                                <th className="ds-th">{translations.financialAccounts.transactions.reason}</th>
+                                <th className="ds-th text-center">{translations.common.status}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {accountTransList.map(tr => {
+                                const isDep = tr.finAccountTransTypeId === 'DEPOSIT';
+                                return (
+                                  <tr key={tr.finAccountTransId} className="ds-tbody-row">
+                                    <td className="ds-td-muted">{tr.transactionDate?.substring(0, 10)}</td>
+                                    <td className="ds-td-mono font-bold">#{tr.finAccountTransId}</td>
+                                    <td className="ds-td">{tr.finAccountTransTypeDesc || tr.finAccountTransTypeId}</td>
+                                    <td className={`ds-td-right font-bold ${isDep ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {isDep ? '+' : '-'}
+                                      {formatCurrency(tr.amount, selectedAccountDetail.currencyUomId || 'USD')}
+                                    </td>
+                                    <td className="ds-td-muted">{tr.comments || '-'}</td>
+                                    <td className="ds-td text-center">
+                                      <span className={`ds-badge ${tr.statusId === 'FINACT_TRNS_APPROVED' ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
+                                        {tr.statusDesc || tr.statusId}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUB-TAB 3: ROLES */}
+                {detailSubTab === 'roles' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-white">
+                        {translations.financialAccounts.rolesAndAuth.rolesTab} ({accountRolesList.length})
+                      </h3>
+                      <button
+                        onClick={() => setShowAddRoleModal(true)}
+                        className="ds-btn-primary !px-2.5 !py-1 text-xs flex items-center gap-1.5"
+                      >
+                        <Plus size={14} />
+                        {translations.financialAccounts.rolesAndAuth.addRole}
+                      </button>
+                    </div>
+
+                    {accountRolesList.length === 0 ? (
+                      <div className="ds-card p-8 text-center text-slate-500 text-xs">
+                        {translations.financialAccounts.rolesAndAuth.noRoles}
+                      </div>
+                    ) : (
+                      <div className="ds-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="ds-table text-xs">
+                            <thead>
+                              <tr className="ds-thead-row">
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.partyId}</th>
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.roleType}</th>
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.fromDate}</th>
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.thruDate}</th>
+                                <th className="ds-th text-right">{translations.common.actions}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {accountRolesList.map((r, idx) => (
+                                <tr key={idx} className="ds-tbody-row">
+                                  <td className="ds-td font-medium text-white">
+                                    {r.partyName || r.partyId}
+                                    <span className="block text-[11px] text-slate-400 font-mono">{r.partyId}</span>
+                                  </td>
+                                  <td className="ds-td text-indigo-400 font-medium">{r.roleTypeDesc || r.roleTypeId}</td>
+                                  <td className="ds-td-muted">{r.fromDate?.substring(0, 10)}</td>
+                                  <td className="ds-td-muted">{r.thruDate ? r.thruDate.substring(0, 10) : '-'}</td>
+                                  <td className="ds-td text-right">
+                                    <button
+                                      onClick={() => handleDeleteRole(r)}
+                                      className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                                      title={translations.common.delete}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUB-TAB 4: AUTHS / HOLDS */}
+                {detailSubTab === 'auths' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-white">
+                        {translations.financialAccounts.rolesAndAuth.authTab} ({accountAuthsList.length})
+                      </h3>
+                      <button
+                        onClick={() => setShowAddAuthModal(true)}
+                        className="ds-btn-primary !px-2.5 !py-1 text-xs flex items-center gap-1.5"
+                      >
+                        <Plus size={14} />
+                        {translations.financialAccounts.rolesAndAuth.addAuth}
+                      </button>
+                    </div>
+
+                    {accountAuthsList.length === 0 ? (
+                      <div className="ds-card p-8 text-center text-slate-500 text-xs">
+                        {translations.financialAccounts.rolesAndAuth.noAuths}
+                      </div>
+                    ) : (
+                      <div className="ds-card overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="ds-table text-xs">
+                            <thead>
+                              <tr className="ds-thead-row">
+                                <th className="ds-th">ID</th>
+                                <th className="ds-th-right">{translations.financialAccounts.rolesAndAuth.amount}</th>
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.authDate}</th>
+                                <th className="ds-th">{translations.financialAccounts.rolesAndAuth.thruDate}</th>
+                                <th className="ds-th text-center">{translations.common.status}</th>
+                                <th className="ds-th text-right">{translations.common.actions}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {accountAuthsList.map((a) => (
+                                <tr key={a.finAccountAuthId} className="ds-tbody-row">
+                                  <td className="ds-td font-mono text-slate-300">#{a.finAccountAuthId}</td>
+                                  <td className="ds-td-right font-bold text-amber-400">
+                                    {formatCurrency(a.amount, selectedAccountDetail.currencyUomId || 'USD')}
+                                  </td>
+                                  <td className="ds-td-muted">{a.authorizationDate?.substring(0, 10)}</td>
+                                  <td className="ds-td-muted">{a.thruDate ? a.thruDate.substring(0, 10) : '-'}</td>
+                                  <td className="ds-td text-center">
+                                    <span className={`ds-badge ${a.isExpired ? 'ds-badge-slate' : 'ds-badge-yellow'}`}>
+                                      {a.isExpired ? translations.financialAccounts.rolesAndAuth.expired : translations.financialAccounts.rolesAndAuth.active}
+                                    </span>
+                                  </td>
+                                  <td className="ds-td text-right">
+                                    {!a.isExpired && (
+                                      <button
+                                        onClick={() => handleExpireAuth(a.finAccountAuthId)}
+                                        className="ds-btn-secondary !px-2 !py-0.5 text-[11px] text-rose-400 hover:text-rose-300 border-rose-500/30"
+                                      >
+                                        {translations.financialAccounts.rolesAndAuth.expireBtn}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               </div>
-            ) : null}
+
+            {/* MODAL: Add Role Child Modal */}
+            {showAddRoleModal && (
+              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+                <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+                  <h3 className="text-sm font-semibold text-white mb-4">
+                    {translations.financialAccounts.rolesAndAuth.addRole}
+                  </h3>
+                  <form onSubmit={handleAddRoleSubmit} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-400 mb-1">
+                        {translations.financialAccounts.rolesAndAuth.partyId} *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="admin, DemoCustomer, DemoSupplier, vb."
+                        value={roleForm.partyId}
+                        onChange={(e) => setRoleForm({ ...roleForm, partyId: e.target.value })}
+                        className="ds-input w-full"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">
+                        {translations.financialAccounts.rolesAndAuth.roleType} *
+                      </label>
+                      <select
+                        value={roleForm.roleTypeId}
+                        onChange={(e) => setRoleForm({ ...roleForm, roleTypeId: e.target.value })}
+                        className="ds-select w-full"
+                      >
+                        {metadata?.roleTypes?.map((rt: any) => (
+                          <option key={rt.roleTypeId} value={rt.roleTypeId}>
+                            {rt.description} ({rt.roleTypeId})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">
+                          {translations.financialAccounts.rolesAndAuth.fromDate}
+                        </label>
+                        <input
+                          type="date"
+                          value={roleForm.fromDate}
+                          onChange={(e) => setRoleForm({ ...roleForm, fromDate: e.target.value })}
+                          className="ds-input w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">
+                          {translations.financialAccounts.rolesAndAuth.thruDate}
+                        </label>
+                        <input
+                          type="date"
+                          value={roleForm.thruDate}
+                          onChange={(e) => setRoleForm({ ...roleForm, thruDate: e.target.value })}
+                          className="ds-input w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddRoleModal(false)}
+                        className="ds-btn-secondary text-xs"
+                      >
+                        {translations.common.cancel}
+                      </button>
+                      <button type="submit" disabled={actionLoading} className="ds-btn-primary text-xs">
+                        {translations.common.save}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: Add Auth / Hold Child Modal */}
+            {showAddAuthModal && (
+              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+                <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
+                  <h3 className="text-sm font-semibold text-white mb-4">
+                    {translations.financialAccounts.rolesAndAuth.addAuth}
+                  </h3>
+                  <form onSubmit={handleAddAuthSubmit} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-400 mb-1">
+                        {translations.financialAccounts.rolesAndAuth.amount} *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0.00"
+                        value={authForm.amount || ''}
+                        onChange={(e) => setAuthForm({ ...authForm, amount: parseFloat(e.target.value) || 0 })}
+                        className="ds-input w-full font-mono text-sm"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">
+                        {translations.financialAccounts.rolesAndAuth.thruDate} (Opsiyonel)
+                      </label>
+                      <input
+                        type="date"
+                        value={authForm.thruDate}
+                        onChange={(e) => setAuthForm({ ...authForm, thruDate: e.target.value })}
+                        className="ds-input w-full"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddAuthModal(false)}
+                        className="ds-btn-secondary text-xs"
+                      >
+                        {translations.common.cancel}
+                      </button>
+                      <button type="submit" disabled={actionLoading} className="ds-btn-primary text-xs">
+                        {translations.common.save}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </>
+        ) : null}
 
             <div className="flex justify-end pt-4 mt-5 border-t border-slate-700/50">
               <button
