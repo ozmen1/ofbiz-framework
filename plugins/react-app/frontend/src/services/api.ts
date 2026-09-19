@@ -1194,12 +1194,12 @@ async function requestApi<T>(endpoint: string, options?: RequestInit): Promise<T
     throw new Error(`OFBiz sunucusundan HTML hata sayfası döndü. (${response.status} ${response.statusText})`);
   }
 
-  const cleanJson = text.startsWith('//') ? text.substring(2) : text;
+  const withoutPrefix = text.startsWith('//') ? text.substring(2) : text;
   let data: any;
   try {
-    data = JSON.parse(cleanJson);
+    data = JSON.parse(extractFirstJson(withoutPrefix));
   } catch (err: any) {
-    throw new Error(`JSON ayrıştırma hatası: ${err.message}. Ham yanıt: ${cleanJson.substring(0, 100)}`);
+    throw new Error(`JSON ayrıştırma hatası: ${err.message}. Ham yanıt: ${withoutPrefix.substring(0, 100)}`);
   }
 
   if (data._ERROR_MESSAGE_) {
@@ -1208,6 +1208,7 @@ async function requestApi<T>(endpoint: string, options?: RequestInit): Promise<T
 
   return data as T;
 }
+
 
 /**
  * Convert an object to application/x-www-form-urlencoded string
@@ -1224,8 +1225,8 @@ function toFormData(obj: Record<string, any>): string {
 
 /**
  * Genel amaçlı fetchApi yardımcısı.
- * Tam URL veya /react-app/control/... path'i kabul eder.
- * OFBiz'in "//" JSON güvenlik önekini temizler.
+ * OFBiz yanıtı bazen: //{...json...}//{...tls-metadata...} formatında gelir.
+ * Baştaki // kaldırılıp, yalnızca ilk JSON bloğu parse edilir.
  */
 export async function fetchApi(url: string, options?: RequestInit): Promise<any> {
   const response = await fetch(url, {
@@ -1242,13 +1243,41 @@ export async function fetchApi(url: string, options?: RequestInit): Promise<any>
     throw new Error(`OFBiz sunucusundan HTML hata sayfası döndü. (${response.status} ${response.statusText})`);
   }
 
-  const cleanJson = text.startsWith('//') ? text.substring(2) : text;
+  // Baştaki "//" güvenlik önekini kaldır, sonra ilk geçerli JSON bloğunu al.
+  // OFBiz çift yanıt yapısı: //{asıl json}//{tls metadata}
+  const withoutPrefix = text.startsWith('//') ? text.substring(2) : text;
+  // İlk tam JSON nesnesini bul (açık parantez sayısını takip ederek)
+  const firstJsonOnly = extractFirstJson(withoutPrefix);
   try {
-    return JSON.parse(cleanJson);
+    return JSON.parse(firstJsonOnly);
   } catch (err: any) {
-    throw new Error(`JSON ayrıştırma hatası: ${err.message}. Ham yanıt: ${cleanJson.substring(0, 100)}`);
+    throw new Error(`JSON ayrıştırma hatası: ${err.message}. Ham yanıt: ${withoutPrefix.substring(0, 100)}`);
   }
 }
+
+/** Bir string içindeki ilk tam JSON nesnesini/dizisini döndürür. */
+function extractFirstJson(s: string): string {
+  const startChar = s[0];
+  if (startChar !== '{' && startChar !== '[') return s;
+  const closeChar = startChar === '{' ? '}' : ']';
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escape) { escape = false; continue; }
+    if (c === '\\' && inString) { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === startChar) depth++;
+    else if (c === closeChar) {
+      depth--;
+      if (depth === 0) return s.substring(0, i + 1);
+    }
+  }
+  return s;
+}
+
 
 export const api = {
 
