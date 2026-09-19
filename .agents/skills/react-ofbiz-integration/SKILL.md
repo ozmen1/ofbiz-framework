@@ -10,7 +10,7 @@ description: >-
 
 Bu kılavuz, `plugins/react-app` içerisinde yeni bir React özelliği, ekran veya modül geliştirildiğinde bu değişikliğin Apache OFBiz backend sistemine eksiksiz, güvenli ve kalıcı olarak nasıl yansıtılacağını tanımlar. Muhasebe (Accounting) modülünün 5 fazında sahada doğrulanmış kuralları ve en iyi uygulamaları içerir.
 
-Ayrıntılı playbook için bkz: `plugins/react-app/docs/OFBIZ_REACT_MODULE_PLAYBOOK.md`
+Ayrıntılı playbook için bkz: `.agents/OFBIZ_REACT_MODULE_PLAYBOOK.md`
 
 ---
 

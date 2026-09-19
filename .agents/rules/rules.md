@@ -1,0 +1,3 @@
+# Antigravity Rules
+
+@AGENTS.md
