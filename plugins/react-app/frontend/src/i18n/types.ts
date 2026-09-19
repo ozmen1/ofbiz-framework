@@ -75,6 +75,7 @@ export interface Translations {
     accountingPreferences: string;
     paymentGateways: string;
     checkRun: string;
+    commissionRun: string;
     apiTest: string;
     settings: string;
     logout: string;
@@ -104,6 +105,7 @@ export interface Translations {
     accountingPreferences: { title: string; subtitle: string };
     paymentGateways: { title: string; subtitle: string };
     checkRun: { title: string; subtitle: string };
+    commissionRun: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
   };
   dashboard: {
@@ -426,6 +428,8 @@ export interface Translations {
     period2: string;
     difference: string;
     percentChange: string;
+    inventoryValuation: string;
+    pastDue: string;
   };
   financialAccounts: {
     title: string;
@@ -1113,6 +1117,89 @@ export interface Translations {
       voidedSuccess: string;
       selectAtLeastOne: string;
       selectBank: string;
+    };
+  };
+  commissionRun: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      invoices: string;
+      newRun: string;
+      inventoryValuation: string;
+      pastDue: string;
+    };
+    stats: {
+      totalVolume: string;
+      invoicesGenerated: string;
+      activeReps: string;
+      pendingSales: string;
+    };
+    table: {
+      invoiceId: string;
+      salesRep: string;
+      date: string;
+      amount: string;
+      status: string;
+      sources: string;
+      actions: string;
+      noInvoices: string;
+    };
+    wizard: {
+      title: string;
+      salesRep: string;
+      allReps: string;
+      commissionRate: string;
+      description: string;
+      descriptionPlaceholder: string;
+      fromDate: string;
+      thruDate: string;
+      availableInvoices: string;
+      noEligibleInvoices: string;
+      selectedCount: string;
+      selectedCommission: string;
+      selectAll: string;
+      deselectAll: string;
+      invoiceId: string;
+      customer: string;
+      salesAmount: string;
+      rate: string;
+      commission: string;
+      executeButton: string;
+    };
+    inventory: {
+      title: string;
+      facility: string;
+      allFacilities: string;
+      totalSkus: string;
+      totalQty: string;
+      totalValuation: string;
+      productId: string;
+      productName: string;
+      warehouse: string;
+      quantity: string;
+      unitCost: string;
+      valuation: string;
+      noInventory: string;
+    };
+    pastDue: {
+      title: string;
+      invoiceType: string;
+      allTypes: string;
+      totalPastDue: string;
+      totalDueSoon: string;
+      aging1_30: string;
+      aging31_60: string;
+      aging61_90: string;
+      aging90_plus: string;
+      partner: string;
+      dueDate: string;
+      daysOverdue: string;
+      openAmount: string;
+      noPastDue: string;
+    };
+    messages: {
+      createdSuccess: string;
+      selectAtLeastOne: string;
     };
   };
 }

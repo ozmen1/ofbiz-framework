@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   FileText, TrendingUp, Landmark, Clock, RefreshCw, 
   CheckCircle2, AlertTriangle, Printer, Download, Search, 
-  Loader2, Layers
+  Loader2, Layers, Boxes
 } from 'lucide-react';
 import { 
   api, 
@@ -13,11 +13,15 @@ import {
   ReportMetadataResponse,
   CashFlowStatementResponse,
   ComparativeBalanceSheetResponse,
-  ComparativeIncomeStatementResponse
+  ComparativeIncomeStatementResponse,
+  InventoryValuationItem,
+  InventoryValuationSummary,
+  PastDueInvoiceItem,
+  PastDueSummary
 } from '../services/api';
 import { useTranslation } from '../i18n';
 
-type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'cash-flow' | 'comparative-bs' | 'comparative-is' | 'aging';
+type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'cash-flow' | 'comparative-bs' | 'comparative-is' | 'aging' | 'inventory-valuation' | 'past-due';
 
 export const FinancialReports: React.FC = () => {
   const { translations, locale } = useTranslation();
@@ -51,6 +55,33 @@ export const FinancialReports: React.FC = () => {
   const [compBsData, setCompBsData] = useState<ComparativeBalanceSheetResponse['comparativeBalanceSheet'] | null>(null);
   const [compIsData, setCompIsData] = useState<ComparativeIncomeStatementResponse['comparativeIncomeStatement'] | null>(null);
   const [agingData, setAgingData] = useState<AgingResponse['agingSummary'] | null>(null);
+
+  // Inventory Valuation state
+  const [inventoryFacility, setInventoryFacility] = useState<string>('');
+  const [inventorySearch, setInventorySearch] = useState<string>('');
+  const [inventoryItems, setInventoryItems] = useState<InventoryValuationItem[]>([]);
+  const [inventorySummary, setInventorySummary] = useState<InventoryValuationSummary>({
+    totalSkuCount: 0,
+    totalQuantityOnHand: 0,
+    totalInventoryValue: 0,
+    itemCount: 0,
+  });
+
+  // Past Due Invoices state
+  const [pastDueType, setPastDueType] = useState<'ALL' | 'SALES_INVOICE' | 'PURCHASE_INVOICE'>('ALL');
+  const [pastDueInvoices, setPastDueInvoices] = useState<PastDueInvoiceItem[]>([]);
+  const [pastDueSummary, setPastDueSummary] = useState<PastDueSummary>({
+    totalPastDueCount: 0,
+    totalPastDueAmount: 0,
+    totalDueSoonCount: 0,
+    totalDueSoonAmount: 0,
+    buckets: {
+      '1_30': 0,
+      '31_60': 0,
+      '61_90': 0,
+      '90_plus': 0,
+    },
+  });
 
   // Trial balance search
   const [tbSearch, setTbSearch] = useState<string>('');
@@ -153,8 +184,33 @@ export const FinancialReports: React.FC = () => {
           setError(err.message || (locale === 'tr' ? 'Yaşlandırma verileri alınamadı.' : 'Could not load aging data.'));
           setLoading(false);
         });
+    } else if (activeTab === 'inventory-valuation') {
+      api.getInventoryValuationReport({
+        facilityId: inventoryFacility || undefined,
+        search: inventorySearch || undefined,
+      })
+        .then(res => {
+          setInventoryItems(res.valuationList || []);
+          if (res.summary) setInventorySummary(res.summary);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(err.message || (locale === 'tr' ? 'Stok değerleme raporu alınamadı.' : 'Could not load inventory valuation.'));
+          setLoading(false);
+        });
+    } else if (activeTab === 'past-due') {
+      api.getPastDueInvoicesReport(pastDueType === 'ALL' ? undefined : { invoiceTypeId: pastDueType })
+        .then(res => {
+          setPastDueInvoices(res.pastDueInvoices || []);
+          if (res.summary) setPastDueSummary(res.summary);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(err.message || (locale === 'tr' ? 'Vadesi geçmiş fatura raporu alınamadı.' : 'Could not load past due report.'));
+          setLoading(false);
+        });
     }
-  }, [activeTab, organizationPartyId, selectedYear, agingType, compYear1, compYear2, locale]);
+  }, [activeTab, organizationPartyId, selectedYear, agingType, compYear1, compYear2, inventoryFacility, inventorySearch, pastDueType, locale]);
 
   useEffect(() => {
     loadReport();
@@ -248,6 +304,18 @@ export const FinancialReports: React.FC = () => {
             >
               <Clock size={16} /> {r.aging}
             </button>
+            <button
+              onClick={() => setActiveTab('inventory-valuation')}
+              className={activeTab === 'inventory-valuation' ? 'ds-tab ds-tab-active' : 'ds-tab'}
+            >
+              <Boxes size={16} /> {r.inventoryValuation}
+            </button>
+            <button
+              onClick={() => setActiveTab('past-due')}
+              className={activeTab === 'past-due' ? 'ds-tab ds-tab-active' : 'ds-tab'}
+            >
+              <Clock size={16} /> {r.pastDue}
+            </button>
           </div>
 
           {/* Right Filters & Tools */}
@@ -286,7 +354,7 @@ export const FinancialReports: React.FC = () => {
                   ))}
                 </select>
               </div>
-            ) : activeTab !== 'aging' ? (
+            ) : (activeTab !== 'aging' && activeTab !== 'inventory-valuation' && activeTab !== 'past-due') ? (
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
@@ -298,6 +366,41 @@ export const FinancialReports: React.FC = () => {
                 ))}
               </select>
             ) : null}
+
+            {/* Inventory Valuation Filters */}
+            {activeTab === 'inventory-valuation' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder={common.search}
+                  value={inventorySearch}
+                  onChange={(e) => setInventorySearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadReport()}
+                  className="ds-input text-sm w-44"
+                />
+                <input
+                  type="text"
+                  placeholder="Facility (Depo)..."
+                  value={inventoryFacility}
+                  onChange={(e) => setInventoryFacility(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadReport()}
+                  className="ds-input text-sm w-36"
+                />
+              </div>
+            )}
+
+            {/* Past Due Filter */}
+            {activeTab === 'past-due' && (
+              <select
+                value={pastDueType}
+                onChange={(e) => setPastDueType(e.target.value as any)}
+                className="ds-select text-sm"
+              >
+                <option value="ALL">{translations.commissionRun.pastDue.allTypes}</option>
+                <option value="SALES_INVOICE">{translations.invoices.salesInvoice} (AR)</option>
+                <option value="PURCHASE_INVOICE">{translations.invoices.purchaseInvoice} (AP)</option>
+              </select>
+            )}
 
             {/* Aging Type Toggle */}
             {activeTab === 'aging' && (
@@ -1181,6 +1284,186 @@ export const FinancialReports: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: INVENTORY VALUATION                                                  */}
+          {/* ========================================================================= */}
+          {activeTab === 'inventory-valuation' && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="ds-stat-card border-l-4 border-l-indigo-500">
+                  <p className="ds-stat-label">{translations.commissionRun.inventory.totalSkus}</p>
+                  <p className="ds-stat-value text-indigo-400 mt-1">{inventorySummary.totalSkuCount}</p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-blue-500">
+                  <p className="ds-stat-label">{translations.commissionRun.inventory.totalQty}</p>
+                  <p className="ds-stat-value text-blue-400 mt-1">
+                    {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US').format(inventorySummary.totalQuantityOnHand)}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                  <p className="ds-stat-label">{translations.commissionRun.inventory.totalValuation}</p>
+                  <p className="ds-stat-value text-emerald-400 mt-1">
+                    {formatCurrency(inventorySummary.totalInventoryValue)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="ds-card overflow-hidden">
+                {inventoryItems.length === 0 ? (
+                  <div className="ds-empty py-16 text-center text-slate-500">
+                    <Boxes className="w-12 h-12 mx-auto mb-3 opacity-30 text-indigo-400" />
+                    <p className="text-base font-medium">{translations.commissionRun.inventory.noInventory}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="ds-table w-full">
+                      <thead>
+                        <tr className="ds-thead-row text-left text-xs uppercase text-slate-400 border-b border-slate-800">
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.inventory.productId}</th>
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.inventory.productName}</th>
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.inventory.warehouse}</th>
+                          <th className="ds-th py-3.5 px-4 text-right">{translations.commissionRun.inventory.quantity}</th>
+                          <th className="ds-th py-3.5 px-4 text-right">{translations.commissionRun.inventory.unitCost}</th>
+                          <th className="ds-th py-3.5 px-4 text-right">{translations.commissionRun.inventory.valuation}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-sm">
+                        {inventoryItems.map((item, idx) => (
+                          <tr key={`${item.productId}-${item.facilityId}-${idx}`} className="ds-tbody-row hover:bg-slate-800/30 transition-colors">
+                            <td className="ds-td py-3 px-4 font-mono font-semibold text-indigo-400">{item.productId}</td>
+                            <td className="ds-td py-3 px-4 text-white font-medium">{item.productName || item.productId}</td>
+                            <td className="ds-td py-3 px-4 text-slate-400">
+                              <span className="px-2 py-0.5 rounded bg-slate-800 text-xs">
+                                {item.facilityName || item.facilityId}
+                              </span>
+                            </td>
+                            <td className="ds-td py-3 px-4 text-right font-medium text-slate-200">
+                              {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US').format(item.quantityOnHand)}
+                            </td>
+                            <td className="ds-td py-3 px-4 text-right text-slate-300">
+                              {formatCurrency(item.unitCost, item.currencyUomId)}
+                            </td>
+                            <td className="ds-td py-3 px-4 text-right font-bold text-emerald-400">
+                              {formatCurrency(item.totalValuation, item.currencyUomId)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: PAST DUE INVOICES                                                    */}
+          {/* ========================================================================= */}
+          {activeTab === 'past-due' && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="ds-stat-card border-l-4 border-l-red-500">
+                  <p className="ds-stat-label text-red-400 font-semibold">{translations.commissionRun.pastDue.totalPastDue}</p>
+                  <p className="ds-stat-value text-red-400 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.totalPastDueAmount)}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-amber-500">
+                  <p className="ds-stat-label text-amber-400 font-semibold">{translations.commissionRun.pastDue.totalDueSoon}</p>
+                  <p className="ds-stat-value text-amber-400 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.totalDueSoonAmount)}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-yellow-500">
+                  <p className="ds-stat-label">{translations.commissionRun.pastDue.aging1_30}</p>
+                  <p className="ds-stat-value text-yellow-300 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.buckets['1_30'])}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-orange-500">
+                  <p className="ds-stat-label">{translations.commissionRun.pastDue.aging31_60}</p>
+                  <p className="ds-stat-value text-orange-400 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.buckets['31_60'])}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-red-400">
+                  <p className="ds-stat-label">{translations.commissionRun.pastDue.aging61_90}</p>
+                  <p className="ds-stat-value text-red-400 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.buckets['61_90'])}
+                  </p>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-rose-600">
+                  <p className="ds-stat-label">{translations.commissionRun.pastDue.aging90_plus}</p>
+                  <p className="ds-stat-value text-rose-500 mt-1 text-base sm:text-lg">
+                    {formatCurrency(pastDueSummary.buckets['90_plus'])}
+                  </p>
+                </div>
+              </div>
+
+              <div className="ds-card overflow-hidden">
+                {pastDueInvoices.length === 0 ? (
+                  <div className="ds-empty py-16 text-center text-slate-500">
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30 text-emerald-400" />
+                    <p className="text-base font-medium">{translations.commissionRun.pastDue.noPastDue}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="ds-table w-full">
+                      <thead>
+                        <tr className="ds-thead-row text-left text-xs uppercase text-slate-400 border-b border-slate-800">
+                          <th className="ds-th py-3.5 px-4">{translations.invoices.invoiceId}</th>
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.pastDue.invoiceType}</th>
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.pastDue.partner}</th>
+                          <th className="ds-th py-3.5 px-4">{translations.commissionRun.pastDue.dueDate}</th>
+                          <th className="ds-th py-3.5 px-4 text-center">{translations.commissionRun.pastDue.daysOverdue}</th>
+                          <th className="ds-th py-3.5 px-4 text-right">{translations.commissionRun.pastDue.openAmount}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-sm">
+                        {pastDueInvoices.map((inv) => (
+                          <tr key={inv.invoiceId} className="ds-tbody-row hover:bg-slate-800/30 transition-colors">
+                            <td className="ds-td py-3 px-4 font-mono font-semibold text-indigo-400">{inv.invoiceId}</td>
+                            <td className="ds-td py-3 px-4">
+                              <span
+                                className={`ds-badge ${
+                                  inv.invoiceTypeId === 'SALES_INVOICE' ? 'ds-badge-blue' : 'ds-badge-yellow'
+                                }`}
+                              >
+                                {inv.invoiceTypeId === 'SALES_INVOICE' ? 'AR' : 'AP'}
+                              </span>
+                            </td>
+                            <td className="ds-td py-3 px-4 text-white">
+                              <span className="font-medium">{inv.partnerName || inv.partnerPartyId}</span>
+                            </td>
+                            <td className="ds-td py-3 px-4 text-slate-300">
+                              {inv.dueDate ? inv.dueDate.substring(0, 10) : '-'}
+                            </td>
+                            <td className="ds-td py-3 px-4 text-center">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                  inv.daysOverdue > 60
+                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                    : inv.daysOverdue > 30
+                                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                }`}
+                              >
+                                +{inv.daysOverdue} d
+                              </span>
+                            </td>
+                            <td className="ds-td py-3 px-4 text-right font-bold text-rose-400">
+                              {formatCurrency(inv.outstandingAmount, inv.currencyUomId)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

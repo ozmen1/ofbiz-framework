@@ -2280,6 +2280,51 @@ export const api = {
   getCheckRunMetadata: async (): Promise<CheckRunMetadataResponse> => {
     return requestApi<CheckRunMetadataResponse>('getCheckRunMetadata');
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Aşama 5: Satış Komisyonları & Stok Değerleme (Commission & Inventory Reports)
+  // ═════════════════════════════════════════════════════════════════
+  getCommissionRuns: async (params?: { search?: string; salesRepPartyId?: string }): Promise<{ commissionRuns: CommissionRunItem[]; stats: CommissionStats }> => {
+    const q = new URLSearchParams();
+    if (params?.search) q.append('search', params.search);
+    if (params?.salesRepPartyId) q.append('salesRepPartyId', params.salesRepPartyId);
+    const query = q.toString();
+    return requestApi<{ commissionRuns: CommissionRunItem[]; stats: CommissionStats }>(query ? `getCommissionRuns?${query}` : 'getCommissionRuns');
+  },
+  getEligibleSalesInvoices: async (params?: { salesRepPartyId?: string; fromDate?: string; thruDate?: string }): Promise<{ eligibleInvoices: EligibleSalesInvoiceItem[]; totalSalesVolume: number; totalEstimatedCommission: number; invoiceCount: number }> => {
+    const q = new URLSearchParams();
+    if (params?.salesRepPartyId) q.append('salesRepPartyId', params.salesRepPartyId);
+    if (params?.fromDate) q.append('fromDate', params.fromDate);
+    if (params?.thruDate) q.append('thruDate', params.thruDate);
+    const query = q.toString();
+    return requestApi<{ eligibleInvoices: EligibleSalesInvoiceItem[]; totalSalesVolume: number; totalEstimatedCommission: number; invoiceCount: number }>(query ? `getEligibleSalesInvoices?${query}` : 'getEligibleSalesInvoices');
+  },
+  createCommissionRun: async (payload: { invoiceIds: string[]; salesRepPartyId?: string; commissionRate?: number; description?: string }): Promise<{ createdInvoices: Array<{ commissionInvoiceId: string; salesRepPartyId: string; salesRepName: string; salesInvoiceCount: number; commissionAmount: number }>; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ createdInvoices: Array<{ commissionInvoiceId: string; salesRepPartyId: string; salesRepName: string; salesInvoiceCount: number; commissionAmount: number }>; _EVENT_MESSAGE_?: string }>('createCommissionRun', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({
+        invoiceIds: JSON.stringify(payload.invoiceIds),
+        salesRepPartyId: payload.salesRepPartyId || '',
+        commissionRate: payload.commissionRate !== undefined ? String(payload.commissionRate) : '',
+        description: payload.description || '',
+      }),
+    });
+  },
+  getInventoryValuationReport: async (params?: { facilityId?: string; search?: string }): Promise<{ valuationList: InventoryValuationItem[]; summary: InventoryValuationSummary }> => {
+    const q = new URLSearchParams();
+    if (params?.facilityId) q.append('facilityId', params.facilityId);
+    if (params?.search) q.append('search', params.search);
+    const query = q.toString();
+    return requestApi<{ valuationList: InventoryValuationItem[]; summary: InventoryValuationSummary }>(query ? `getInventoryValuationReport?${query}` : 'getInventoryValuationReport');
+  },
+  getPastDueInvoicesReport: async (params?: { invoiceTypeId?: string }): Promise<{ pastDueInvoices: PastDueInvoiceItem[]; dueSoonInvoices: PastDueInvoiceItem[]; summary: PastDueSummary }> => {
+    const q = params?.invoiceTypeId ? `?invoiceTypeId=${encodeURIComponent(params.invoiceTypeId)}` : '';
+    return requestApi<{ pastDueInvoices: PastDueInvoiceItem[]; dueSoonInvoices: PastDueInvoiceItem[]; summary: PastDueSummary }>(`getPastDueInvoicesReport${q}`);
+  },
+  getCommissionMetadata: async (): Promise<CommissionMetadataResponse> => {
+    return requestApi<CommissionMetadataResponse>('getCommissionMetadata');
+  },
 };
 
 // ==========================================
@@ -2842,3 +2887,99 @@ export interface CheckRunMetadataResponse {
     }>;
   };
 }
+
+// ═════════════════════════════════════════════════════════════════
+// Aşama 5: Satış Komisyonları & Stok Değerleme Tipleri
+// ═════════════════════════════════════════════════════════════════
+export interface CommissionRunItem {
+  invoiceId: string;
+  salesRepPartyId: string;
+  salesRepName: string;
+  payerPartyId: string;
+  invoiceDate: string | null;
+  dueDate: string | null;
+  statusId: string;
+  totalAmount: number;
+  currencyUomId: string;
+  description: string;
+  sourceInvoiceCount: number;
+  sourceInvoiceIds: string[];
+}
+
+export interface CommissionStats {
+  totalCommissionVolume: number;
+  totalInvoicesGenerated: number;
+  activeSalesReps: number;
+  pendingSalesInvoices: number;
+}
+
+export interface EligibleSalesInvoiceItem {
+  invoiceId: string;
+  invoiceDate: string | null;
+  statusId: string;
+  partyId: string;
+  customerName: string;
+  totalAmount: number;
+  salesRepPartyId: string;
+  salesRepName: string;
+  commissionRate: number;
+  estimatedCommission: number;
+  currencyUomId: string;
+  description: string;
+}
+
+export interface InventoryValuationItem {
+  inventoryItemId: string;
+  productId: string;
+  productName: string;
+  facilityId: string;
+  facilityName: string;
+  quantityOnHand: number;
+  unitCost: number;
+  totalValuation: number;
+  currencyUomId: string;
+  datetimeReceived: string | null;
+}
+
+export interface InventoryValuationSummary {
+  totalSkuCount: number;
+  totalQuantityOnHand: number;
+  totalInventoryValue: number;
+  itemCount: number;
+}
+
+export interface PastDueInvoiceItem {
+  invoiceId: string;
+  invoiceTypeId: string;
+  invoiceDate: string | null;
+  dueDate: string;
+  partnerName: string;
+  partnerPartyId: string;
+  statusId: string;
+  totalAmount: number;
+  outstandingAmount: number;
+  currencyUomId: string;
+  daysOverdue: number;
+}
+
+export interface PastDueSummary {
+  totalPastDueCount: number;
+  totalPastDueAmount: number;
+  totalDueSoonCount: number;
+  totalDueSoonAmount: number;
+  buckets: {
+    '1_30': number;
+    '31_60': number;
+    '61_90': number;
+    '90_plus': number;
+  };
+}
+
+export interface CommissionMetadataResponse {
+  metadata: {
+    salesReps: Array<{ partyId: string; name: string }>;
+    facilities: Array<{ facilityId: string; facilityName: string; facilityTypeId?: string }>;
+    defaultCommissionRate: number;
+  };
+}
+

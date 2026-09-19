@@ -22,6 +22,7 @@ import { DepositSlips } from './components/DepositSlips'
 import { AccountingPreferences } from './components/AccountingPreferences'
 import { PaymentGateways } from './components/PaymentGateways'
 import { CheckRun } from './components/CheckRun'
+import { CommissionRun } from './components/CommissionRun'
 import TestPage from './components/TestPage'
 import { I18nProvider } from './i18n'
 import './index.css'
@@ -52,6 +53,7 @@ export type ViewType =
   | 'accounting-preferences'
   | 'payment-gateways'
   | 'check-run'
+  | 'commission-run'
   | 'test-page';
 
 
@@ -171,6 +173,9 @@ function App() {
 
       {/* Batch Check Run & Voiding (Faz 4) */}
       {currentView === 'check-run' && <CheckRun />}
+
+      {/* Sales Commission Run & Inventory Valuation (Faz 5) */}
+      {currentView === 'commission-run' && <CommissionRun />}
 
       {currentView === 'test-page' && <TestPage />}
       </Layout>
