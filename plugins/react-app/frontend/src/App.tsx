@@ -1,34 +1,36 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import Layout from './components/Layout'
-import AccountingDashboard from './components/AccountingDashboard'
-import InvoiceList from './components/InvoiceList'
-import CreateInvoice from './components/CreateInvoice'
-import InvoiceDetail from './components/InvoiceDetail'
-import PaymentList from './components/PaymentList'
-import CreatePayment from './components/CreatePayment'
-import PaymentDetail from './components/PaymentDetail'
-import PaymentGroups from './components/PaymentGroups'
-import FinancialReports from './components/FinancialReports'
-import ChartOfAccounts from './components/ChartOfAccounts'
-import JournalEntries from './components/JournalEntries'
-import CreateJournalEntry from './components/CreateJournalEntry'
-import FinancialAccounts from './components/FinancialAccounts'
-import AdvancedAccounting from './components/AdvancedAccounting'
-import { TaxAndGlMapping } from './components/TaxAndGlMapping'
-import { FiscalPeriods } from './components/FiscalPeriods'
-import { FxManagement } from './components/FxManagement'
-import { CostCenters } from './components/CostCenters'
-import { DepositSlips } from './components/DepositSlips'
-import { AccountingPreferences } from './components/AccountingPreferences'
-import { PaymentGateways } from './components/PaymentGateways'
-import { CheckRun } from './components/CheckRun'
-import { CommissionRun } from './components/CommissionRun'
-import TestPage from './components/TestPage'
+import ViewLoader from './components/ViewLoader'
+import ErrorBoundary from './components/ErrorBoundary'
 import { I18nProvider } from './i18n'
 import './index.css'
 import './design-system.css'
 
-
+// Dynamic lazy loaded screen components
+const AccountingDashboard = lazy(() => import('./components/AccountingDashboard'))
+const InvoiceList = lazy(() => import('./components/InvoiceList'))
+const CreateInvoice = lazy(() => import('./components/CreateInvoice'))
+const InvoiceDetail = lazy(() => import('./components/InvoiceDetail'))
+const PaymentList = lazy(() => import('./components/PaymentList'))
+const CreatePayment = lazy(() => import('./components/CreatePayment'))
+const PaymentDetail = lazy(() => import('./components/PaymentDetail'))
+const PaymentGroups = lazy(() => import('./components/PaymentGroups'))
+const FinancialReports = lazy(() => import('./components/FinancialReports'))
+const ChartOfAccounts = lazy(() => import('./components/ChartOfAccounts'))
+const JournalEntries = lazy(() => import('./components/JournalEntries'))
+const CreateJournalEntry = lazy(() => import('./components/CreateJournalEntry'))
+const FinancialAccounts = lazy(() => import('./components/FinancialAccounts'))
+const AdvancedAccounting = lazy(() => import('./components/AdvancedAccounting'))
+const TaxAndGlMapping = lazy(() => import('./components/TaxAndGlMapping').then(m => ({ default: m.TaxAndGlMapping })))
+const FiscalPeriods = lazy(() => import('./components/FiscalPeriods').then(m => ({ default: m.FiscalPeriods })))
+const FxManagement = lazy(() => import('./components/FxManagement').then(m => ({ default: m.FxManagement })))
+const CostCenters = lazy(() => import('./components/CostCenters').then(m => ({ default: m.CostCenters })))
+const DepositSlips = lazy(() => import('./components/DepositSlips').then(m => ({ default: m.DepositSlips })))
+const AccountingPreferences = lazy(() => import('./components/AccountingPreferences').then(m => ({ default: m.AccountingPreferences })))
+const PaymentGateways = lazy(() => import('./components/PaymentGateways').then(m => ({ default: m.PaymentGateways })))
+const CheckRun = lazy(() => import('./components/CheckRun').then(m => ({ default: m.CheckRun })))
+const CommissionRun = lazy(() => import('./components/CommissionRun').then(m => ({ default: m.CommissionRun })))
+const TestPage = lazy(() => import('./components/TestPage'))
 
 export type ViewType = 
   | 'dashboard' 
@@ -56,7 +58,6 @@ export type ViewType =
   | 'commission-run'
   | 'test-page';
 
-
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
@@ -72,115 +73,141 @@ function App() {
     } else if (view === 'journal-entries' && id !== undefined) {
       setActiveJournalTransId(id);
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <AccountingDashboard />;
+
+      case 'invoices':
+        return <InvoiceList onViewInvoice={(id) => handleNavigate('invoice-detail', id)} />;
+
+      case 'create-invoice':
+        return (
+          <CreateInvoice 
+            onCancel={() => handleNavigate('invoices')} 
+            onSave={(newId) => newId ? handleNavigate('invoice-detail', newId) : handleNavigate('invoices')} 
+          />
+        );
+
+      case 'invoice-detail':
+        return (
+          <InvoiceDetail 
+            invoiceId={activeInvoiceId} 
+            onBack={() => handleNavigate('invoices')} 
+            onViewInvoice={(newId) => handleNavigate('invoice-detail', newId)}
+            onViewPayment={(paymentId) => handleNavigate('payment-detail', paymentId)}
+          />
+        );
+
+      case 'payments':
+        return (
+          <PaymentList 
+            onViewPayment={(id) => handleNavigate('payment-detail', id)} 
+            onCreatePayment={() => handleNavigate('create-payment')}
+          />
+        );
+
+      case 'create-payment':
+        return (
+          <CreatePayment 
+            onCancel={() => handleNavigate('payments')} 
+            onSave={(newId) => newId ? handleNavigate('payment-detail', newId) : handleNavigate('payments')} 
+          />
+        );
+
+      case 'payment-detail':
+        return (
+          <PaymentDetail 
+            paymentId={activePaymentId} 
+            onBack={() => handleNavigate('payments')} 
+            onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
+          />
+        );
+
+      case 'financial-accounts':
+        return <FinancialAccounts />;
+
+      case 'deposit-slips':
+        return <DepositSlips />;
+
+      case 'chart-of-accounts':
+        return (
+          <ChartOfAccounts 
+            onSelectTransaction={(id) => handleNavigate('journal-entries', id)} 
+          />
+        );
+
+      case 'journal-entries':
+        return (
+          <JournalEntries 
+            onCreateNew={() => handleNavigate('create-journal-entry')}
+            initialSelectedId={activeJournalTransId}
+          />
+        );
+
+      case 'create-journal-entry':
+        return (
+          <CreateJournalEntry 
+            onBack={() => handleNavigate('journal-entries')}
+            onSuccess={(newId) => handleNavigate('journal-entries', newId)}
+          />
+        );
+
+      case 'reports':
+        return <FinancialReports />;
+
+      case 'fiscal-periods':
+        return <FiscalPeriods />;
+
+      case 'fx-rates':
+        return <FxManagement />;
+
+      case 'cost-centers':
+        return <CostCenters />;
+
+      case 'advanced-accounting':
+        return <AdvancedAccounting />;
+
+      case 'tax-and-gl-mapping':
+        return <TaxAndGlMapping />;
+
+      case 'payment-groups':
+        return <PaymentGroups />;
+
+      case 'accounting-preferences':
+        return <AccountingPreferences />;
+
+      case 'payment-gateways':
+        return <PaymentGateways />;
+
+      case 'check-run':
+        return <CheckRun />;
+
+      case 'commission-run':
+        return <CommissionRun />;
+
+      case 'test-page':
+        return <TestPage />;
+
+      default:
+        return <AccountingDashboard />;
+    }
   };
 
   return (
     <I18nProvider>
-      <Layout currentView={currentView} onNavigate={handleNavigate}>
-        {currentView === 'dashboard' && <AccountingDashboard />}
-      
-      {/* Invoices Views */}
-      {currentView === 'invoices' && (
-        <InvoiceList onViewInvoice={(id) => handleNavigate('invoice-detail', id)} />
-      )}
-      {currentView === 'create-invoice' && (
-        <CreateInvoice 
-          onCancel={() => handleNavigate('invoices')} 
-          onSave={(newId) => newId ? handleNavigate('invoice-detail', newId) : handleNavigate('invoices')} 
-        />
-      )}
-      {currentView === 'invoice-detail' && (
-        <InvoiceDetail 
-          invoiceId={activeInvoiceId} 
-          onBack={() => handleNavigate('invoices')} 
-          onViewInvoice={(newId) => handleNavigate('invoice-detail', newId)}
-          onViewPayment={(paymentId) => handleNavigate('payment-detail', paymentId)}
-        />
-      )}
-
-      {/* Payments Views */}
-      {currentView === 'payments' && (
-        <PaymentList 
-          onViewPayment={(id) => handleNavigate('payment-detail', id)} 
-          onCreatePayment={() => handleNavigate('create-payment')}
-        />
-      )}
-      {currentView === 'create-payment' && (
-        <CreatePayment 
-          onCancel={() => handleNavigate('payments')} 
-          onSave={(newId) => newId ? handleNavigate('payment-detail', newId) : handleNavigate('payments')} 
-        />
-      )}
-      {currentView === 'payment-detail' && (
-        <PaymentDetail 
-          paymentId={activePaymentId} 
-          onBack={() => handleNavigate('payments')} 
-          onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
-        />
-      )}
-
-      {/* Financial Accounts (Kasa & Banka) View */}
-      {currentView === 'financial-accounts' && <FinancialAccounts />}
-
-      {/* Bank Deposit Slips (Banka Mevduat Fişleri) View */}
-      {currentView === 'deposit-slips' && <DepositSlips />}
-
-      {/* General Ledger & Chart of Accounts Views */}
-      {currentView === 'chart-of-accounts' && (
-        <ChartOfAccounts 
-          onSelectTransaction={(id) => handleNavigate('journal-entries', id)} 
-        />
-      )}
-      {currentView === 'journal-entries' && (
-        <JournalEntries 
-          onCreateNew={() => handleNavigate('create-journal-entry')}
-          initialSelectedId={activeJournalTransId}
-        />
-      )}
-      {currentView === 'create-journal-entry' && (
-        <CreateJournalEntry 
-          onBack={() => handleNavigate('journal-entries')}
-          onSuccess={(newId) => handleNavigate('journal-entries', newId)}
-        />
-      )}
-
-      {/* Reports View */}
-      {currentView === 'reports' && <FinancialReports />}
-
-      {/* Fiscal Periods & Year-End Closing */}
-      {currentView === 'fiscal-periods' && <FiscalPeriods />}
-
-      {/* FX Rates & Currency Matrix */}
-      {currentView === 'fx-rates' && <FxManagement />}
-
-      {/* Cost Centers & Gl Category Allocations */}
-      {currentView === 'cost-centers' && <CostCenters />}
-
-      {/* Advanced Accounting (Billing Accounts, Fixed Assets, Budgets, Agreements) */}
-      {currentView === 'advanced-accounting' && <AdvancedAccounting />}
-
-      {/* Tax & Automated GL Mappings (Faz 6) */}
-      {currentView === 'tax-and-gl-mapping' && <TaxAndGlMapping />}
-
-      {/* Payment Groups & Batches (Faz 7) */}
-      {currentView === 'payment-groups' && <PaymentGroups />}
-
-      {/* Accounting Preferences & GL Journals (Faz 2) */}
-      {currentView === 'accounting-preferences' && <AccountingPreferences />}
-
-      {/* Payment Gateways & Transaction Logs (Faz 3) */}
-      {currentView === 'payment-gateways' && <PaymentGateways />}
-
-      {/* Batch Check Run & Voiding (Faz 4) */}
-      {currentView === 'check-run' && <CheckRun />}
-
-      {/* Sales Commission Run & Inventory Valuation (Faz 5) */}
-      {currentView === 'commission-run' && <CommissionRun />}
-
-      {currentView === 'test-page' && <TestPage />}
-      </Layout>
+      <ErrorBoundary onReset={() => handleNavigate('dashboard')}>
+        <Layout currentView={currentView} onNavigate={handleNavigate}>
+          <Suspense fallback={<ViewLoader />}>
+            {renderCurrentView()}
+          </Suspense>
+        </Layout>
+      </ErrorBoundary>
     </I18nProvider>
-  )
+  );
 }
 
 export default App
