@@ -90,13 +90,48 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
    - OFBiz JSON yanıtlarının başındaki `//` güvenlik önekini `rawText.startsWith('//') ? rawText.substring(2) : rawText` ile temizleyin.
 3. **Kimlik Doğrulama (Authentication):**
    - OFBiz'den dönen kimlik doğrulama token'ları (örn. JWT veya Session Cookie) frontend tarafında Context API, Redux veya Zustand aracılığıyla global state'te güvenli bir şekilde saklanmalıdır. API isteklerine Authorization header'ı olarak eklenmelidir.
-4. **Stil ve Tasarım:**
-   - Modern ve responsive bir arayüz geliştirilmelidir (Tercihen TailwindCSS veya Material UI kullanılabilir, projedeki `package.json` dosyasını kontrol et).
-   - "Placeholder" tasarımlardan kaçınılmalı, gerçekçi, bitmiş bir ürün görünümü sunulmalıdır.
-5. **Dosya Değişiklikleri ve Build Kontrolü:**
+4. **Stil, Birleşik Tasarım Dili (Design System) ve Responsive Standartları:**
+   - Modern ve responsive bir arayüz geliştirilmelidir. Tüm sayfalarda tek bir tasarım dili (`src/design-system.css`) ve Tailwind CSS karanlık tema paleti (`slate-950`, `slate-900`, `slate-800`, `indigo-500/600`) kullanılmalıdır.
+   - Satır içi stillerden (`style={{}}`), eski `glass-card` veya dağınık CSS değişkenlerinden kaçınılmalıdır.
+   - Standart DS sınıfları kullanılmalıdır: `.ds-card`, `.ds-stat-card`, `.ds-table`, `.ds-thead-row`, `.ds-th`, `.ds-tbody-row`, `.ds-td`, `.ds-btn-primary`, `.ds-btn-secondary`, `.ds-btn-danger`, `.ds-input`, `.ds-select`, `.ds-label`, `.ds-badge`, `.ds-overlay`, `.ds-modal`, `.ds-spinner`, `.ds-empty`.
+   - **Tablo Sarmalama:** Her `<table>` mutlaka `<div className="overflow-x-auto">` içine alınmalıdır.
+   - **Modallar:** Mobilde taşmaları önlemek için `.ds-overlay` (`overflow-y-auto p-3 sm:p-6`) ve `.ds-modal` (`max-h-[85vh] sm:max-h-[90vh] my-auto`) kullanılmalıdır.
+
+5. **60 FPS Akıcılık, Modal Optimizasyonu ve Performans Kuralları (KRİTİK):**
+   - **Backdrop-Blur ve GPU Compositor Kilitlenmesi Yasağı:**
+     - Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
+     - *Neden:* İç içe kartlar ve arka plan katmanları varken `backdrop-filter: blur()` uygulanması, tarayıcı GPU'sunda piksel başına katlanan Gauss hesaplama yükü bindirir ($O(N \times \text{layers})$). Modal açılışında, fare hareketlerinde ve animasyonlarda şiddetli donmaya (FPS düşüşü, INP > 1000ms) yol açar.
+     - *Standart:* Overlay'lerde daima donanımsal olarak hafif, saf yarı saydam renk kullanın: `bg-black/80` veya doğrudan `.ds-overlay` sınıfı. `.ds-card` ve modal gövdelerinde gereksiz `backdrop-blur-*` eklemeyin.
+   - **Büyük `<select>` Seçeneklerinin Memoize Edilmesi (`useMemo`):**
+     - Muhasebe hesapları (GL Accounts), ürünler veya cariler gibi 50'den fazla kayıt içeren dropdown seçeneklerini **mutlaka `useMemo` ile sarmalayın**:
+       ```tsx
+       const glAccountOptions = useMemo(() => (
+         glAccounts.map(acc => (
+           <option key={acc.glAccountId} value={acc.glAccountId}>
+             {acc.glAccountId} - {acc.accountName}
+           </option>
+         ))
+       ), [glAccounts]);
+       ```
+     - *Neden:* Formdaki bir harf değişiminde (keystroke) yüzlerce `<option>` DOM düğümünün sıfırdan oluşturulmasını engeller, klavye girdi gecikmesini (INP) sıfıra indirir.
+   - **Bayrak İkonlarında SVG Kullanımı (Platform Bağımsızlığı):**
+     - Dil seçiminde veya ülke göstergelerinde **ASLA Unicode emoji bayrakları (`🇹🇷`, `🇬🇧`) KULLANMAYIN**.
+     - *Neden:* Linux ve birçok Chromium tabanlı sistemde işletim sistemi seviyesinde bayrak font glifleri bulunmadığından emojiler bozuk harf kodları ("TR", "GB") olarak render edilir.
+     - *Standart:* Harici kütüphane gerektirmeyen saf inline SVG bileşenleri (`TrFlag`, `GbFlag`) kullanın.
+   - **Koşullu Modal Render (Unmount on Close):**
+     - Modalları CSS `hidden` ile gizlemek yerine daima `{isOpen && <MyModal ... />}` şeklinde DOM'dan kaldırarak render edin.
+
+6. **Çoklu Dil (Localization / i18n) Standartları:**
+   - Yeni bir ekran, form, buton, tablo veya bildirim geliştirildiğinde **KESİNLİKLE sabit (hardcoded) metin yazılmamalıdır**.
+   - `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına modül sözlükleri eklenmeli; bileşende `const { translations, locale } = useTranslation();` hook'u kullanılmalıdır.
+   - Tarih ve para birimi biçimlendirmesinde `locale === 'tr' ? 'tr-TR' : 'en-US'` parametresi dikkate alınmalıdır.
+
+7. **Dosya Değişiklikleri ve Build Kontrolü:**
    - Yeni bir sayfa veya bileşen eklendiğinde `src/components` veya `src/pages` klasör mimarisine uy.
+   - TypeScript `noUnusedLocals` denetimi devrededir; kullanılmayan değişkenleri import veya destructuring'de bırakmayın.
    - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
-6. **Ağ Erişimi ve Host Header Doğrulaması (Yerel Ağda Veri Gelmeme Sorunu):**
+
+8. **Ağ Erişimi ve Host Header Doğrulaması (Yerel Ağda Veri Gelmeme Sorunu):**
    - Uygulama sadece `localhost` üzerinden değil, yerel ağ IP'si (örn: `https://192.168.1.x:8443/react-app/`) üzerinden de test edilmelidir.
    - Eğer React ekranı açılıyor fakat tablolara veya istatistik kartlarına veri dolmuyorsa, tarayıcı geliştirici araçları (Network sekmesi) üzerinden API çağrılarını kontrol et.
    - Eğer API çağrıları `500 Internal Server Error` ile HTML dönüyorsa, sorun OFBiz `host-headers-allowed` güvenliğidir. `framework/security/config/security.properties` dosyasına IP/subnet eklenmeli ve OFBiz yeniden başlatılmalıdır.

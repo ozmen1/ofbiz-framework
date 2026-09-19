@@ -363,33 +363,38 @@ Tüm ekranlarda tek bir görsel kimlik ve kullanıcı deneyimi sunulması için 
 4. **Sekmeler (Tabs):**
    Çok sekmeli görünümlerde `.ds-tab-bar` kullanılmalı, sekme sayısı fazlaysa `overflow-x-auto` ile yatay kaydırma desteklenmelidir.
 
+#### C. 60 FPS Akıcılık, GPU Compositor Performansı ve INP Optimizasyonu (KRİTİK):
+1. **Backdrop-Blur ve Çoklu Katman Yasağı:**
+   Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
+   - *Teknik Sebep:* Chromium ve WebKit tabanlı tarayıcılarda iç içe binen `backdrop-filter: blur()` katmanları, her animasyon karesinde piksel başına katlanarak hesaplanan Gauss bulanıklığı oluşturur ($O(N \times \text{layers})$). Bu durum GPU compositor thread'ini kilitler, modal açılışında ciddi donmaya ve Interaction to Next Paint (INP) değerinin 1000ms üzerine çıkmasına yol açar.
+   - *Kural:* Overlay'lerde her zaman donanım dostu saf yarı saydam renk kullanın: `bg-black/80` veya doğrudan `.ds-overlay` sınıfı. Kartlarda (`.ds-card`) ve modal pencerelerinde gereksiz blur efektlerinden kaçının.
+2. **Büyük Dropdown `<select>` Seçeneklerinin Memoization'ı (`useMemo`):**
+   GL hesapları (460+ hesap), ürün veya cari seçim menüleri gibi 50'den fazla öğe içeren seçim listeleri **mutlaka `useMemo` içine alınmalıdır**:
+   ```tsx
+   const glAccountOptions = useMemo(() => (
+     glAccounts.map(acc => (
+       <option key={acc.glAccountId} value={acc.glAccountId}>
+         {acc.glAccountId} - {acc.accountName}
+       </option>
+     ))
+   ), [glAccounts]);
+   ```
+   - *Teknik Sebep:* Memoize edilmeyen seçenekler, form içindeki her tuş vuruşunda (keystroke) yüzlerce DOM düğümünün baştan render edilmesine ve klavye gecikmesine yol açar.
+3. **Platform Bağımsız SVG Bayrak İkonları:**
+   Dil seçim butonlarında veya ülke göstergelerinde Unicode bayrak emojileri (`🇹🇷`, `🇬🇧`) **KULLANILMAMALIDIR**. Linux dağıtımlarında ve birçok tarayıcıda yerel bayrak font glifleri olmadığından bu karakterler "TR", "GB" şeklinde bozulur. Projedeki standart `TrFlag` ve `GbFlag` gibi saf SVG bileşenleri kullanılmalıdır.
+4. **Koşullu Render ile Temiz Modal Yaşam Döngüsü:**
+   Modalları DOM'da `hidden` olarak gizlemek yerine `{isOpen && <MyModal ... />}` şeklinde DOM'dan kaldırarak (unmount on close) bellek ve render yükünü sıfırlayın.
+
 ---
 
 ## 6. Diğer Modüllere Uygulama Rehberi (Cookbook)
 
-Aşağıdaki şablonları yeni modülleri geliştirirken doğrudan kullanabilirsiniz:
-
-### A. Sipariş Yönetimi (Order Management)
-- **Ana Varlıklar:** `OrderHeader`, `OrderItem`, `OrderRole`, `OrderStatus`, `OrderAdjustment`.
-- **Durum Akışı:** `ORDER_CREATED` -> `ORDER_APPROVED` -> `ORDER_COMPLETED` (veya `ORDER_CANCELLED`).
-- **Endpoint'ler:** `getOrders`, `getOrderDetails`, `createOrder`, `approveOrder`, `cancelOrder`, `addOrderItem`.
-- **Önemli Servisler:** `createOrder`, `changeOrderStatus`, `quickShipEntireOrder`.
-
-### B. Cari / Taraf Yönetimi (Party Management)
-- **Ana Varlıklar:** `Party`, `Person` (Bireysel), `PartyGroup` (Kurumsal), `PartyRole`, `ContactMech`, `PostalAddress`, `TelecomNumber`.
-- **Endpoint'ler:** `getParties`, `getPartyDetails`, `createPersonCustomer`, `createCorporateSupplier`, `addPartyContactMech`.
-- **Önemli Servisler:** `createPerson`, `createPartyGroup`, `createPartyPostalAddress`, `createPartyTelecomNumber`.
-
-### C. Ürün & Katalog (Catalog & Product)
-- **Ana Varlıklar:** `Product`, `ProductCategory`, `ProductCategoryMember`, `ProductPrice`, `GoodIdentification` (Barkod/SKU).
-- **Endpoint'ler:** `getProducts`, `getProductDetails`, `createProduct`, `updateProductPrice`, `assignProductCategory`.
-- **Önemli Servisler:** `createProduct`, `updateProduct`, `createProductPrice`.
-
-### D. Depo & Stok (Facility & Inventory)
-- **Ana Varlıklar:** `Facility`, `InventoryItem`, `InventoryItemDetail`, `Shipment`, `ShipmentItem`.
-- **Metrikler:** ATP (Available to Promise) ve QOH (Quantity on Hand).
-- **Endpoint'ler:** `getFacilities`, `getInventoryItems`, `createInventoryItem`, `receiveInventoryItem`, `transferInventory`.
-- **Önemli Servisler:** `createInventoryItem`, `createFacility`, `receiveInventoryProduct`.
+| Modül | Temel Varlıklar (Entities) | Temel Servisler / Akış |
+|---|---|---|
+| **Sipariş (Order)** | `OrderHeader`, `OrderItem`, `OrderRole`, `OrderStatus`, `OrderAdjustment`. | `createOrder`, `changeOrderStatus`, `quickShipEntireOrder` |
+| **Cari / Taraf (Party)** | `Party`, `Person` (Bireysel), `PartyGroup` (Kurumsal), `PartyRole`, `ContactMech`, `PostalAddress`, `TelecomNumber`. | `createPerson`, `createPartyGroup`, `createPartyPostalAddress` |
+| **Ürün & Katalog (Product)** | `Product`, `ProductCategory`, `ProductCategoryMember`, `ProductPrice`, `GoodIdentification` (Barkod/SKU). | `createProduct`, `updateProduct`, `createProductPrice` |
+| **Depo & Stok (Facility)** | `Facility`, `InventoryItem`, `InventoryItemDetail`, `Shipment`, `ShipmentItem`. | `createInventoryItem`, `createFacility`, `receiveInventoryProduct` |
 
 ---
 
@@ -403,10 +408,9 @@ Yeni bir modül geliştirirken bu adımları sırayla işaretleyin:
 4. [ ] **Controller Senkronizasyonu:** Hem `frontend/public/.../controller.xml` hem `webapp/react-app/.../controller.xml` güncellendi.
 5. [ ] **URL Whitelist:** `framework/webapp/config/url.properties` içine endpoint'ler eklendi.
 6. [ ] **Frontend API:** `api.ts` içine TypeScript interface'leri ve API çağrı fonksiyonları eklendi.
-7. [ ] **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına modül sözlükleri eklendi; sabit (hardcoded) metin bırakılmadı; para/tarih biçimlendirmesinde `locale` kullanıldı.
-8. [ ] **Tasarım Sistemi & Responsive:** `src/design-system.css` token sınıfları (`.ds-card`, `.ds-table`, `.ds-btn-*`, `.ds-badge`, vb.) kullanıldı; tüm tablolar `<div className="overflow-x-auto">` ile sarıldı; modal ve form ızgaraları mobil ekranda doğrulandı.
+7. [ ] **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına modül sözlükleri eklendi; sabit (hardcoded) metin bırakılmadı; para/tarih biçimlendirmesinde `locale` kullanıldı; bayraklar için SVG kullanıldı.
+8. [ ] **Tasarım Sistemi & 60 FPS Performans:** `src/design-system.css` token sınıfları kullanıldı; tüm tablolar `<div className="overflow-x-auto">` ile sarıldı; modallarda `backdrop-blur` kullanılmadı (`bg-black/80`), büyük select listeleri `useMemo` ile memoize edildi.
 9. [ ] **Frontend UI & Entegrasyon:** `src/components/<Modul>.tsx` bileşeni oluşturuldu, `App.tsx` ve `Layout.tsx` rotalarına ve menüye bağlandı.
 10. [ ] **Derleme:** `cd plugins/react-app/frontend && npm run build` hatasız çalıştırıldı (TypeScript `noUnusedLocals` ve controller kopyası doğrulandı).
 11. [ ] **Canlı Doğrulama:** `curl` ile JSON yanıtı ve PostgreSQL üzerinden veritabanı kayıtları doğrulandı.
 12. [ ] **Git Commit:** `git status` ve `git commit` yapıldı.
-

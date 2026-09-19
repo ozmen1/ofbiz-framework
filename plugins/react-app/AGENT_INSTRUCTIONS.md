@@ -100,14 +100,38 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
      4. Bileşende `const { translations, locale } = useTranslation();` hook'unu kullanarak `translations.<modul>.<anahtar>` üzerinden çağırın.
      5. Tarih ve Para Birimi: Biçimlendirmelerde mutlaka `locale` parametresi dikkate alınmalıdır (`tr-TR` veya `en-US`).
 
-6. **Dosya Değişiklikleri ve Build Kontrolü:**
+6. **60 FPS Akıcılık, Modal Optimizasyonu ve Performans Kuralları (KRİTİK):**
+   - **Backdrop-Blur ve GPU Compositor Kilitlenmesi Yasağı:**
+     - Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
+     - *Neden:* İç içe kartlar ve arka plan katmanları varken `backdrop-filter: blur()` uygulanması, tarayıcı GPU'sunda piksel başına katlanan Gauss hesaplama yükü bindirir ($O(N \times \text{layers})$). Modal açılışında, fare hareketlerinde ve animasyonlarda şiddetli donmaya (FPS düşüşü, INP > 1000ms) yol açar.
+     - *Standart:* Overlay'lerde daima donanımsal olarak hafif, saf yarı saydam renk kullanın: `bg-black/80` veya doğrudan `.ds-overlay` sınıfı. `.ds-card` ve modal gövdelerinde gereksiz `backdrop-blur-*` eklemeyin.
+   - **Büyük `<select>` Seçeneklerinin Memoize Edilmesi (`useMemo`):**
+     - Muhasebe hesapları (GL Accounts), ürünler veya cariler gibi 50'den fazla kayıt içeren dropdown seçeneklerini **mutlaka `useMemo` ile sarmalayın**:
+       ```tsx
+       const glAccountOptions = useMemo(() => (
+         glAccounts.map(acc => (
+           <option key={acc.glAccountId} value={acc.glAccountId}>
+             {acc.glAccountId} - {acc.accountName}
+           </option>
+         ))
+       ), [glAccounts]);
+       ```
+     - *Neden:* Formdaki bir harf değişiminde (keystroke) yüzlerce `<option>` DOM düğümünün sıfırdan oluşturulmasını engeller, klavye girdi gecikmesini (INP) sıfıra indirir.
+   - **Bayrak İkonlarında SVG Kullanımı (Platform Bağımsızlığı):**
+     - Dil seçiminde veya ülke göstergelerinde **ASLA Unicode emoji bayrakları (`🇹🇷`, `🇬🇧`) KULLANMAYIN**.
+     - *Neden:* Linux ve birçok Chromium tabanlı sistemde işletim sistemi seviyesinde bayrak font glifleri bulunmadığından emojiler bozuk harf kodları ("TR", "GB") olarak render edilir.
+     - *Standart:* Harici kütüphane gerektirmeyen saf inline SVG bileşenleri (`TrFlag`, `GbFlag`) kullanın.
+   - **Koşullu Modal Render (Unmount on Close):**
+     - Modalları CSS `hidden` ile gizlemek yerine daima `{isOpen && <MyModal ... />}` şeklinde DOM'dan kaldırarak render edin.
+
+7. **Dosya Değişiklikleri ve Build Kontrolü:**
    - Yeni bir sayfa veya bileşen eklendiğinde `src/components` mimarisine uy.
    - TypeScript `noUnusedLocals` denetimi devrededir; kullanılmayan değişkenleri (`t`, `locale`, vb.) import veya destructuring'de bırakmayın.
    - Yapılan her değişiklik sonrası `plugins/react-app/frontend` içinde `npm run build` çalıştırarak derleme ve controller senkronizasyonunun başarılı olduğunu teyit et.
-7. **Backend Groovy Event ve İşlem (Transaction) Bütünlüğü:**
+8. **Backend Groovy Event ve İşlem (Transaction) Bütünlüğü:**
    - Groovy event metodlarında `EntityQuery.from(...).where(...)` kullanırken koşul listesi boş olduğunda `where(null)` çağırmayın (`if (!conditions.isEmpty()) query = query.where(...)`).
    - Servis çalıştırmadan önce `secas.xml` içindeki ECA kurallarını denetleyin. Otomatik tetiklenen bir alt servisi (ör. durum oluşturma) tekrar çağırıp mükerrerlik hatasıyla JTA transaction'ın `rollback-only` olmasını engelleyin.
-8. **HTTP Port & Ağ İzinleri:**
+9. **HTTP Port & Ağ İzinleri:**
    - `framework/webapp/config/url.properties` içindeki `http.request-map.list` listesine eklenen tüm endpoint'leri tanımlayın (`no.http=N`).
    - `framework/security/config/security.properties` içindeki `host-headers-allowed` listesinde yerel alt ağların (`192.168.*`) bulunduğundan emin olun.
 

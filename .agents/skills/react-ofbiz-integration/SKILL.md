@@ -176,6 +176,29 @@ Her modül sayfası şu temel tasarım ilkelerine kesinlikle uymalıdır:
   4. Bileşende `const { translations, locale } = useTranslation();` kullanarak `translations.<modul>.<anahtar>` üzerinden çekin.
   5. Para birimi ve tarih biçimlendirmelerinde aktif `locale` parametresi ('tr' -> 'tr-TR', 'en' -> 'en-US') kullanılmalıdır.
 
+### D. 60 FPS Akıcılık, GPU Performansı ve INP/CLS Standartları (KRİTİK)
+* **Backdrop-Blur Yasağı (GPU Compositor Darboğazı):**
+  - Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
+  - İç içe binen `backdrop-filter: blur()` katmanları, Chromium/WebKit tarayıcılarda her animasyon karesinde piksel başına katlanarak hesaplanan Gauss bulanıklığı oluşturur ($O(N \times \text{layers})$). Bu durum GPU kompozisyonunu kilitler, modal açılışını geciktirir ve kullanıcı etkileşim süresini (INP) 1000ms üzerine fırlatır.
+  - Overlay'lerde donanım dostu saf yarı saydam renk kullanın: `bg-black/80` veya `.ds-overlay`. Kartlarda (`.ds-card`) gereksiz blur kullanmayın.
+* **Büyük Dropdown `<select>` Seçeneklerinin Memoization'ı (`useMemo`):**
+  - GL hesapları, cari ve ürünler gibi 50'den fazla öğe içeren seçim listelerini mutlaka `useMemo` ile sarmalayın:
+    ```tsx
+    const glAccountOptions = useMemo(() => (
+      glAccounts.map(acc => (
+        <option key={acc.glAccountId} value={acc.glAccountId}>
+          {acc.glAccountId} - {acc.accountName}
+        </option>
+      ))
+    ), [glAccounts]);
+    ```
+  - Bu sayede formdaki her tuş vuruşunda (keystroke) yüzlerce DOM düğümü baştan üretilmez, girdi gecikmesi sıfırlanır.
+* **Bayrak İkonlarında SVG Kullanımı (Platform Bağımsızlığı):**
+  - Dil butonlarında veya arayüzün hiçbir yerinde Unicode bayrak emojileri (`🇹🇷`, `🇬🇧`) **KULLANILMAMALIDIR**.
+  - Linux dağıtımlarında yerel bayrak font glifleri bulunmadığından bu emojiler "TR", "GB" gibi bozuk harflere dönüşür. Harici bağımlılığı olmayan saf SVG bileşenleri (`TrFlag`, `GbFlag`) kullanılmalıdır.
+* **Koşullu Modal Render:**
+  - Modalları CSS `hidden` ile domda tutmak yerine daima `{isOpen && <ModalComponent ... />}` ile koşullu render edin (unmount on close).
+
 ---
 
 ## 9. Yeni Modülleri Geliştirirken Hızlı Referans (Cookbook)
@@ -199,8 +222,8 @@ React-app üzerinde yeni bir servis/veri entegrasyonu yaparken bu adımları sı
 4. **Controller Runtime:** `plugins/react-app/webapp/react-app/WEB-INF/controller.xml` dosyasına ekleyin.
 5. **URL İzinleri:** `framework/webapp/config/url.properties` dosyasında `http.request-map.list`'e ekleyin.
 6. **Frontend API:** `api.ts` içinde TypeScript modellerini ve endpoint fonksiyonlarını yazın.
-7. **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına yeni modül metinlerini ekleyin.
-8. **Frontend UI:** Bileşeni `design-system.css` ve `overflow-x-auto` responsive standartlarına uygun oluşturup `App.tsx` ve `Layout.tsx` rotalarına ekleyin.
+7. **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına yeni modül metinlerini ekleyin; emoji bayrak yerine SVG kullanın.
+8. **Frontend UI & Performans:** Bileşeni `design-system.css` standartlarına göre yazın. Overlay'lerde `backdrop-blur` kullanmayın (`bg-black/80`), 50+ seçenekli `<select>` listelerini `useMemo` içine alın, tüm tabloları `<div className="overflow-x-auto">` ile sarın.
 9. **Build:** `cd plugins/react-app/frontend && npm run build` çalıştırarak derleyin (0 TypeScript/Rollup hatası).
 10. **Canlı Doğrulama:** `curl` ile JSON yanıtını ve PostgreSQL üzerinden veritabanı yansımasını test edin.
 11. **Git Commit:** Hooks atlanarak temiz bir commit mesajıyla kaydedin.
