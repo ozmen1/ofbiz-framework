@@ -71,6 +71,7 @@ export interface Translations {
     taxAndGl: string;
     fxRates: string;
     costCenters: string;
+    depositSlips: string;
     apiTest: string;
     settings: string;
     logout: string;
@@ -96,6 +97,7 @@ export interface Translations {
     taxAndGlMapping: { title: string; subtitle: string };
     fxRates: { title: string; subtitle: string };
     costCenters: { title: string; subtitle: string };
+    depositSlips: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
   };
   dashboard: {
@@ -835,5 +837,38 @@ export interface Translations {
     successCreated: string;
     successAccountAdded: string;
     successAccountRemoved: string;
+  };
+  depositSlips: {
+    title: string;
+    subtitle: string;
+    newSlip: string;
+    cancelSlip: string;
+    confirmCancel: string;
+    slipId: string;
+    slipName: string;
+    bankAccount: string;
+    transStatus: string;
+    paymentCount: string;
+    totalAmount: string;
+    createdDate: string;
+    undepositedPayments: string;
+    selectPaymentsToDeposit: string;
+    totalSelected: string;
+    depositTo: string;
+    viewDetail: string;
+    memberPayments: string;
+    noDepositSlips: string;
+    noUndepositedPayments: string;
+    stats: {
+      totalSlips: string;
+      totalDepositedAmount: string;
+      undepositedCount: string;
+      undepositedAmount: string;
+    };
+    messages: {
+      successCreated: string;
+      successCancelled: string;
+      selectAtLeastOne: string;
+    };
   };
 }

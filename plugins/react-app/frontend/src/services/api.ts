@@ -2090,6 +2090,49 @@ export const api = {
     if (params?.thruDate) q.append('thruDate', params.thruDate);
     return requestApi<{ costCenters: CostCenterBalanceReport[] }>(`getCostCenterBalances?${q.toString()}`);
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Aşama 1: Banka Mevduat & Para Yatırma Fişleri (Deposit Slips)
+  // ═════════════════════════════════════════════════════════════════
+  getDepositSlips: async (params?: { finAccountId?: string; search?: string }): Promise<{ depositSlips: DepositSlipItem[] }> => {
+    const q = new URLSearchParams();
+    if (params?.finAccountId) q.append('finAccountId', params.finAccountId);
+    if (params?.search) q.append('search', params.search);
+    return requestApi<{ depositSlips: DepositSlipItem[] }>(`getDepositSlips?${q.toString()}`);
+  },
+  getDepositSlipDetail: async (paymentGroupId: string): Promise<{ depositSlip: DepositSlipDetailItem }> => {
+    return requestApi<{ depositSlip: DepositSlipDetailItem }>(`getDepositSlipDetail?paymentGroupId=${encodeURIComponent(paymentGroupId)}`);
+  },
+  getUndepositedPayments: async (params?: { paymentMethodTypeId?: string; partyIdFrom?: string; search?: string; fromDate?: string; thruDate?: string }): Promise<{ payments: UndepositedPaymentItem[] }> => {
+    const q = new URLSearchParams();
+    if (params?.paymentMethodTypeId) q.append('paymentMethodTypeId', params.paymentMethodTypeId);
+    if (params?.partyIdFrom) q.append('partyIdFrom', params.partyIdFrom);
+    if (params?.search) q.append('search', params.search);
+    if (params?.fromDate) q.append('fromDate', params.fromDate);
+    if (params?.thruDate) q.append('thruDate', params.thruDate);
+    return requestApi<{ payments: UndepositedPaymentItem[] }>(`getUndepositedPayments?${q.toString()}`);
+  },
+  createDepositSlip: async (payload: { finAccountId: string; paymentIds: string[]; paymentGroupName?: string }): Promise<{ paymentGroupId: string; finAccountTransId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ paymentGroupId: string; finAccountTransId: string; _EVENT_MESSAGE_?: string }>('createDepositSlip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({
+        finAccountId: payload.finAccountId,
+        paymentGroupName: payload.paymentGroupName || '',
+        paymentIds: payload.paymentIds.join(','),
+      }),
+    });
+  },
+  cancelDepositSlip: async (paymentGroupId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('cancelDepositSlip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentGroupId }),
+    });
+  },
+  getDepositSlipMetadata: async (): Promise<DepositSlipMetadataResponse> => {
+    return requestApi<DepositSlipMetadataResponse>('getDepositSlipMetadata');
+  },
 };
 
 // ==========================================
@@ -2333,5 +2376,80 @@ export interface CostCenterBalanceReport {
     balance: number;
   }[];
 }
+
+// ═════════════════════════════════════════════════════════════════
+// TYPES: DEPOSIT SLIPS (BANKA MEVDUAT FİŞLERİ)
+// ═════════════════════════════════════════════════════════════════
+export interface DepositSlipItem {
+  paymentGroupId: string;
+  paymentGroupName: string;
+  paymentGroupTypeId: string;
+  finAccountId?: string | null;
+  finAccountName?: string | null;
+  finAccountTransId?: string | null;
+  transStatusId: string;
+  totalAmount: number;
+  paymentCount: number;
+  createdDate?: string | null;
+}
+
+export interface DepositSlipMemberPayment {
+  paymentId: string;
+  partyIdFrom?: string | null;
+  partyFromName?: string | null;
+  paymentTypeId: string;
+  paymentMethodTypeId?: string | null;
+  paymentMethodTypeDesc?: string | null;
+  amount: number;
+  currencyUomId: string;
+  effectiveDate?: string | null;
+  paymentRefNum?: string | null;
+  statusId: string;
+  statusDesc?: string | null;
+}
+
+export interface DepositSlipDetailItem {
+  paymentGroupId: string;
+  paymentGroupName: string;
+  paymentGroupTypeId: string;
+  finAccountId?: string | null;
+  finAccountName?: string | null;
+  finAccountCode?: string | null;
+  finAccountTransId?: string | null;
+  transStatusId: string;
+  totalAmount: number;
+  paymentCount: number;
+  memberPayments: DepositSlipMemberPayment[];
+}
+
+export interface UndepositedPaymentItem {
+  paymentId: string;
+  partyIdFrom?: string | null;
+  partyFromName?: string | null;
+  paymentTypeId: string;
+  paymentMethodTypeId?: string | null;
+  paymentMethodTypeDesc?: string | null;
+  amount: number;
+  currencyUomId: string;
+  effectiveDate?: string | null;
+  paymentRefNum?: string | null;
+  statusId: string;
+}
+
+export interface DepositSlipMetadataResponse {
+  finAccounts: {
+    finAccountId: string;
+    finAccountName: string;
+    finAccountCode: string;
+    finAccountTypeId: string;
+    currencyUomId: string;
+    actualBalance: number;
+  }[];
+  paymentMethodTypes: {
+    paymentMethodTypeId: string;
+    description: string;
+  }[];
+}
+
 
 

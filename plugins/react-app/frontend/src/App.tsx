@@ -18,6 +18,7 @@ import { TaxAndGlMapping } from './components/TaxAndGlMapping'
 import { FiscalPeriods } from './components/FiscalPeriods'
 import { FxManagement } from './components/FxManagement'
 import { CostCenters } from './components/CostCenters'
+import { DepositSlips } from './components/DepositSlips'
 import TestPage from './components/TestPage'
 import { I18nProvider } from './i18n'
 import './index.css'
@@ -35,6 +36,7 @@ export type ViewType =
   | 'payment-detail'
   | 'payment-groups'
   | 'financial-accounts'
+  | 'deposit-slips'
   | 'reports'
   | 'advanced-accounting'
   | 'tax-and-gl-mapping'
@@ -111,6 +113,9 @@ function App() {
 
       {/* Financial Accounts (Kasa & Banka) View */}
       {currentView === 'financial-accounts' && <FinancialAccounts />}
+
+      {/* Bank Deposit Slips (Banka Mevduat Fişleri) View */}
+      {currentView === 'deposit-slips' && <DepositSlips />}
 
       {/* General Ledger & Chart of Accounts Views */}
       {currentView === 'chart-of-accounts' && (

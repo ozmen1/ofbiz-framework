@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X, Globe, Calendar, TrendingUp, Target
+  Menu, X, Globe, Calendar, TrendingUp, Target, Building2
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -40,6 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
     'payment-detail':       translations.pages.paymentDetail,
     'payment-groups':       translations.pages.paymentGroups,
     'financial-accounts':   translations.pages.financialAccounts,
+    'deposit-slips':        translations.pages.depositSlips,
     'chart-of-accounts':    translations.pages.chartOfAccounts,
     'journal-entries':      translations.pages.journalEntries,
     'create-journal-entry': translations.pages.createJournalEntry,
@@ -69,6 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
         { icon: <CreditCard size={18} />, label: translations.nav.payments,       view: 'payments'           as ViewType },
         { icon: <Layers2    size={18} />, label: translations.nav.paymentGroups,   view: 'payment-groups'     as ViewType },
         { icon: <Landmark   size={18} />, label: translations.nav.cashAndBank,     view: 'financial-accounts' as ViewType },
+        { icon: <Building2  size={18} />, label: translations.nav.depositSlips,    view: 'deposit-slips'      as ViewType },
       ]
     },
     {

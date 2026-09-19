@@ -4,7 +4,7 @@ import {
   CheckCircle2, Clock, X, AlertCircle, Loader2, 
   ArrowUpRight, ArrowDownLeft, Eye, Edit3, Filter, 
   Wallet, FileSpreadsheet, Check, Link2, 
-  Unlink2, DollarSign, Ban
+  Unlink2, DollarSign, Ban, Building2
 } from 'lucide-react';
 import { 
   api, 
@@ -20,8 +20,9 @@ import {
   CreateGlReconciliationPayload
 } from '../services/api';
 import { useTranslation } from '../i18n';
+import { DepositSlips } from './DepositSlips';
 
-type FinAccountTab = 'accounts' | 'transactions' | 'reconciliation';
+type FinAccountTab = 'accounts' | 'transactions' | 'reconciliation' | 'deposit-slips';
 
 export const FinancialAccounts: React.FC = () => {
   const { translations, locale } = useTranslation();
@@ -655,7 +656,8 @@ export const FinancialAccounts: React.FC = () => {
         {[
           { id: 'accounts', label: translations.financialAccounts.tabs.accounts, icon: <Landmark size={18} /> },
           { id: 'transactions', label: translations.financialAccounts.tabs.transactions, icon: <ArrowRightLeft size={18} /> },
-          { id: 'reconciliation', label: translations.financialAccounts.tabs.reconciliation, icon: <FileSpreadsheet size={18} /> }
+          { id: 'reconciliation', label: translations.financialAccounts.tabs.reconciliation, icon: <FileSpreadsheet size={18} /> },
+          { id: 'deposit-slips', label: translations.depositSlips.title, icon: <Building2 size={18} /> }
         ].map(tab => (
           <button
             key={tab.id}
@@ -1280,6 +1282,11 @@ export const FinancialAccounts: React.FC = () => {
           )}
 
         </div>
+      )}
+
+      {/* TAB 4: BANK DEPOSIT SLIPS */}
+      {activeTab === 'deposit-slips' && (
+        <DepositSlips initialFinAccountId={accounts[0]?.finAccountId} />
       )}
 
       {/* MODAL: CREATE ACCOUNT */}
