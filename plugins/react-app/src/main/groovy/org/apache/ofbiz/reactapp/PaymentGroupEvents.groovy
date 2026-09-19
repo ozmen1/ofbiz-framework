@@ -168,9 +168,9 @@ def getPaymentGroupDetail() {
                     amount          : amount,
                     currencyUomId   : payment.currencyUomId ?: "USD",
                     partyIdFrom     : payment.partyIdFrom ?: "",
-                    partyNameFrom   : fromParty?.fullName ?: payment.partyIdFrom ?: "",
+                    partyNameFrom   : (fromParty?.firstName ? "${fromParty.firstName} ${fromParty.lastName ?: ''}".trim() : fromParty?.groupName ?: payment.partyIdFrom ?: ""),
                     partyIdTo       : payment.partyIdTo ?: "",
-                    partyNameTo     : toParty?.fullName ?: payment.partyIdTo ?: "",
+                    partyNameTo     : (toParty?.firstName ? "${toParty.firstName} ${toParty.lastName ?: ''}".trim() : toParty?.groupName ?: payment.partyIdTo ?: ""),
                     paymentRefNum   : payment.paymentRefNum ?: "",
                     effectiveDate   : payment.effectiveDate?.toString() ?: ""
                 ]
@@ -391,9 +391,9 @@ def getAvailablePayments() {
                     currencyUomId: p.currencyUomId ?: "USD",
                     statusId     : p.statusId ?: "",
                     partyIdFrom  : p.partyIdFrom ?: "",
-                    partyNameFrom: fromParty?.fullName ?: p.partyIdFrom ?: "",
+                    partyNameFrom: (fromParty?.firstName ? "${fromParty.firstName} ${fromParty.lastName ?: ''}".trim() : fromParty?.groupName ?: p.partyIdFrom ?: ""),
                     partyIdTo    : p.partyIdTo ?: "",
-                    partyNameTo  : toParty?.fullName ?: p.partyIdTo ?: "",
+                    partyNameTo  : (toParty?.firstName ? "${toParty.firstName} ${toParty.lastName ?: ''}".trim() : toParty?.groupName ?: p.partyIdTo ?: ""),
                     paymentRefNum: p.paymentRefNum ?: "",
                     effectiveDate: p.effectiveDate?.toString() ?: ""
                 ]
