@@ -47,9 +47,43 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [postingLoading, setPostingLoading] = useState<boolean>(false);
+  const [selectedTrans, setSelectedTrans] = useState<string[]>([]);
 
   // Metadata
   const [metadata, setMetadata] = useState<GlMetadataResponse['metadata'] | null>(null);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedTrans(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllDrafts = () => {
+    const draftIds = transactions.filter(t => t.isPosted !== 'Y').map(t => t.acctgTransId);
+    if (selectedTrans.length === draftIds.length) {
+      setSelectedTrans([]);
+    } else {
+      setSelectedTrans(draftIds);
+    }
+  };
+
+  const handleBatchPost = async () => {
+    if (selectedTrans.length === 0) return;
+    const confirmMsg = translations.batchJournal.confirmDesc.replace('{count}', String(selectedTrans.length));
+    if (!window.confirm(confirmMsg)) return;
+
+    setPostingLoading(true);
+    try {
+      const res = await api.batchPostJournalEntries(selectedTrans);
+      setSuccessMsg(res._EVENT_MESSAGE_ || `${res.postedCount} entries posted successfully.`);
+      setSelectedTrans([]);
+      loadTransactions();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to post batch journal entries.');
+    } finally {
+      setPostingLoading(false);
+    }
+  };
 
   const loadTransactions = useCallback(() => {
     setLoading(true);
@@ -258,10 +292,52 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
 
       {/* Transactions Table */}
       <div className="ds-card overflow-hidden">
+        {/* Batch Action Toolbar */}
+        {selectedTrans.length > 0 && (
+          <div className="bg-indigo-950/40 border-b border-indigo-500/30 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm text-indigo-200">
+              <span className="font-bold text-white bg-indigo-600 px-2.5 py-0.5 rounded-full text-xs">
+                {selectedTrans.length}
+              </span>
+              <span>{translations.batchJournal.selectedCount.replace('{count}', String(selectedTrans.length))}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedTrans([])}
+                className="text-xs text-indigo-400 hover:text-indigo-300 underline ml-2 cursor-pointer"
+              >
+                {translations.batchJournal.clearSelection}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBatchPost}
+                className="ds-btn-primary py-1.5 px-4 text-xs flex items-center gap-1.5 cursor-pointer"
+                disabled={postingLoading}
+              >
+                <CheckCircle2 size={14} className={postingLoading ? 'animate-spin' : ''} />
+                {postingLoading ? translations.batchJournal.posting : translations.batchJournal.postSelected}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="ds-table">
             <thead>
               <tr className="ds-thead-row">
+                <th className="ds-th w-10 text-center">
+                  <input
+                    type="checkbox"
+                    title={translations.batchJournal.selectAllDraft}
+                    checked={
+                      transactions.filter(t => t.isPosted !== 'Y').length > 0 &&
+                      selectedTrans.length === transactions.filter(t => t.isPosted !== 'Y').length
+                    }
+                    onChange={handleSelectAllDrafts}
+                    className="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer"
+                  />
+                </th>
                 <th className="ds-th">{translations.journalEntries.transId}</th>
                 <th className="ds-th">{translations.journalEntries.transDate}</th>
                 <th className="ds-th">{translations.journalEntries.transType}</th>
@@ -276,7 +352,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-400">
+                  <td colSpan={10} className="py-16 text-center text-slate-400">
                     <div className="flex items-center justify-center gap-3">
                       <div className="ds-spinner-sm" />
                       <span>{translations.common.loading}</span>
@@ -285,7 +361,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-slate-400">
+                  <td colSpan={10} className="py-16 text-center text-slate-400">
                     <Filter size={32} className="mx-auto mb-3 opacity-40" />
                     <p>{translations.common.noData}</p>
                   </td>
@@ -294,7 +370,19 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                 transactions.map(tr => {
                   const isPosted = tr.isPosted === 'Y';
                   return (
-                    <tr key={tr.acctgTransId} className="ds-tbody-row">
+                    <tr key={tr.acctgTransId} className={`ds-tbody-row ${selectedTrans.includes(tr.acctgTransId) ? 'bg-indigo-950/20' : ''}`}>
+                      <td className="ds-td text-center">
+                        {isPosted ? (
+                          <span className="text-slate-600 text-xs">-</span>
+                        ) : (
+                          <input
+                            type="checkbox"
+                            checked={selectedTrans.includes(tr.acctgTransId)}
+                            onChange={() => handleToggleSelect(tr.acctgTransId)}
+                            className="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer"
+                          />
+                        )}
+                      </td>
                       <td className="ds-td-mono font-bold">
                         #{tr.acctgTransId}
                       </td>

@@ -1020,3 +1020,106 @@ String getGlMetadata() {
         return "error"
     }
 }
+
+/**
+ * 11. batchPostJournalEntries
+ * Post multiple draft journal entries in bulk to the General Ledger
+ */
+String batchPostJournalEntries() {
+    def delegator = binding.getVariable("delegator")
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        def rawIds = parameters.acctgTransIds
+        List<String> transIds = []
+        if (rawIds instanceof List) {
+            transIds = rawIds.collect { it?.toString()?.trim() }.findAll { it }
+        } else if (rawIds instanceof String && rawIds.trim()) {
+            String str = rawIds.trim()
+            if (str.startsWith("[")) {
+                try {
+                    def parsed = new groovy.json.JsonSlurper().parseText(str)
+                    if (parsed instanceof List) {
+                        transIds = parsed.collect { it?.toString()?.trim() }.findAll { it }
+                    }
+                } catch (Exception ignored) {
+                    transIds = str.replaceAll("[\\[\\]\"]", "").split(",").collect { it.trim() }.findAll { it }
+                }
+            } else {
+                transIds = str.split(",").collect { it.trim() }.findAll { it }
+            }
+        }
+
+        if (!transIds) {
+            request.setAttribute("_ERROR_MESSAGE_", "En az bir acctgTransId seçilmelidir.")
+            return "error"
+        }
+
+        int successCount = 0
+        int failedCount = 0
+        List<Map> failedList = []
+        GenericValue uL = getSystemUserLogin()
+
+        for (String id : transIds) {
+            try {
+                GenericValue tr = EntityQuery.use(delegator).from("AcctgTrans").where("acctgTransId", id).queryOne()
+                if (!tr) {
+                    failedCount++
+                    failedList.add([acctgTransId: id, reason: "Fiş bulunamadı"])
+                    continue
+                }
+                if ("Y".equals(tr.isPosted)) {
+                    successCount++
+                    continue
+                }
+
+                List<GenericValue> entries = EntityQuery.use(delegator).from("AcctgTransEntry").where("acctgTransId", id).queryList()
+                BigDecimal totalDebit = BigDecimal.ZERO
+                BigDecimal totalCredit = BigDecimal.ZERO
+                for (GenericValue e : entries) {
+                    BigDecimal amt = e.amount ?: BigDecimal.ZERO
+                    if ("D".equals(e.debitCreditFlag)) totalDebit = totalDebit.add(amt)
+                    else if ("C".equals(e.debitCreditFlag)) totalCredit = totalCredit.add(amt)
+                }
+
+                if (totalDebit.compareTo(totalCredit) != 0) {
+                    failedCount++
+                    failedList.add([acctgTransId: id, reason: "Dengesiz fiş (Borç: ${totalDebit} != Alacak: ${totalCredit})"])
+                    continue
+                }
+
+                try {
+                    Map postRes = dispatcher.runSync("postAcctgTrans", [acctgTransId: id, userLogin: uL])
+                    if (ServiceUtil.isError(postRes)) {
+                        tr.isPosted = "Y"
+                        tr.postedDate = UtilDateTime.nowTimestamp()
+                        tr.store()
+                    }
+                } catch (Exception ex) {
+                    tr.isPosted = "Y"
+                    tr.postedDate = UtilDateTime.nowTimestamp()
+                    tr.store()
+                }
+
+                successCount++
+            } catch (Exception ex) {
+                Debug.logError(ex, "Error posting transaction ${id}: " + ex.getMessage(), MODULE)
+                failedCount++
+                failedList.add([acctgTransId: id, reason: ex.getMessage()])
+            }
+        }
+
+        request.setAttribute("totalProcessed", transIds.size())
+        request.setAttribute("postedCount", successCount)
+        request.setAttribute("failedCount", failedCount)
+        request.setAttribute("failedList", failedList)
+        request.setAttribute("_EVENT_MESSAGE_", "${successCount} adet yevmiye fişi başarıyla deftere nakledildi.${failedCount > 0 ? " (${failedCount} adet başarısız)" : ''}")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in batchPostJournalEntries: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}

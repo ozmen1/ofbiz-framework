@@ -18,6 +18,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { TaxAuthorityExtendedModal } from './TaxAuthorityExtendedModal';
+import { ExtendedGlMappingsModal } from './ExtendedGlMappingsModal';
 import {
   api,
   TaxAuthorityItem,
@@ -70,6 +71,7 @@ export const TaxAndGlMapping: React.FC = () => {
   const [showDefaultMapModal, setShowDefaultMapModal] = useState(false);
   const [showAuthGlModal, setShowAuthGlModal] = useState(false);
   const [showExtTaxAuthModal, setShowExtTaxAuthModal] = useState(false);
+  const [showExtMappingsModal, setShowExtMappingsModal] = useState(false);
   const [selectedExtTaxAuth, setSelectedExtTaxAuth] = useState<TaxAuthorityItem | null>(null);
 
   // Form states
@@ -427,6 +429,13 @@ export const TaxAndGlMapping: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             {translations.common.refresh}
+          </button>
+          <button
+            onClick={() => setShowExtMappingsModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-xl text-sm font-semibold border border-indigo-500/30 transition-all cursor-pointer"
+          >
+            <Layers className="w-4 h-4" />
+            <span>{translations.extendedGl.title}</span>
           </button>
           {activeTab === 'rates' && (
             <button
@@ -1665,6 +1674,14 @@ export const TaxAndGlMapping: React.FC = () => {
           setShowExtTaxAuthModal(false);
           setSelectedExtTaxAuth(null);
         }}
+        onUpdated={loadAllData}
+      />
+
+      {/* Extended GL Mappings Modal (Variance Reasons, Party GL, Credit Card GL) */}
+      <ExtendedGlMappingsModal
+        isOpen={showExtMappingsModal}
+        onClose={() => setShowExtMappingsModal(false)}
+        glAccounts={metadata?.glAccounts || []}
         onUpdated={loadAllData}
       />
     </div>

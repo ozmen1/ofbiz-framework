@@ -24,14 +24,16 @@ import {
   CreateBudgetItemPayload,
   AgreementSummary,
   AgreementDetailResponse,
-  CreateAgreementPayload
+  CreateAgreementPayload,
+  CostComponentCalcItem,
+  CreateCostComponentCalcPayload,
 } from '../services/api';
 import { FixedAssetLifecycleModal } from './FixedAssetLifecycleModal';
 import { BudgetVarianceModal } from './BudgetVarianceModal';
 import { AgreementExtendedModal } from './AgreementExtendedModal';
 import { BillingAccountExtendedModal } from './BillingAccountExtendedModal';
 
-type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements';
+type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements' | 'cost-calcs';
 
 export const AdvancedAccounting: React.FC = () => {
   const { translations, locale } = useTranslation();
@@ -166,6 +168,24 @@ export const AdvancedAccounting: React.FC = () => {
     textData: ''
   });
 
+  // ==========================================
+  // TAB 5: COST COMPONENT CALCS STATE
+  // ==========================================
+  const [costCalcs, setCostCalcs] = useState<CostComponentCalcItem[]>([]);
+  const [costCalcSearch, setCostCalcSearch] = useState<string>('');
+  const [showCostCalcModal, setShowCostCalcModal] = useState<boolean>(false);
+  const [editingCostCalc, setEditingCostCalc] = useState<CostComponentCalcItem | null>(null);
+  const [costCalcForm, setCostCalcForm] = useState<CreateCostComponentCalcPayload>({
+    costComponentCalcId: '',
+    description: '',
+    costGlAccountTypeId: '',
+    offsettingGlAccountTypeId: '',
+    fixedCost: 0,
+    variableCost: 0,
+    perMilliSecond: 0,
+    currencyUomId: 'TRY',
+  });
+
   // Load Metadata
   const loadMetadata = useCallback(async () => {
     try {
@@ -258,6 +278,59 @@ export const AdvancedAccounting: React.FC = () => {
     }
   }, [agrSearch, agrTypeFilter, t.messages.loadAgError]);
 
+  // Fetch Cost Component Calculations
+  const fetchCostCalcs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.getCostComponentCalcs();
+      setCostCalcs(res.costCalcs || []);
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || (isTr ? 'Maliyet formülleri yüklenemedi.' : 'Failed to load cost calculations.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isTr]);
+
+  const handleSaveCostCalc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!costCalcForm.description) return;
+    try {
+      setLoading(true);
+      if (editingCostCalc) {
+        await api.updateCostComponentCalc({
+          ...costCalcForm,
+          costComponentCalcId: editingCostCalc.costComponentCalcId,
+        });
+        triggerSuccess(isTr ? 'Maliyet formülü güncellendi.' : 'Cost calculation updated.');
+      } else {
+        await api.createCostComponentCalc(costCalcForm);
+        triggerSuccess(isTr ? 'Maliyet formülü oluşturuldu.' : 'Cost calculation created.');
+      }
+      setShowCostCalcModal(false);
+      setEditingCostCalc(null);
+      await fetchCostCalcs();
+    } catch (err: any) {
+      setError(err?.message || 'Error saving cost calculation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCostCalc = async (id: string) => {
+    if (!window.confirm(translations.costCalcs.deleteConfirm)) return;
+    try {
+      setLoading(true);
+      await api.deleteCostComponentCalc(id);
+      triggerSuccess(isTr ? 'Maliyet formülü silindi.' : 'Cost calculation deleted.');
+      await fetchCostCalcs();
+    } catch (err: any) {
+      setError(err?.message || 'Error deleting cost calculation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load initial data
   useEffect(() => {
     loadMetadata();
@@ -273,8 +346,10 @@ export const AdvancedAccounting: React.FC = () => {
       fetchBudgets();
     } else if (activeTab === 'agreements') {
       fetchAgreements();
+    } else if (activeTab === 'cost-calcs') {
+      fetchCostCalcs();
     }
-  }, [activeTab, fetchBillingAccounts, fetchFixedAssets, fetchBudgets, fetchAgreements]);
+  }, [activeTab, fetchBillingAccounts, fetchFixedAssets, fetchBudgets, fetchAgreements, fetchCostCalcs]);
 
   // Helper clear message
   const triggerSuccess = (msg: string) => {
@@ -599,6 +674,7 @@ export const AdvancedAccounting: React.FC = () => {
               else if (activeTab === 'fixed-assets') fetchFixedAssets();
               else if (activeTab === 'budgets') fetchBudgets();
               else if (activeTab === 'agreements') fetchAgreements();
+              else if (activeTab === 'cost-calcs') fetchCostCalcs();
             }}
             className="ds-btn-secondary"
           >
@@ -656,6 +732,29 @@ export const AdvancedAccounting: React.FC = () => {
             >
               <Plus size={16} />
               {t.agreements.newAgreement}
+            </button>
+          )}
+
+          {activeTab === 'cost-calcs' && (
+            <button
+              onClick={() => {
+                setEditingCostCalc(null);
+                setCostCalcForm({
+                  costComponentCalcId: '',
+                  description: '',
+                  costGlAccountTypeId: '',
+                  offsettingGlAccountTypeId: '',
+                  fixedCost: 0,
+                  variableCost: 0,
+                  perMilliSecond: 0,
+                  currencyUomId: 'TRY',
+                });
+                setShowCostCalcModal(true);
+              }}
+              className="ds-btn-primary"
+            >
+              <Plus size={16} />
+              {translations.costCalcs.newCalc}
             </button>
           )}
         </div>
@@ -720,6 +819,17 @@ export const AdvancedAccounting: React.FC = () => {
           {t.tabs.agreements}
           <span className="ds-badge ds-badge-slate ml-1">
             {totalAgrCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('cost-calcs')}
+          className={`ds-tab flex items-center gap-2 ${activeTab === 'cost-calcs' ? 'ds-tab-active' : ''}`}
+        >
+          <CreditCard size={18} />
+          {translations.costCalcs.title}
+          <span className="ds-badge ds-badge-slate ml-1">
+            {costCalcs.length}
           </span>
         </button>
       </div>
@@ -1291,6 +1401,299 @@ export const AdvancedAccounting: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* TAB 5: COST COMPONENT CALCS CONTENT        */}
+      {/* ========================================== */}
+      {activeTab === 'cost-calcs' && (
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="ds-stat-card border-l-4 border-l-indigo-500">
+              <div className="ds-stat-label">{translations.costCalcs.title}</div>
+              <div className="ds-stat-value text-indigo-400">{costCalcs.length}</div>
+            </div>
+            <div className="ds-stat-card border-l-4 border-l-emerald-500">
+              <div className="ds-stat-label">{translations.costCalcs.fixedCost} (Top.)</div>
+              <div className="ds-stat-value text-emerald-400">
+                {fmt(costCalcs.reduce((sum, c) => sum + (c.fixedCost || 0), 0))}
+              </div>
+            </div>
+            <div className="ds-stat-card border-l-4 border-l-blue-500">
+              <div className="ds-stat-label">{translations.costCalcs.variableCost} (Top.)</div>
+              <div className="ds-stat-value text-blue-400">
+                {fmt(costCalcs.reduce((sum, c) => sum + (c.variableCost || 0), 0))}
+              </div>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="ds-card p-4 flex gap-3 items-center">
+            <Search size={18} className="text-slate-400" />
+            <input
+              type="text"
+              placeholder={translations.costCalcs.subtitle}
+              value={costCalcSearch}
+              onChange={e => setCostCalcSearch(e.target.value)}
+              className="ds-input flex-1"
+            />
+          </div>
+
+          {/* Cost Calcs Table */}
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
+                <thead>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{translations.costCalcs.calcId}</th>
+                    <th className="ds-th">{translations.costCalcs.description}</th>
+                    <th className="ds-th">{translations.costCalcs.costGlType}</th>
+                    <th className="ds-th">{translations.costCalcs.offsettingGlType}</th>
+                    <th className="ds-th-right">{translations.costCalcs.fixedCost}</th>
+                    <th className="ds-th-right">{translations.costCalcs.variableCost}</th>
+                    <th className="ds-th-right">{translations.costCalcs.perMilliSecond}</th>
+                    <th className="ds-th text-center">{tc.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="py-16 text-center text-slate-400">
+                        <div className="flex items-center justify-center gap-3">
+                          <Loader2 className="animate-spin text-indigo-400" size={24} />
+                          <span>{tc.loading}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : costCalcs.filter(c =>
+                      !costCalcSearch ||
+                      c.costComponentCalcId.toLowerCase().includes(costCalcSearch.toLowerCase()) ||
+                      c.description.toLowerCase().includes(costCalcSearch.toLowerCase())
+                    ).length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-16 text-center text-slate-400">
+                        <CreditCard size={32} className="mx-auto mb-3 opacity-40" />
+                        <p>{translations.costCalcs.noCalcs}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    costCalcs
+                      .filter(c =>
+                        !costCalcSearch ||
+                        c.costComponentCalcId.toLowerCase().includes(costCalcSearch.toLowerCase()) ||
+                        c.description.toLowerCase().includes(costCalcSearch.toLowerCase())
+                      )
+                      .map(calc => (
+                        <tr key={calc.costComponentCalcId} className="ds-tbody-row">
+                          <td className="ds-td-mono font-bold text-indigo-300">
+                            #{calc.costComponentCalcId}
+                          </td>
+                          <td className="ds-td font-medium text-white">
+                            {calc.description || '-'}
+                          </td>
+                          <td className="ds-td">
+                            <span className="ds-badge ds-badge-blue text-xs">
+                              {calc.costGlAccountTypeDesc || calc.costGlAccountTypeId || '-'}
+                            </span>
+                          </td>
+                          <td className="ds-td">
+                            <span className="ds-badge ds-badge-purple text-xs">
+                              {calc.offsettingGlAccountTypeDesc || calc.offsettingGlAccountTypeId || '-'}
+                            </span>
+                          </td>
+                          <td className="ds-td-right font-mono text-emerald-400">
+                            {fmt(calc.fixedCost, calc.currencyUomId)}
+                          </td>
+                          <td className="ds-td-right font-mono text-blue-400">
+                            {fmt(calc.variableCost, calc.currencyUomId)}
+                          </td>
+                          <td className="ds-td-right font-mono text-slate-300">
+                            {calc.perMilliSecond || 0} ms
+                          </td>
+                          <td className="ds-td text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingCostCalc(calc);
+                                  setCostCalcForm({
+                                    costComponentCalcId: calc.costComponentCalcId,
+                                    description: calc.description,
+                                    costGlAccountTypeId: calc.costGlAccountTypeId,
+                                    offsettingGlAccountTypeId: calc.offsettingGlAccountTypeId,
+                                    fixedCost: calc.fixedCost,
+                                    variableCost: calc.variableCost,
+                                    perMilliSecond: calc.perMilliSecond,
+                                    currencyUomId: calc.currencyUomId,
+                                  });
+                                  setShowCostCalcModal(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700/50 transition-colors"
+                                title={tc.edit}
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCostCalc(calc.costComponentCalcId)}
+                                className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors"
+                                title={tc.delete}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CREATE / EDIT COST COMPONENT CALC */}
+      {showCostCalcModal && (
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <CreditCard size={20} className="text-indigo-400" />
+                {editingCostCalc ? translations.costCalcs.editCalc : translations.costCalcs.newCalc}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowCostCalcModal(false);
+                  setEditingCostCalc(null);
+                }}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCostCalc} className="space-y-4">
+              <div>
+                <label className="ds-label">{translations.costCalcs.calcId}</label>
+                <input
+                  type="text"
+                  placeholder="GEN_OVERHEAD, LABOR_COST vb."
+                  disabled={!!editingCostCalc}
+                  value={costCalcForm.costComponentCalcId || ''}
+                  onChange={e => setCostCalcForm({ ...costCalcForm, costComponentCalcId: e.target.value })}
+                  className="ds-input"
+                />
+              </div>
+
+              <div>
+                <label className="ds-label">{translations.costCalcs.description} *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Genel Üretim Gideri, İşçilik vb."
+                  value={costCalcForm.description}
+                  onChange={e => setCostCalcForm({ ...costCalcForm, description: e.target.value })}
+                  className="ds-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="ds-label">{translations.costCalcs.costGlType}</label>
+                  <input
+                    type="text"
+                    placeholder="OPERATING_EXPENSE vb."
+                    value={costCalcForm.costGlAccountTypeId || ''}
+                    onChange={e => setCostCalcForm({ ...costCalcForm, costGlAccountTypeId: e.target.value })}
+                    className="ds-input font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="ds-label">{translations.costCalcs.offsettingGlType}</label>
+                  <input
+                    type="text"
+                    placeholder="WIP_INVENTORY vb."
+                    value={costCalcForm.offsettingGlAccountTypeId || ''}
+                    onChange={e => setCostCalcForm({ ...costCalcForm, offsettingGlAccountTypeId: e.target.value })}
+                    className="ds-input font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="ds-label">{translations.costCalcs.fixedCost}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={costCalcForm.fixedCost || 0}
+                    onChange={e => setCostCalcForm({ ...costCalcForm, fixedCost: parseFloat(e.target.value) || 0 })}
+                    className="ds-input font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="ds-label">{translations.costCalcs.variableCost}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={costCalcForm.variableCost || 0}
+                    onChange={e => setCostCalcForm({ ...costCalcForm, variableCost: parseFloat(e.target.value) || 0 })}
+                    className="ds-input font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="ds-label">{translations.costCalcs.perMilliSecond}</label>
+                  <input
+                    type="number"
+                    value={costCalcForm.perMilliSecond || 0}
+                    onChange={e => setCostCalcForm({ ...costCalcForm, perMilliSecond: parseInt(e.target.value) || 0 })}
+                    className="ds-input font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="ds-label">{translations.costCalcs.currency}</label>
+                <select
+                  value={costCalcForm.currencyUomId}
+                  onChange={e => setCostCalcForm({ ...costCalcForm, currencyUomId: e.target.value })}
+                  className="ds-select"
+                >
+                  {metadata?.currencies.map(c => (
+                    <option key={c.uomId} value={c.uomId}>{c.uomId}</option>
+                  ))}
+                  {!metadata?.currencies.length && (
+                    <>
+                      <option value="TRY">TRY</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCostCalcModal(false);
+                    setEditingCostCalc(null);
+                  }}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary"
+                >
+                  {tc.save}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

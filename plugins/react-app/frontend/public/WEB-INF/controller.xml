@@ -1322,6 +1322,105 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Faz 10: Kurumsal Muhasebe Eşlemeleri, Toplu Yevmiye Onayı & Maliyet -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- 1. Extended GL Mappings -->
+    <request-map uri="getVarianceReasonGlAccounts">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="getVarianceReasonGlAccounts"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createVarianceReasonGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="createVarianceReasonGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteVarianceReasonGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="deleteVarianceReasonGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPartyGlAccounts">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="getPartyGlAccounts"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createPartyGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="createPartyGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deletePartyGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="deletePartyGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getCreditCardTypeGlAccounts">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="getCreditCardTypeGlAccounts"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createCreditCardTypeGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="createCreditCardTypeGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteCreditCardTypeGlAccount">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="deleteCreditCardTypeGlAccount"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getExtendedGlMetadata">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ExtendedGlMappingEvents.groovy" invoke="getExtendedGlMetadata"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- 2. Batch Journal Entry Posting -->
+    <request-map uri="batchPostJournalEntries">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/GeneralLedgerEvents.groovy" invoke="batchPostJournalEntries"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- 3. Cost Component Calculations -->
+    <request-map uri="getCostComponentCalcs">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCalcEvents.groovy" invoke="getCostComponentCalcs"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createCostComponentCalc">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCalcEvents.groovy" invoke="createCostComponentCalc"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateCostComponentCalc">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCalcEvents.groovy" invoke="updateCostComponentCalc"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteCostComponentCalc">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCalcEvents.groovy" invoke="deleteCostComponentCalc"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>

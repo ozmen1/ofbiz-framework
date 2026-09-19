@@ -1555,4 +1555,63 @@ export interface Translations {
       noUnapplied: string;
     };
   };
+  extendedGl: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      varianceReasons: string;
+      partyGl: string;
+      creditCardGl: string;
+    };
+    variance: {
+      newMapping: string;
+      reason: string;
+      glAccount: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+    party: {
+      newMapping: string;
+      party: string;
+      partyId: string;
+      role: string;
+      accountType: string;
+      glAccount: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+    creditCard: {
+      newMapping: string;
+      cardType: string;
+      glAccount: string;
+      noMappings: string;
+      deleteConfirm: string;
+    };
+  };
+  batchJournal: {
+    selectedCount: string;
+    postSelected: string;
+    posting: string;
+    confirmTitle: string;
+    confirmDesc: string;
+    selectAllDraft: string;
+    clearSelection: string;
+    onlyDraftsCanBePosted: string;
+  };
+  costCalcs: {
+    title: string;
+    subtitle: string;
+    newCalc: string;
+    editCalc: string;
+    calcId: string;
+    description: string;
+    costGlType: string;
+    offsettingGlType: string;
+    fixedCost: string;
+    variableCost: string;
+    perMilliSecond: string;
+    currency: string;
+    noCalcs: string;
+    deleteConfirm: string;
+  };
 }

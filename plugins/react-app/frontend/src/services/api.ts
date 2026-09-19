@@ -3183,6 +3183,97 @@ export const api = {
   getCommissionMetadata: async (): Promise<CommissionMetadataResponse> => {
     return requestApi<CommissionMetadataResponse>('getCommissionMetadata');
   },
+
+  // Phase 10: Extended GL Mappings
+  getVarianceReasonGlAccounts: async (): Promise<{ varianceReasonGlAccounts: VarianceReasonGlAccountItem[] }> => {
+    return requestApi<{ varianceReasonGlAccounts: VarianceReasonGlAccountItem[] }>('getVarianceReasonGlAccounts');
+  },
+  createVarianceReasonGlAccount: async (payload: CreateVarianceReasonGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createVarianceReasonGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteVarianceReasonGlAccount: async (varianceReasonId: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteVarianceReasonGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ varianceReasonId, organizationPartyId }),
+    });
+  },
+  getPartyGlAccounts: async (): Promise<{ partyGlAccounts: PartyGlAccountItem[] }> => {
+    return requestApi<{ partyGlAccounts: PartyGlAccountItem[] }>('getPartyGlAccounts');
+  },
+  createPartyGlAccount: async (payload: CreatePartyGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createPartyGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deletePartyGlAccount: async (partyId: string, glAccountTypeId: string, roleTypeId: string = '_NA_', organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deletePartyGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ partyId, glAccountTypeId, roleTypeId, organizationPartyId }),
+    });
+  },
+  getCreditCardTypeGlAccounts: async (): Promise<{ creditCardTypeGlAccounts: CreditCardTypeGlAccountItem[] }> => {
+    return requestApi<{ creditCardTypeGlAccounts: CreditCardTypeGlAccountItem[] }>('getCreditCardTypeGlAccounts');
+  },
+  createCreditCardTypeGlAccount: async (payload: CreateCreditCardTypeGlAccountPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createCreditCardTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteCreditCardTypeGlAccount: async (cardType: string, organizationPartyId: string = 'Company'): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteCreditCardTypeGlAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ cardType, organizationPartyId }),
+    });
+  },
+  getExtendedGlMetadata: async (): Promise<ExtendedGlMetadataResponse> => {
+    return requestApi<ExtendedGlMetadataResponse>('getExtendedGlMetadata');
+  },
+
+  // Phase 10: Batch Journal Entry Posting
+  batchPostJournalEntries: async (acctgTransIds: string[]): Promise<BatchPostJournalEntriesResponse> => {
+    return requestApi<BatchPostJournalEntriesResponse>('batchPostJournalEntries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ acctgTransIds: JSON.stringify(acctgTransIds) }),
+    });
+  },
+
+  // Phase 10: Cost Component Calculations
+  getCostComponentCalcs: async (): Promise<{ costCalcs: CostComponentCalcItem[] }> => {
+    return requestApi<{ costCalcs: CostComponentCalcItem[] }>('getCostComponentCalcs');
+  },
+  createCostComponentCalc: async (payload: CreateCostComponentCalcPayload): Promise<{ costComponentCalcId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ costComponentCalcId: string; _EVENT_MESSAGE_?: string }>('createCostComponentCalc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  updateCostComponentCalc: async (payload: UpdateCostComponentCalcPayload): Promise<{ costComponentCalcId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ costComponentCalcId: string; _EVENT_MESSAGE_?: string }>('updateCostComponentCalc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteCostComponentCalc: async (costComponentCalcId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteCostComponentCalc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ costComponentCalcId }),
+    });
+  },
 };
 
 // ==========================================
@@ -3840,4 +3931,105 @@ export interface CommissionMetadataResponse {
     defaultCommissionRate: number;
   };
 }
+
+// ═════════════════════════════════════════════════════════════════
+// Aşama 10: Kurumsal Muhasebe Eşlemeleri, Toplu Yevmiye & Maliyet Tipleri
+// ═════════════════════════════════════════════════════════════════
+export interface VarianceReasonGlAccountItem {
+  varianceReasonId: string;
+  varianceReasonDesc: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface CreateVarianceReasonGlAccountPayload {
+  varianceReasonId: string;
+  organizationPartyId?: string;
+  glAccountId: string;
+}
+
+export interface PartyGlAccountItem {
+  organizationPartyId: string;
+  partyId: string;
+  partyName: string;
+  roleTypeId: string;
+  roleTypeDesc: string;
+  glAccountTypeId: string;
+  glAccountTypeDesc: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface CreatePartyGlAccountPayload {
+  organizationPartyId?: string;
+  partyId: string;
+  roleTypeId?: string;
+  glAccountTypeId: string;
+  glAccountId: string;
+}
+
+export interface CreditCardTypeGlAccountItem {
+  cardType: string;
+  organizationPartyId: string;
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+}
+
+export interface CreateCreditCardTypeGlAccountPayload {
+  cardType: string;
+  organizationPartyId?: string;
+  glAccountId: string;
+}
+
+export interface ExtendedGlMetadataResponse {
+  metadata: {
+    varianceReasons: Array<{ id: string; description: string }>;
+    roleTypes: Array<{ id: string; description: string }>;
+    glAccountTypes: Array<{ id: string; description: string }>;
+    cardTypes: string[];
+  };
+}
+
+export interface BatchPostJournalEntriesResponse {
+  totalProcessed: number;
+  postedCount: number;
+  failedCount: number;
+  failedList: Array<{ acctgTransId: string; reason: string }>;
+  _EVENT_MESSAGE_?: string;
+  _ERROR_MESSAGE_?: string;
+}
+
+export interface CostComponentCalcItem {
+  costComponentCalcId: string;
+  description: string;
+  costGlAccountTypeId: string;
+  costGlAccountTypeDesc: string;
+  offsettingGlAccountTypeId: string;
+  offsettingGlAccountTypeDesc: string;
+  fixedCost: number;
+  variableCost: number;
+  perMilliSecond: number;
+  currencyUomId: string;
+  costCustomMethodId?: string;
+}
+
+export interface CreateCostComponentCalcPayload {
+  costComponentCalcId?: string;
+  description: string;
+  costGlAccountTypeId?: string;
+  offsettingGlAccountTypeId?: string;
+  fixedCost?: number;
+  variableCost?: number;
+  perMilliSecond?: number;
+  currencyUomId?: string;
+}
+
+export interface UpdateCostComponentCalcPayload extends CreateCostComponentCalcPayload {
+  costComponentCalcId: string;
+}
+
 
