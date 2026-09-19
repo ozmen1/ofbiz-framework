@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal
+  Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal, ShieldCheck
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -51,6 +51,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
     'fx-rates':             translations.pages.fxRates,
     'cost-centers':         translations.pages.costCenters,
     'accounting-preferences': translations.pages.accountingPreferences,
+    'payment-gateways':     translations.pages.paymentGateways,
     'test-page':            translations.pages.testPage,
   };
 
@@ -72,6 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
         { icon: <Layers2    size={18} />, label: translations.nav.paymentGroups,   view: 'payment-groups'     as ViewType },
         { icon: <Landmark   size={18} />, label: translations.nav.cashAndBank,     view: 'financial-accounts' as ViewType },
         { icon: <Building2  size={18} />, label: translations.nav.depositSlips,    view: 'deposit-slips'      as ViewType },
+        { icon: <ShieldCheck size={18} />, label: translations.nav.paymentGateways, view: 'payment-gateways' as ViewType },
       ]
     },
     {

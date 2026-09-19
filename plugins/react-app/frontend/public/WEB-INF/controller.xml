@@ -936,6 +936,44 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- Payment Gateways & Transaction Logs (Phase 3) -->
+    <request-map uri="getPaymentGatewayConfigs">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="getPaymentGatewayConfigs"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="savePaymentGatewayConfig">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="savePaymentGatewayConfig"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deletePaymentGatewayConfig">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="deletePaymentGatewayConfig"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPaymentGatewayResponses">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="getPaymentGatewayResponses"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPaymentGatewayResponseDetail">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="getPaymentGatewayResponseDetail"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getPaymentGatewayMetadata">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentGatewayEvents.groovy" invoke="getPaymentGatewayMetadata"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>

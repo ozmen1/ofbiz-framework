@@ -73,6 +73,7 @@ export interface Translations {
     costCenters: string;
     depositSlips: string;
     accountingPreferences: string;
+    paymentGateways: string;
     apiTest: string;
     settings: string;
     logout: string;
@@ -100,6 +101,7 @@ export interface Translations {
     costCenters: { title: string; subtitle: string };
     depositSlips: { title: string; subtitle: string };
     accountingPreferences: { title: string; subtitle: string };
+    paymentGateways: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
   };
   dashboard: {
@@ -944,6 +946,81 @@ export interface Translations {
       successUpdatedJournal: string;
       successDeletedJournal: string;
       successPostedJournal: string;
+    };
+  };
+  paymentGateways: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      responses: string;
+      configs: string;
+    };
+    stats: {
+      totalTrans: string;
+      capturedVolume: string;
+      approvedCount: string;
+      declinedCount: string;
+    };
+    filters: {
+      allServiceTypes: string;
+      allMethodTypes: string;
+      allStatuses: string;
+      approved: string;
+      captured: string;
+      declined: string;
+      searchPlaceholder: string;
+    };
+    responses: {
+      responseId: string;
+      serviceType: string;
+      methodType: string;
+      referenceNum: string;
+      gatewayCode: string;
+      gatewayFlag: string;
+      amount: string;
+      date: string;
+      status: string;
+      message: string;
+      noResponses: string;
+      viewDetail: string;
+    };
+    detail: {
+      title: string;
+      responseId: string;
+      serviceType: string;
+      orderPrefId: string;
+      referenceNum: string;
+      altReference: string;
+      subReference: string;
+      gatewayCode: string;
+      gatewayFlag: string;
+      gatewayMessage: string;
+      avsResult: string;
+      cvvResult: string;
+      scoreResult: string;
+      date: string;
+      declined: string;
+      nsf: string;
+      badExpire: string;
+      badCardNumber: string;
+      rawMessages: string;
+      noRawMessages: string;
+      linkedPayments: string;
+      noLinkedPayments: string;
+    };
+    configs: {
+      configId: string;
+      configType: string;
+      description: string;
+      newConfig: string;
+      editConfig: string;
+      deleteConfig: string;
+      noConfigs: string;
+      confirmDelete: string;
+    };
+    messages: {
+      successSavedConfig: string;
+      successDeletedConfig: string;
     };
   };
 }

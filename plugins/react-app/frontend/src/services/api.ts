@@ -2180,6 +2180,52 @@ export const api = {
       body: toFormData({ glJournalId }),
     });
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Aşama 3: Ödeme Ağ Geçidi Yapılandırması & Logları (Payment Gateways & Logs)
+  // ═════════════════════════════════════════════════════════════════
+  getPaymentGatewayConfigs: async (): Promise<{ configs: PaymentGatewayConfigItem[] }> => {
+    return requestApi<{ configs: PaymentGatewayConfigItem[] }>('getPaymentGatewayConfigs');
+  },
+  savePaymentGatewayConfig: async (payload: { paymentGatewayConfigId?: string; paymentGatewayConfigTypeId?: string; description?: string }): Promise<{ success: boolean; paymentGatewayConfigId: string }> => {
+    return requestApi<{ success: boolean; paymentGatewayConfigId: string }>('savePaymentGatewayConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deletePaymentGatewayConfig: async (paymentGatewayConfigId: string): Promise<{ success: boolean; paymentGatewayConfigId: string }> => {
+    return requestApi<{ success: boolean; paymentGatewayConfigId: string }>('deletePaymentGatewayConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentGatewayConfigId }),
+    });
+  },
+  getPaymentGatewayResponses: async (params?: {
+    search?: string;
+    paymentServiceTypeEnumId?: string;
+    paymentMethodTypeId?: string;
+    statusFilter?: string;
+    fromDate?: string;
+    thruDate?: string;
+    viewIndex?: number;
+    viewSize?: number;
+  }): Promise<PaymentGatewayResponsesResponse> => {
+    const q = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') q.append(k, String(v));
+      });
+    }
+    const query = q.toString();
+    return requestApi<PaymentGatewayResponsesResponse>(query ? `getPaymentGatewayResponses?${query}` : 'getPaymentGatewayResponses');
+  },
+  getPaymentGatewayResponseDetail: async (paymentGatewayResponseId: string): Promise<{ responseDetail: PaymentGatewayResponseDetail }> => {
+    return requestApi<{ responseDetail: PaymentGatewayResponseDetail }>(`getPaymentGatewayResponseDetail?paymentGatewayResponseId=${encodeURIComponent(paymentGatewayResponseId)}`);
+  },
+  getPaymentGatewayMetadata: async (): Promise<PaymentGatewayMetadataResponse> => {
+    return requestApi<PaymentGatewayMetadataResponse>('getPaymentGatewayMetadata');
+  },
 };
 
 // ==========================================
@@ -2553,6 +2599,79 @@ export interface AccountingPreferencesResponse {
     journals: { glJournalId: string; glJournalName: string }[];
   };
 }
+
+// ═════════════════════════════════════════════════════════════════
+// TYPES: PAYMENT GATEWAYS & TRANSACTION LOGS
+// ═════════════════════════════════════════════════════════════════
+export interface PaymentGatewayConfigItem {
+  paymentGatewayConfigId: string;
+  paymentGatewayConfigTypeId?: string | null;
+  typeDescription?: string | null;
+  description?: string | null;
+}
+
+export interface PaymentGatewayResponseItem {
+  paymentGatewayResponseId: string;
+  paymentServiceTypeEnumId?: string | null;
+  paymentServiceTypeDesc?: string | null;
+  orderPaymentPreferenceId?: string | null;
+  paymentMethodTypeId?: string | null;
+  paymentMethodTypeDesc?: string | null;
+  paymentMethodId?: string | null;
+  transCodeEnumId?: string | null;
+  amount: number;
+  currencyUomId: string;
+  referenceNum?: string | null;
+  altReference?: string | null;
+  gatewayCode?: string | null;
+  gatewayFlag?: string | null;
+  gatewayMessage?: string | null;
+  transactionDate?: string | null;
+  status: 'APPROVED' | 'CAPTURED' | 'DECLINED' | string;
+  resultDeclined: string;
+  resultNsf: string;
+  resultBadExpire: string;
+  resultBadCardNumber: string;
+}
+
+export interface PaymentGatewayResponseDetail extends PaymentGatewayResponseItem {
+  subReference?: string | null;
+  gatewayAvsResult?: string | null;
+  gatewayCvResult?: string | null;
+  gatewayScoreResult?: string | null;
+  messages: string[];
+  linkedPayments: {
+    paymentId: string;
+    paymentTypeId: string;
+    partyIdFrom: string;
+    partyIdTo: string;
+    amount: number;
+    statusId: string;
+  }[];
+}
+
+export interface PaymentGatewayResponsesResponse {
+  responses: PaymentGatewayResponseItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  stats: {
+    totalTransactions: number;
+    approvedCount: number;
+    declinedCount: number;
+    totalCapturedAmount: number;
+  };
+}
+
+export interface PaymentGatewayMetadataResponse {
+  metadata: {
+    configTypes: { paymentGatewayConfigTypeId: string; description: string }[];
+    serviceTypes: { enumId: string; description: string }[];
+    transCodes: { enumId: string; description: string }[];
+    paymentMethodTypes: { paymentMethodTypeId: string; description: string }[];
+  };
+}
+
 
 
 
