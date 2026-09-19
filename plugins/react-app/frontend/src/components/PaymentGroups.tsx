@@ -58,8 +58,8 @@ const fmtDate = (s: string) =>
   s ? new Date(s).toLocaleDateString('tr-TR') : '-';
 
 const typeColor: Record<string, string> = {
-  CHECK_RUN    : 'bg-blue-100 text-blue-800',
-  BATCH_PAYMENT: 'bg-green-100 text-green-800',
+  CHECK_RUN    : 'bg-blue-500/20 text-blue-300',
+  BATCH_PAYMENT: 'bg-emerald-500/20 text-emerald-300',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,67 +82,52 @@ function CreateGroupModal({
   const [error, setError]   = useState('');
 
   const save = async () => {
-    if (!form.paymentGroupName.trim()) {
-      setError('Grup adı gerekli');
-      return;
-    }
+    if (!form.paymentGroupName.trim()) { setError('Grup adı gerekli'); return; }
     setSaving(true);
     try {
       const data = await fetchApi(
         `/react-app/control/createPaymentGroup?paymentGroupName=${encodeURIComponent(form.paymentGroupName)}&paymentGroupTypeId=${form.paymentGroupTypeId}`
       );
-      if (data.success) {
-        onCreated();
-        onClose();
-      } else {
-        setError(data.error || 'Oluşturulamadı');
-      }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
+      if (data.success) { onCreated(); onClose(); }
+      else setError(data.error || 'Oluşturulamadı');
+    } catch (e: any) { setError(e.message); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Yeni Ödeme Grubu</h2>
-        {error && <div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 className="text-xl font-bold text-white mb-4">Yeni Ödeme Grubu</h2>
+        {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Grup Adı *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Grup Adı *</label>
             <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
               value={form.paymentGroupName}
               onChange={e => setForm(p => ({ ...p, paymentGroupName: e.target.value }))}
               placeholder="Örn: Kasım Havale Bordrosu"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Grup Tipi</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Grup Tipi</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
               value={form.paymentGroupTypeId}
               onChange={e => setForm(p => ({ ...p, paymentGroupTypeId: e.target.value }))}
             >
               {types.map(t => (
-                <option key={t.paymentGroupTypeId} value={t.paymentGroupTypeId}>
-                  {t.description}
-                </option>
+                <option key={t.paymentGroupTypeId} value={t.paymentGroupTypeId}>{t.description}</option>
               ))}
             </select>
           </div>
         </div>
         <div className="flex gap-3 mt-6 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-300 border border-slate-600 rounded-xl hover:bg-slate-700 transition-colors">
             İptal
           </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
+          <button onClick={save} disabled={saving}
+            className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl disabled:opacity-50 transition-colors">
             {saving ? 'Kaydediliyor…' : 'Oluştur'}
           </button>
         </div>
@@ -176,7 +161,6 @@ function AddPaymentModal({
       .finally(() => setLoading(false));
   }, [groupId]);
 
-
   const toggle = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev);
@@ -190,33 +174,28 @@ function AddPaymentModal({
     setSaving(true);
     try {
       for (const paymentId of Array.from(selected)) {
-        await fetchApi(
-          `/react-app/control/addPaymentToGroup?paymentGroupId=${groupId}&paymentId=${paymentId}`
-        );
+        await fetchApi(`/react-app/control/addPaymentToGroup?paymentGroupId=${groupId}&paymentId=${paymentId}`);
       }
       onAdded();
       onClose();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 max-h-[80vh] flex flex-col">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Gruba Ödeme Ekle</h2>
-        {error && <div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-        <div className="flex-1 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[80vh] flex flex-col">
+        <h2 className="text-xl font-bold text-white mb-4">Gruba Ödeme Ekle</h2>
+        {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
+        <div className="flex-1 overflow-y-auto rounded-xl border border-slate-700">
           {loading ? (
-            <div className="text-center py-10 text-gray-500">Yükleniyor…</div>
+            <div className="text-center py-10 text-slate-400">Yükleniyor…</div>
           ) : payments.length === 0 ? (
-            <div className="text-center py-10 text-gray-400">Eklenebilecek ödeme bulunamadı</div>
+            <div className="text-center py-10 text-slate-500">Eklenebilecek ödeme bulunamadı</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-gray-600 text-xs uppercase">
+                <tr className="bg-slate-700/60 text-slate-400 text-xs uppercase">
                   <th className="px-3 py-2 text-left w-8"></th>
                   <th className="px-3 py-2 text-left">Ödeme ID</th>
                   <th className="px-3 py-2 text-left">Gönderen</th>
@@ -227,19 +206,17 @@ function AddPaymentModal({
               </thead>
               <tbody>
                 {payments.map(p => (
-                  <tr
-                    key={p.paymentId}
-                    className={`border-b cursor-pointer hover:bg-blue-50 ${selected.has(p.paymentId) ? 'bg-blue-50' : ''}`}
-                    onClick={() => toggle(p.paymentId)}
-                  >
+                  <tr key={p.paymentId}
+                    className={`border-b border-slate-700/50 cursor-pointer transition-colors hover:bg-indigo-500/10 ${selected.has(p.paymentId) ? 'bg-indigo-500/15' : ''}`}
+                    onClick={() => toggle(p.paymentId)}>
                     <td className="px-3 py-2">
-                      <input type="checkbox" readOnly checked={selected.has(p.paymentId)} className="rounded" />
+                      <input type="checkbox" readOnly checked={selected.has(p.paymentId)} className="rounded accent-indigo-500" />
                     </td>
-                    <td className="px-3 py-2 font-mono text-blue-600">{p.paymentId}</td>
-                    <td className="px-3 py-2">{p.partyNameFrom}</td>
-                    <td className="px-3 py-2">{p.partyNameTo}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{fmt(p.amount, p.currencyUomId)}</td>
-                    <td className="px-3 py-2 text-gray-500">{fmtDate(p.effectiveDate)}</td>
+                    <td className="px-3 py-2 font-mono text-indigo-400">{p.paymentId}</td>
+                    <td className="px-3 py-2 text-slate-200">{p.partyNameFrom}</td>
+                    <td className="px-3 py-2 text-slate-200">{p.partyNameTo}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-white">{fmt(p.amount, p.currencyUomId)}</td>
+                    <td className="px-3 py-2 text-slate-400">{fmtDate(p.effectiveDate)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -247,16 +224,13 @@ function AddPaymentModal({
           )}
         </div>
         <div className="flex gap-3 mt-4 justify-between items-center">
-          <span className="text-sm text-gray-500">{selected.size} ödeme seçildi</span>
+          <span className="text-sm text-slate-400">{selected.size} ödeme seçildi</span>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-300 border border-slate-600 rounded-xl hover:bg-slate-700 transition-colors">
               İptal
             </button>
-            <button
-              onClick={addSelected}
-              disabled={saving || selected.size === 0}
-              className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
+            <button onClick={addSelected} disabled={saving || selected.size === 0}
+              className="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl disabled:opacity-50 transition-colors">
               {saving ? 'Ekleniyor…' : `${selected.size} Ödemeyi Ekle`}
             </button>
           </div>
@@ -278,10 +252,10 @@ function GroupDetailPanel({
   onBack: () => void;
   onDeleted: () => void;
 }) {
-  const [detail, setDetail]       = useState<PaymentGroupDetail | null>(null);
-  const [loading, setLoading]     = useState(true);
+  const [detail, setDetail]        = useState<PaymentGroupDetail | null>(null);
+  const [loading, setLoading]      = useState(true);
   const [showAddModal, setShowAdd] = useState(false);
-  const [error, setError]         = useState('');
+  const [error, setError]          = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -290,7 +264,6 @@ function GroupDetailPanel({
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [groupId]);
-
 
   useEffect(() => { load(); }, [load]);
 
@@ -309,53 +282,46 @@ function GroupDetailPanel({
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
     </div>
   );
-
-  if (error) return (
-    <div className="p-6 text-red-600">{error}</div>
-  );
-
+  if (error) return <div className="p-6 text-red-400 bg-red-500/10 rounded-xl border border-red-500/20">{error}</div>;
   if (!detail) return null;
 
   return (
     <div>
       {/* Başlık */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600">
+        <button onClick={onBack}
+          className="p-2 hover:bg-slate-700/60 rounded-xl text-slate-400 hover:text-white transition-colors">
           ← Listeye Dön
         </button>
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-800">{detail.paymentGroupName}</h2>
+          <h2 className="text-xl font-bold text-white">{detail.paymentGroupName}</h2>
           <div className="flex items-center gap-3 mt-1">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor[detail.paymentGroupTypeId] || 'bg-gray-100 text-gray-700'}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor[detail.paymentGroupTypeId] || 'bg-slate-600/40 text-slate-300'}`}>
               {detail.paymentGroupTypeDesc}
             </span>
-            <span className="text-sm text-gray-500">{detail.memberCount} ödeme · Toplam: {fmt(detail.totalAmount)}</span>
+            <span className="text-sm text-slate-400">{detail.memberCount} ödeme · Toplam: {fmt(detail.totalAmount)}</span>
           </div>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowAdd(true)}
-            className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
-          >
+          <button onClick={() => setShowAdd(true)}
+            className="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center gap-2 transition-colors">
             + Ödeme Ekle
           </button>
-          <button
-            onClick={deleteGroup}
-            className="px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
-          >
+          <button onClick={deleteGroup}
+            className="px-4 py-2 text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors">
             Grubu Sil
           </button>
         </div>
       </div>
 
       {/* Üye Ödemeler Tablosu */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 text-gray-600 text-xs uppercase border-b">
+            <tr className="bg-slate-700/40 text-slate-400 text-xs uppercase border-b border-slate-700/50">
               <th className="px-4 py-3 text-left">#</th>
               <th className="px-4 py-3 text-left">Ödeme ID</th>
               <th className="px-4 py-3 text-left">Tip</th>
@@ -370,32 +336,26 @@ function GroupDetailPanel({
           <tbody>
             {detail.members.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
                   Bu grupta henüz ödeme yok. "Ödeme Ekle" butonuyla ödeme ekleyebilirsiniz.
                 </td>
               </tr>
             ) : (
               detail.members.map((m, idx) => (
-                <tr key={m.paymentId} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-400">{m.sequenceNum || idx + 1}</td>
-                  <td className="px-4 py-3 font-mono text-blue-600">{m.paymentId}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.paymentTypeDesc}</td>
-                  <td className="px-4 py-3">{m.partyNameFrom}</td>
-                  <td className="px-4 py-3">{m.partyNameTo}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                    {fmt(m.amount, m.currencyUomId)}
-                  </td>
+                <tr key={m.paymentId} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                  <td className="px-4 py-3 text-slate-500">{m.sequenceNum || idx + 1}</td>
+                  <td className="px-4 py-3 font-mono text-indigo-400">{m.paymentId}</td>
+                  <td className="px-4 py-3 text-slate-300">{m.paymentTypeDesc}</td>
+                  <td className="px-4 py-3 text-white">{m.partyNameFrom}</td>
+                  <td className="px-4 py-3 text-white">{m.partyNameTo}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-white">{fmt(m.amount, m.currencyUomId)}</td>
                   <td className="px-4 py-3">
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                      {m.statusDesc}
-                    </span>
+                    <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">{m.statusDesc}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{fmtDate(m.effectiveDate)}</td>
+                  <td className="px-4 py-3 text-slate-400">{fmtDate(m.effectiveDate)}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => removePayment(m.paymentId)}
-                      className="text-xs text-red-500 hover:text-red-700 hover:underline"
-                    >
+                    <button onClick={() => removePayment(m.paymentId)}
+                      className="text-xs text-red-400 hover:text-red-300 hover:underline transition-colors">
                       Çıkar
                     </button>
                   </td>
@@ -405,9 +365,9 @@ function GroupDetailPanel({
           </tbody>
           {detail.members.length > 0 && (
             <tfoot>
-              <tr className="bg-blue-50 font-bold">
-                <td colSpan={5} className="px-4 py-3 text-right text-gray-700">GENEL TOPLAM:</td>
-                <td className="px-4 py-3 text-right text-blue-700 text-base">{fmt(detail.totalAmount)}</td>
+              <tr className="bg-indigo-500/10 font-bold border-t border-indigo-500/20">
+                <td colSpan={5} className="px-4 py-3 text-right text-slate-300">GENEL TOPLAM:</td>
+                <td className="px-4 py-3 text-right text-indigo-400 text-base">{fmt(detail.totalAmount)}</td>
                 <td colSpan={3}></td>
               </tr>
             </tfoot>
@@ -416,11 +376,7 @@ function GroupDetailPanel({
       </div>
 
       {showAddModal && (
-        <AddPaymentModal
-          groupId={groupId}
-          onClose={() => setShowAdd(false)}
-          onAdded={load}
-        />
+        <AddPaymentModal groupId={groupId} onClose={() => setShowAdd(false)} onAdded={load} />
       )}
     </div>
   );
@@ -430,13 +386,13 @@ function GroupDetailPanel({
 // Ana Bileşen: PaymentGroups
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PaymentGroups() {
-  const [groups, setGroups]           = useState<PaymentGroup[]>([]);
-  const [types, setTypes]             = useState<PaymentGroupType[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState('');
+  const [groups, setGroups]            = useState<PaymentGroup[]>([]);
+  const [types, setTypes]              = useState<PaymentGroupType[]>([]);
+  const [loading, setLoading]          = useState(true);
+  const [error, setError]              = useState('');
   const [selectedGroupId, setSelected] = useState<string | null>(null);
-  const [showCreate, setShowCreate]   = useState(false);
-  const [typeFilter, setTypeFilter]   = useState('');
+  const [showCreate, setShowCreate]    = useState(false);
+  const [typeFilter, setTypeFilter]    = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -470,75 +426,67 @@ export default function PaymentGroups() {
   }
 
   return (
-    <div>
+    <div className="space-y-5">
       {/* Başlık */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Ödeme Grupları & Bordrolar</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            📋 Ödeme Grupları & Bordrolar
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
             Toplu tahsilat fişleri, çek run ve EFT bordrolarını yönetin
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all cursor-pointer self-start sm:self-auto"
         >
           + Yeni Grup
         </button>
       </div>
 
-      {/* Filtre */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4 flex gap-4 items-center">
-        <label className="text-sm font-medium text-gray-700">Tip Filtresi:</label>
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500"
-          value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-        >
-          <option value="">Tümü</option>
-          {types.map(t => (
-            <option key={t.paymentGroupTypeId} value={t.paymentGroupTypeId}>
-              {t.description}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Özet Kartlar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500">
-          <p className="text-sm text-gray-500">Toplam Grup</p>
-          <p className="text-2xl font-bold text-gray-800">{groups.length}</p>
+      {/* Filtre + Özet */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 flex items-center gap-3">
+          <label className="text-sm text-slate-400 whitespace-nowrap">Tip:</label>
+          <select
+            className="flex-1 bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+          >
+            <option value="">Tümü</option>
+            {types.map(t => (
+              <option key={t.paymentGroupTypeId} value={t.paymentGroupTypeId}>{t.description}</option>
+            ))}
+          </select>
         </div>
-        <div className="bg-white rounded-xl shadow p-4 border-l-4 border-green-500">
-          <p className="text-sm text-gray-500">Toplam Ödeme</p>
-          <p className="text-2xl font-bold text-gray-800">
-            {groups.reduce((s, g) => s + g.memberCount, 0)}
-          </p>
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-indigo-500">
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Grup</p>
+          <p className="text-2xl font-bold text-white mt-1">{groups.length}</p>
         </div>
-        <div className="bg-white rounded-xl shadow p-4 border-l-4 border-purple-500">
-          <p className="text-sm text-gray-500">Toplam Tutar</p>
-          <p className="text-2xl font-bold text-gray-800">
-            {fmt(groups.reduce((s, g) => s + g.totalAmount, 0))}
-          </p>
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-emerald-500">
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Ödeme</p>
+          <p className="text-2xl font-bold text-white mt-1">{groups.reduce((s, g) => s + g.memberCount, 0)}</p>
+        </div>
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-purple-500">
+          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Tutar</p>
+          <p className="text-2xl font-bold text-indigo-400 mt-1">{fmt(groups.reduce((s, g) => s + g.totalAmount, 0))}</p>
         </div>
       </div>
 
       {/* Liste */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
         </div>
       ) : error ? (
-        <div className="p-6 bg-red-50 text-red-600 rounded-xl">{error}</div>
+        <div className="p-6 bg-red-500/10 text-red-400 rounded-2xl border border-red-500/20">{error}</div>
       ) : groups.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-12 text-center">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-12 text-center">
           <div className="text-5xl mb-4">📋</div>
-          <p className="text-gray-500">Henüz ödeme grubu yok</p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="mt-4 px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
+          <p className="text-slate-400">Henüz ödeme grubu yok</p>
+          <button onClick={() => setShowCreate(true)}
+            className="mt-4 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors">
             İlk Grubu Oluştur
           </button>
         </div>
@@ -547,30 +495,28 @@ export default function PaymentGroups() {
           {groups.map(grp => (
             <div
               key={grp.paymentGroupId}
-              className="bg-white rounded-xl shadow hover:shadow-md cursor-pointer transition-all p-5 border border-transparent hover:border-blue-200"
+              className="bg-slate-800/40 border border-slate-700/50 hover:border-indigo-500/40 rounded-2xl cursor-pointer transition-all p-5 hover:bg-slate-800/60 hover:shadow-lg hover:shadow-indigo-500/5"
               onClick={() => setSelected(grp.paymentGroupId)}
             >
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-base">{grp.paymentGroupName || grp.paymentGroupId}</h3>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${typeColor[grp.paymentGroupTypeId] || 'bg-gray-100 text-gray-700'}`}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white text-base truncate">{grp.paymentGroupName || grp.paymentGroupId}</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${typeColor[grp.paymentGroupTypeId] || 'bg-slate-600/40 text-slate-300'}`}>
                     {grp.paymentGroupTypeDesc}
                   </span>
                 </div>
-                <span className="text-xs text-gray-400 font-mono">{grp.paymentGroupId}</span>
+                <span className="text-xs text-slate-500 font-mono ml-2 shrink-0">{grp.paymentGroupId}</span>
               </div>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Ödeme Sayısı</p>
-                  <p className="text-lg font-bold text-gray-700">{grp.memberCount}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Toplam Tutar</p>
-                  <p className="text-lg font-bold text-blue-600">{fmt(grp.totalAmount)}</p>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-700/40">
+                <div>
+                  <p className="text-xs text-slate-500">Ödeme</p>
+                  <p className="text-lg font-bold text-slate-200">{grp.memberCount}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-blue-500 hover:underline">Detaylar →</span>
+                  <p className="text-xs text-slate-500">Toplam</p>
+                  <p className="text-lg font-bold text-indigo-400">{fmt(grp.totalAmount)}</p>
                 </div>
+                <span className="text-xs text-indigo-400 hover:underline">Detaylar →</span>
               </div>
             </div>
           ))}
@@ -578,11 +524,7 @@ export default function PaymentGroups() {
       )}
 
       {showCreate && types.length > 0 && (
-        <CreateGroupModal
-          types={types}
-          onClose={() => setShowCreate(false)}
-          onCreated={load}
-        />
+        <CreateGroupModal types={types} onClose={() => setShowCreate(false)} onCreated={load} />
       )}
     </div>
   );
