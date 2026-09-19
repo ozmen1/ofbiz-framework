@@ -9,6 +9,7 @@ import {
   JournalEntryLinePayload, 
   CreateJournalEntryPayload 
 } from '../services/api';
+import { useTranslation } from '../i18n';
 
 interface CreateJournalEntryProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ interface EditableLine extends JournalEntryLinePayload {
 }
 
 export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, onSuccess }) => {
+  const { translations, locale } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -532,12 +534,14 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
             )}
             <div>
               <div className={`text-base font-extrabold ${isBalanced ? 'text-emerald-400' : 'text-red-400'}`}>
-                {isBalanced ? 'Fiş Dengeli (Kayıt Yapılabilir)' : 'Fiş Dengesiz! Borç ve Alacak Eşitlenmelidir'}
+                {isBalanced
+                  ? (locale === 'tr' ? 'Fiş Dengeli (Kayıt Yapılabilir)' : 'Voucher Balanced (Ready to Post)')
+                  : (locale === 'tr' ? 'Fiş Dengesiz! Borç ve Alacak Eşitlenmelidir' : 'Voucher Unbalanced! Debits and Credits must match')}
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
                 {isBalanced
-                  ? 'Borç ve alacak toplamları tam olarak uyuşuyor. Defter-i kebir kaydına hazır.'
-                  : `Borç ve Alacak arasında $${difference.toFixed(2)} tutarında fark bulunmaktadır.`}
+                  ? (locale === 'tr' ? 'Borç ve alacak toplamları tam olarak uyuşuyor. Defter-i kebir kaydına hazır.' : 'Total debits and credits match exactly. Ready for posting.')
+                  : (locale === 'tr' ? `Borç ve Alacak arasında $${difference.toFixed(2)} tutarında fark bulunmaktadır.` : `Difference between debits and credits: $${difference.toFixed(2)}`)}
               </div>
             </div>
           </div>
@@ -545,17 +549,17 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           {/* Quick numbers */}
           <div className="flex gap-8 items-center flex-wrap">
             <div>
-              <div className="text-xs text-slate-400">Toplam Borç (Debit)</div>
+              <div className="text-xs text-slate-400">{translations.journalEntries.totalDebit}</div>
               <div className="text-2xl font-extrabold text-blue-400">${totalDebit.toFixed(2)}</div>
             </div>
 
             <div>
-              <div className="text-xs text-slate-400">Toplam Alacak (Credit)</div>
+              <div className="text-xs text-slate-400">{translations.journalEntries.totalCredit}</div>
               <div className="text-2xl font-extrabold text-orange-400">${totalCredit.toFixed(2)}</div>
             </div>
 
             <div>
-              <div className="text-xs text-slate-400">Bakiye Farkı</div>
+              <div className="text-xs text-slate-400">{locale === 'tr' ? 'Bakiye Farkı' : 'Difference'}</div>
               <div className={`text-2xl font-extrabold ${isBalanced ? 'text-emerald-400' : 'text-red-400'}`}>
                 ${difference.toFixed(2)}
               </div>

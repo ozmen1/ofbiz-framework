@@ -2,76 +2,16 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X
+  Menu, X, Globe
 } from 'lucide-react';
 import { ViewType } from '../App';
+import { useTranslation } from '../i18n';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
 }
-
-// ─── Sayfa meta bilgileri ────────────────────────────────────────────────────
-const PAGE_META: Partial<Record<ViewType, { title: string; subtitle: string }>> = {
-  'dashboard':            { title: 'Dashboard',                subtitle: "Today's financial activity at a glance." },
-  'invoices':             { title: 'Faturalar',                subtitle: 'Tüm satış ve alış faturalarınızı görüntüleyin.' },
-  'create-invoice':       { title: 'Yeni Fatura',              subtitle: 'Yeni bir satış veya alış faturası oluşturun.' },
-  'invoice-detail':       { title: 'Fatura Detayı',            subtitle: 'Fatura başlık bilgilerini görüntüleyin ve düzenleyin.' },
-  'payments':             { title: 'Ödemeler',                  subtitle: 'Tahsilat ve tediye kayıtlarını yönetin.' },
-  'create-payment':       { title: 'Yeni Ödeme',               subtitle: 'Yeni bir tahsilat veya tediye kaydı oluşturun.' },
-  'payment-detail':       { title: 'Ödeme Detayı',             subtitle: 'Ödeme detaylarını görüntüleyin ve faturalarla eşleştirin.' },
-  'payment-groups':       { title: 'Ödeme Grupları',           subtitle: 'Toplu tahsilat fişleri ve EFT bordrolarını yönetin.' },
-  'financial-accounts':   { title: 'Kasa & Banka',             subtitle: 'Finansal hesaplar, virman ve banka mutabakatı.' },
-  'chart-of-accounts':    { title: 'Hesap Planı',              subtitle: 'GL hesapları ve muhasebe ağacını yönetin.' },
-  'journal-entries':      { title: 'Yevmiye Fişleri',          subtitle: 'Muhasebe kayıtlarını görüntüleyin ve oluşturun.' },
-  'create-journal-entry': { title: 'Yeni Yevmiye Fişi',        subtitle: 'Manuel muhasebe kaydı oluşturun.' },
-  'reports':              { title: 'Mali Raporlar',             subtitle: 'Mizan, Bilanço, Gelir Tablosu ve Yaşlandırma.' },
-  'advanced-accounting':  { title: 'Varlık & Bütçe',           subtitle: 'Cari hesaplar, sabit varlıklar ve bütçe yönetimi.' },
-  'tax-and-gl-mapping':   { title: 'Vergi & GL Eşlemeleri',    subtitle: 'Vergi otoriteler, oranları ve otomatik GL hesap eşlemeleri.' },
-  'test-page':            { title: 'API Test',                  subtitle: 'OFBiz REST API entegrasyonu test sayfası.' },
-};
-
-// ─── Navigasyon grupları ─────────────────────────────────────────────────────
-const NAV_GROUPS = [
-  {
-    label: 'Ana Menü',
-    items: [
-      { icon: <LayoutDashboard size={18} />, label: 'Dashboard',      view: 'dashboard'          as ViewType },
-    ]
-  },
-  {
-    label: 'Muhasebe',
-    items: [
-      { icon: <FileText   size={18} />, label: 'Faturalar',       view: 'invoices'           as ViewType },
-      { icon: <CreditCard size={18} />, label: 'Ödemeler',         view: 'payments'           as ViewType },
-      { icon: <Layers2    size={18} />, label: 'Ödeme Grupları',   view: 'payment-groups'     as ViewType },
-      { icon: <Landmark   size={18} />, label: 'Kasa & Banka',     view: 'financial-accounts' as ViewType },
-    ]
-  },
-  {
-    label: 'Genel Muhasebe',
-    items: [
-      { icon: <BookOpen   size={18} />, label: 'Hesap Planı',      view: 'chart-of-accounts'  as ViewType },
-      { icon: <ScrollText size={18} />, label: 'Yevmiye Fişleri',  view: 'journal-entries'    as ViewType },
-      { icon: <PieChart   size={18} />, label: 'Raporlar',         view: 'reports'            as ViewType },
-    ]
-  },
-  {
-    label: 'İleri Muhasebe',
-    items: [
-      { icon: <Layers   size={18} />, label: 'Varlık & Bütçe',  view: 'advanced-accounting' as ViewType },
-      { icon: <Percent  size={18} />, label: 'Vergi & GL',       view: 'tax-and-gl-mapping'  as ViewType },
-    ]
-  },
-  {
-    label: 'Sistem',
-    items: [
-      { icon: <Beaker   size={18} />, label: 'API Test', view: 'test-page' as ViewType },
-      { icon: <Settings size={18} />, label: 'Ayarlar',  view: null as any },
-    ]
-  }
-];
 
 function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean {
   if (!itemView) return false;
@@ -85,13 +25,109 @@ function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const meta = PAGE_META[currentView];
+  const { locale, setLocale, translations } = useTranslation();
+
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
+
+  // Dinamik Sayfa Meta Bilgileri
+  const pageMetaMap: Record<ViewType, { title: string; subtitle: string }> = {
+    'dashboard':            translations.pages.dashboard,
+    'invoices':             translations.pages.invoices,
+    'create-invoice':       translations.pages.createInvoice,
+    'invoice-detail':       translations.pages.invoiceDetail,
+    'payments':             translations.pages.payments,
+    'create-payment':       translations.pages.createPayment,
+    'payment-detail':       translations.pages.paymentDetail,
+    'payment-groups':       translations.pages.paymentGroups,
+    'financial-accounts':   translations.pages.financialAccounts,
+    'chart-of-accounts':    translations.pages.chartOfAccounts,
+    'journal-entries':      translations.pages.journalEntries,
+    'create-journal-entry': translations.pages.createJournalEntry,
+    'reports':              translations.pages.reports,
+    'advanced-accounting':  translations.pages.advancedAccounting,
+    'tax-and-gl-mapping':   translations.pages.taxAndGlMapping,
+    'test-page':            translations.pages.testPage,
+  };
+
+  const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
+
+  // Dinamik Menü Grupları
+  const navGroups = [
+    {
+      label: translations.nav.mainMenu,
+      items: [
+        { icon: <LayoutDashboard size={18} />, label: translations.nav.dashboard, view: 'dashboard' as ViewType },
+      ]
+    },
+    {
+      label: translations.nav.accounting,
+      items: [
+        { icon: <FileText   size={18} />, label: translations.nav.invoices,       view: 'invoices'           as ViewType },
+        { icon: <CreditCard size={18} />, label: translations.nav.payments,       view: 'payments'           as ViewType },
+        { icon: <Layers2    size={18} />, label: translations.nav.paymentGroups,   view: 'payment-groups'     as ViewType },
+        { icon: <Landmark   size={18} />, label: translations.nav.cashAndBank,     view: 'financial-accounts' as ViewType },
+      ]
+    },
+    {
+      label: translations.nav.generalLedger,
+      items: [
+        { icon: <BookOpen   size={18} />, label: translations.nav.chartOfAccounts, view: 'chart-of-accounts'  as ViewType },
+        { icon: <ScrollText size={18} />, label: translations.nav.journalEntries,   view: 'journal-entries'    as ViewType },
+        { icon: <PieChart   size={18} />, label: translations.nav.reports,          view: 'reports'            as ViewType },
+      ]
+    },
+    {
+      label: translations.nav.advancedAccounting,
+      items: [
+        { icon: <Layers   size={18} />, label: translations.nav.assetsAndBudget, view: 'advanced-accounting' as ViewType },
+        { icon: <Percent  size={18} />, label: translations.nav.taxAndGl,         view: 'tax-and-gl-mapping'  as ViewType },
+      ]
+    },
+    {
+      label: translations.nav.system,
+      items: [
+        { icon: <Beaker   size={18} />, label: translations.nav.apiTest, view: 'test-page' as ViewType },
+        { icon: <Settings size={18} />, label: translations.nav.settings, view: null as any },
+      ]
+    }
+  ];
 
   const handleNavClick = (view: ViewType) => {
     onNavigate(view);
     setIsMobileMenuOpen(false);
   };
+
+  // Dil Değiştirici Buton Bileşeni
+  const LanguageToggle = ({ className = '' }: { className?: string }) => (
+    <div className={`flex items-center bg-slate-800/90 border border-slate-700/70 rounded-xl p-0.5 shadow-inner ${className}`}>
+      <button
+        type="button"
+        onClick={() => setLocale('tr')}
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${
+          locale === 'tr'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white'
+        }`}
+        title="Türkçe"
+      >
+        <span>🇹🇷</span>
+        <span>TR</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setLocale('en')}
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${
+          locale === 'en'
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white'
+        }`}
+        title="English"
+      >
+        <span>🇬🇧</span>
+        <span>EN</span>
+      </button>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white relative">
@@ -118,8 +154,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
               <PieChart size={20} className="text-white" />
             </div>
             <div>
-              <span className="text-sm font-bold text-white tracking-tight">OFBiz Accounting</span>
-              <p className="text-xs text-slate-500">Finansal Yönetim</p>
+              <span className="text-sm font-bold text-white tracking-tight">{translations.nav.appName}</span>
+              <p className="text-xs text-slate-500">{translations.nav.appSubtitle}</p>
             </div>
           </div>
           <button 
@@ -132,7 +168,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
 
         {/* Nav Grupları */}
         <nav className="flex-1 px-3 py-4 space-y-5">
-          {NAV_GROUPS.map(group => (
+          {navGroups.map(group => (
             <div key={group.label}>
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
                 {group.label}
@@ -161,12 +197,20 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
           ))}
         </nav>
 
-        {/* Logout */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        {/* Dil Seçici (Mobil Drawer İçin) ve Logout */}
+        <div className="px-3 py-4 border-t border-slate-800 space-y-3">
+          <div className="flex items-center justify-between px-2 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <Globe size={14} className="text-indigo-400" />
+              Dil / Language
+            </span>
+            <LanguageToggle />
+          </div>
+
           <a href="#"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
             <LogOut size={18} className="text-slate-600" />
-            Çıkış Yap
+            {translations.nav.logout}
           </a>
         </div>
       </aside>
@@ -194,19 +238,25 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             </div>
           </div>
 
-          {/* Quick Action Button */}
-          <div className="flex gap-2 shrink-0">
+          {/* Sağ Alan: Dil Değiştirici ve Hızlı İşlem Butonu */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Masaüstü Dil Değiştirici */}
+            <div className="hidden sm:block">
+              <LanguageToggle />
+            </div>
+
+            {/* Quick Action Button */}
             {isPaymentView ? (
               <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
                 <Plus size={16} /> 
-                <span className="hidden sm:inline">Yeni Ödeme</span>
-                <span className="sm:hidden">Ödeme</span>
+                <span className="hidden sm:inline">{translations.nav.newPayment}</span>
+                <span className="sm:hidden">{translations.nav.newPayment.split(' ')[1] || 'Payment'}</span>
               </button>
             ) : (
               <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
                 <Plus size={16} /> 
-                <span className="hidden sm:inline">Yeni Fatura</span>
-                <span className="sm:hidden">Fatura</span>
+                <span className="hidden sm:inline">{translations.nav.newInvoice}</span>
+                <span className="sm:hidden">{translations.nav.newInvoice.split(' ')[1] || 'Invoice'}</span>
               </button>
             )}
           </div>

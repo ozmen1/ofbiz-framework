@@ -10,6 +10,7 @@ import {
   AcctgTransDetailResponse, 
   GlMetadataResponse 
 } from '../services/api';
+import { useTranslation } from '../i18n';
 
 interface JournalEntriesProps {
   onCreateNew?: () => void;
@@ -17,6 +18,7 @@ interface JournalEntriesProps {
 }
 
 export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, initialSelectedId }) => {
+  const { translations } = useTranslation();
   const [transactions, setTransactions] = useState<AcctgTransListItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -260,15 +262,15 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
           <table className="ds-table">
             <thead>
               <tr className="ds-thead-row">
-                <th className="ds-th">Fiş No</th>
-                <th className="ds-th">Tarih</th>
-                <th className="ds-th">Fiş Türü</th>
-                <th className="ds-th">Açıklama</th>
-                <th className="ds-th">Belge / Ref</th>
-                <th className="ds-th-right">Toplam Borç</th>
-                <th className="ds-th-right">Toplam Alacak</th>
-                <th className="ds-th text-center">Durum</th>
-                <th className="ds-th-right">İşlemler</th>
+                <th className="ds-th">{translations.journalEntries.transId}</th>
+                <th className="ds-th">{translations.journalEntries.transDate}</th>
+                <th className="ds-th">{translations.journalEntries.transType}</th>
+                <th className="ds-th">{translations.common.description}</th>
+                <th className="ds-th">{translations.journalEntries.reference}</th>
+                <th className="ds-th-right">{translations.journalEntries.totalDebit}</th>
+                <th className="ds-th-right">{translations.journalEntries.totalCredit}</th>
+                <th className="ds-th text-center">{translations.common.status}</th>
+                <th className="ds-th-right">{translations.common.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -277,7 +279,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                   <td colSpan={9} className="py-16 text-center text-slate-400">
                     <div className="flex items-center justify-center gap-3">
                       <div className="ds-spinner-sm" />
-                      <span>Yevmiye fişleri yükleniyor...</span>
+                      <span>{translations.common.loading}</span>
                     </div>
                   </td>
                 </tr>
@@ -285,7 +287,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                 <tr>
                   <td colSpan={9} className="py-16 text-center text-slate-400">
                     <Filter size={32} className="mx-auto mb-3 opacity-40" />
-                    <p>Kriterlere uygun yevmiye fişi bulunamadı.</p>
+                    <p>{translations.common.noData}</p>
                   </td>
                 </tr>
               ) : (

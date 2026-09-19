@@ -4,6 +4,7 @@ import {
   User, Calendar, AlignLeft, Plus, Trash2, AlertCircle, Link2, ExternalLink, X
 } from 'lucide-react';
 import { api, PaymentDetailResponse, OpenInvoiceItem, PaymentMetadataResponse } from '../services/api';
+import { useTranslation } from '../i18n';
 
 interface PaymentDetailProps {
   paymentId: string | null;
@@ -28,6 +29,7 @@ const formatStatus = (statusId: string) => {
 };
 
 const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onViewInvoice }) => {
+  const { translations } = useTranslation();
   const [detail, setDetail] = useState<PaymentDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -528,13 +530,13 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
             <table className="ds-table">
               <thead>
                 <tr className="ds-thead-row">
-                  <th className="ds-th">Eşleşme No</th>
-                  <th className="ds-th">Fatura No</th>
-                  <th className="ds-th">Fatura Tarihi</th>
-                  <th className="ds-th">Fatura Açıklaması</th>
-                  <th className="ds-th-right">Fatura Tutarı</th>
-                  <th className="ds-th-right">Uygulanan Tutar</th>
-                  <th className="ds-th text-center">İşlem</th>
+                  <th className="ds-th">#</th>
+                  <th className="ds-th">{translations.invoices.invoiceId}</th>
+                  <th className="ds-th">{translations.invoices.invoiceDate}</th>
+                  <th className="ds-th">{translations.common.description}</th>
+                  <th className="ds-th-right">{translations.invoices.totalAmount}</th>
+                  <th className="ds-th-right">{translations.payments.appliedAmount}</th>
+                  <th className="ds-th text-center">{translations.common.actions}</th>
                 </tr>
               </thead>
               <tbody>

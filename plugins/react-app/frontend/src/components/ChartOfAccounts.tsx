@@ -13,6 +13,7 @@ import {
   CreateGlAccountPayload,
   UpdateGlAccountPayload 
 } from '../services/api';
+import { useTranslation } from '../i18n';
 
 const getClassBadgeClass = (classId: string) => {
   const c = classId.toUpperCase();
@@ -41,6 +42,7 @@ interface ChartOfAccountsProps {
 }
 
 export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransaction }) => {
+  const { translations, locale } = useTranslation();
   const [accounts, setAccounts] = useState<GlAccountItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -346,7 +348,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text"
-              placeholder="Hesap kodu, hesap adı veya açıklama ile ara..."
+              placeholder={translations.chartOfAccounts.searchPlaceholder}
               value={searchTerm}
               onChange={e => { setSearchTerm(e.target.value); setViewIndex(0); }}
               className="ds-input pl-10"
@@ -360,7 +362,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               onChange={e => { setAssignedOnly(e.target.checked); setViewIndex(0); }}
               className="accent-indigo-500 rounded"
             />
-            <span>Yalnızca Şirkete Atananlar</span>
+            <span>{locale === 'tr' ? 'Yalnızca Şirkete Atananlar' : 'Only Assigned to Company'}</span>
           </label>
         </div>
       </div>
@@ -371,13 +373,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
           <table className="ds-table">
             <thead>
               <tr className="ds-thead-row">
-                <th className="ds-th">Hesap Kodu</th>
-                <th className="ds-th">Hesap Adı</th>
-                <th className="ds-th">Sınıf (Class)</th>
-                <th className="ds-th">Tür (Type)</th>
-                <th className="ds-th">Üst Hesap</th>
-                <th className="ds-th text-center">Şirket Durumu</th>
-                <th className="ds-th-right">İşlemler</th>
+                <th className="ds-th">{translations.chartOfAccounts.accountCode}</th>
+                <th className="ds-th">{translations.chartOfAccounts.accountName}</th>
+                <th className="ds-th">{translations.chartOfAccounts.accountClass}</th>
+                <th className="ds-th">{translations.chartOfAccounts.accountType}</th>
+                <th className="ds-th">{translations.chartOfAccounts.parentAccount}</th>
+                <th className="ds-th text-center">{translations.chartOfAccounts.companyStatus}</th>
+                <th className="ds-th-right">{translations.common.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -386,7 +388,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   <td colSpan={7} className="py-16 text-center text-slate-400">
                     <div className="flex items-center justify-center gap-3">
                       <div className="ds-spinner-sm" />
-                      <span>Hesap planı yükleniyor...</span>
+                      <span>{translations.common.loading}</span>
                     </div>
                   </td>
                 </tr>
@@ -394,7 +396,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-slate-400">
                     <Filter size={32} className="mx-auto mb-3 opacity-40" />
-                    <p>Kriterlere uygun GL hesabı bulunamadı.</p>
+                    <p>{translations.common.noData}</p>
                   </td>
                 </tr>
               ) : (

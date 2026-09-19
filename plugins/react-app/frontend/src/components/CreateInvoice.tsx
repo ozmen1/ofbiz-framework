@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X, Building2, User, FileText, Calendar, AlignLeft, AlertCircle, Loader2, DollarSign, Hash } from 'lucide-react';
 import { api } from '../services/api';
+import { useTranslation } from '../i18n';
 
 interface CreateInvoiceProps {
   onCancel: () => void;
@@ -8,6 +9,7 @@ interface CreateInvoiceProps {
 }
 
 const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
+  const { translations, locale } = useTranslation();
   const [formData, setFormData] = useState({
     partyIdFrom: 'Company',
     partyIdTo: '',
@@ -240,14 +242,14 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
           </div>
 
           <div>
-            <label className="ds-label">Açıklama / Notlar</label>
+            <label className="ds-label">{translations.common.description}</label>
             <div className="relative">
               <AlignLeft size={15} className="absolute left-3 top-3.5 text-slate-500 pointer-events-none" />
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Faturaya dair genel açıklama veya proje detayı..."
+                placeholder={locale === 'tr' ? 'Faturaya dair genel açıklama veya proje detayı...' : 'General invoice description or notes...'}
                 className="ds-input pl-9 w-full min-h-[100px] resize-y"
               />
             </div>
@@ -257,11 +259,11 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
         {/* Action Buttons */}
         <div className="flex gap-3 justify-end border-t border-slate-700/50 pt-5">
           <button type="button" onClick={onCancel} className="ds-btn-secondary flex items-center gap-2" disabled={loading}>
-            <X size={16} /> İptal
+            <X size={16} /> {translations.common.cancel}
           </button>
           <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={loading}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            {loading ? 'Oluşturuluyor...' : 'Faturayı Oluştur'}
+            {loading ? (locale === 'tr' ? 'Oluşturuluyor...' : 'Creating...') : translations.common.create}
           </button>
         </div>
 

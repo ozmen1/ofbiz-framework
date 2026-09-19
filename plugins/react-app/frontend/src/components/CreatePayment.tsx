@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle, Loader2, ArrowDownLeft, ArrowUpRight, DollarSign } from 'lucide-react';
 import { api, PaymentMetadataResponse } from '../services/api';
+import { useTranslation } from '../i18n';
 
 interface CreatePaymentProps {
   onCancel: () => void;
@@ -8,6 +9,7 @@ interface CreatePaymentProps {
 }
 
 const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
+  const { translations, locale } = useTranslation();
   const [direction, setDirection] = useState<'incoming' | 'outgoing'>('incoming');
   const [loading, setLoading] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(true);
@@ -327,7 +329,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               onClick={onCancel}
               className="ds-btn-secondary"
             >
-              İptal
+              {translations.common.cancel}
             </button>
             <button
               type="submit"
@@ -337,12 +339,12 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               {loading ? (
                 <>
                   <Loader2 size={16} className="ds-spinner-sm" />
-                  Kaydediliyor...
+                  {locale === 'tr' ? 'Kaydediliyor...' : 'Saving...'}
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  Ödemeyi Kaydet
+                  {translations.common.save}
                 </>
               )}
             </button>

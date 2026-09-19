@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { api, InvoiceDetailResponse } from '../services/api';
 import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
-
+import { useTranslation } from '../i18n';
 
 interface InvoiceDetailProps {
   invoiceId: string | null;
@@ -53,6 +53,7 @@ const formatStatus = (statusId: string) => {
 };
 
 const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onViewInvoice, onViewPayment }) => {
+  const { translations } = useTranslation();
   const [detail, setDetail] = useState<InvoiceDetailResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -645,13 +646,13 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
           <table className="ds-table">
             <thead>
               <tr className="ds-thead-row">
-                <th className="ds-th">Sıra No</th>
-                <th className="ds-th">Kalem Tipi</th>
-                <th className="ds-th">Açıklama</th>
-                <th className="ds-th-right">Miktar</th>
-                <th className="ds-th-right">Birim Fiyat</th>
-                <th className="ds-th-right">Tutar</th>
-                {isEditable && <th className="ds-th text-center">İşlem</th>}
+                <th className="ds-th">#</th>
+                <th className="ds-th">{translations.invoices.itemType}</th>
+                <th className="ds-th">{translations.common.description}</th>
+                <th className="ds-th-right">{translations.invoices.quantity}</th>
+                <th className="ds-th-right">{translations.invoices.unitPrice}</th>
+                <th className="ds-th-right">{translations.invoices.lineTotal}</th>
+                {isEditable && <th className="ds-th text-center">{translations.common.actions}</th>}
               </tr>
             </thead>
             <tbody>

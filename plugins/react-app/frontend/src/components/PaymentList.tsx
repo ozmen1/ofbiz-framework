@@ -4,6 +4,7 @@ import {
   Clock, XCircle, AlertCircle, Loader2, ArrowDownLeft, ArrowUpRight, Plus, Filter 
 } from 'lucide-react';
 import { api, PaymentListItem } from '../services/api';
+import { useTranslation } from '../i18n';
 
 const getPaymentStatusBadgeClass = (statusId: string): string => {
   switch (statusId) {
@@ -28,8 +29,28 @@ const getPaymentStatusIcon = (statusId: string) => {
   }
 };
 
-const formatStatus = (statusId: string) => {
-  return (statusId || '').replace('PMNT_', '').replace(/_/g, ' ');
+const getPaymentStatusLabel = (statusId: string, locale: string): string => {
+  if (locale === 'tr') {
+    switch (statusId) {
+      case 'PMNT_RECEIVED': return 'Alındı / Tahsil';
+      case 'PMNT_SENT': return 'Gönderildi / Tediye';
+      case 'PMNT_CONFIRMED': return 'Onaylandı';
+      case 'PMNT_NOT_PAID': return 'Ödenmedi';
+      case 'PMNT_CANCELLED': return 'İptal Edildi';
+      case 'PMNT_VOID': return 'Hükümsüz';
+      default: return (statusId || '').replace('PMNT_', '').replace(/_/g, ' ');
+    }
+  } else {
+    switch (statusId) {
+      case 'PMNT_RECEIVED': return 'Received';
+      case 'PMNT_SENT': return 'Sent';
+      case 'PMNT_CONFIRMED': return 'Confirmed';
+      case 'PMNT_NOT_PAID': return 'Not Paid';
+      case 'PMNT_CANCELLED': return 'Cancelled';
+      case 'PMNT_VOID': return 'Void';
+      default: return (statusId || '').replace('PMNT_', '').replace(/_/g, ' ');
+    }
+  }
 };
 
 interface PaymentListProps {
@@ -38,6 +59,7 @@ interface PaymentListProps {
 }
 
 const PaymentList: React.FC<PaymentListProps> = ({ onViewPayment, onCreatePayment }) => {
+  const { translations, locale } = useTranslation();
   const [payments, setPayments] = useState<PaymentListItem[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -280,15 +302,15 @@ const PaymentList: React.FC<PaymentListProps> = ({ onViewPayment, onCreatePaymen
           <table className="ds-table">
             <thead>
               <tr className="ds-thead-row">
-                <th className="ds-th">Ödeme No</th>
-                <th className="ds-th">Tür</th>
-                <th className="ds-th">Gönderen (Borçlu)</th>
-                <th className="ds-th">Alan (Alacaklı)</th>
-                <th className="ds-th">Yöntem</th>
-                <th className="ds-th">Tarih</th>
-                <th className="ds-th-right">Toplam Tutar</th>
-                <th className="ds-th-right">Mahsup / Açık</th>
-                <th className="ds-th">Durum</th>
+                <th className="ds-th">{translations.payments.paymentId}</th>
+                <th className="ds-th">{translations.payments.paymentType}</th>
+                <th className="ds-th">{translations.payments.fromParty}</th>
+                <th className="ds-th">{translations.payments.toParty}</th>
+                <th className="ds-th">{translations.payments.paymentMethod}</th>
+                <th className="ds-th">{translations.payments.effectiveDate}</th>
+                <th className="ds-th-right">{translations.payments.amount}</th>
+                <th className="ds-th-right">{locale === 'tr' ? 'Mahsup / Açık' : 'Applied / Open'}</th>
+                <th className="ds-th">{translations.common.status}</th>
                 <th className="ds-th"></th>
               </tr>
             </thead>
@@ -298,14 +320,14 @@ const PaymentList: React.FC<PaymentListProps> = ({ onViewPayment, onCreatePaymen
                   <td colSpan={10} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 size={28} className="ds-spinner text-indigo-400" />
-                      <div className="text-slate-400">Ödemeler yükleniyor...</div>
+                      <div className="text-slate-400">{translations.common.loading}</div>
                     </div>
                   </td>
                 </tr>
               ) : payments.length === 0 ? (
                 <tr>
                   <td colSpan={10}>
-                    <div className="ds-empty">Filtreye uygun ödeme bulunamadı.</div>
+                    <div className="ds-empty">{translations.common.noData}</div>
                   </td>
                 </tr>
               ) : (
@@ -355,18 +377,18 @@ const PaymentList: React.FC<PaymentListProps> = ({ onViewPayment, onCreatePaymen
                         </div>
                         {p.openAmount > 0 && (
                           <div className="text-xs text-slate-500">
-                            Açık: ${p.openAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {locale === 'tr' ? 'Açık:' : 'Open:'} ${p.openAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         )}
                       </td>
                       <td className="ds-td">
-                        <span className={`${getPaymentStatusBadgeClass(p.statusId)} inline-flex items-center gap-1`}>
+                        <span className={getPaymentStatusBadgeClass(p.statusId)}>
                           {getPaymentStatusIcon(p.statusId)}
-                          {p.statusDesc || formatStatus(p.statusId)}
+                          {getPaymentStatusLabel(p.statusId, locale)}
                         </span>
                       </td>
-                      <td className="ds-td text-center text-slate-500">
-                        <ChevronRight size={16} />
+                      <td className="ds-td text-right">
+                        <ChevronRight size={16} className="text-slate-500 ml-auto" />
                       </td>
                     </tr>
                   );

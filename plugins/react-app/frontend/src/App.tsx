@@ -16,6 +16,7 @@ import FinancialAccounts from './components/FinancialAccounts'
 import AdvancedAccounting from './components/AdvancedAccounting'
 import { TaxAndGlMapping } from './components/TaxAndGlMapping'
 import TestPage from './components/TestPage'
+import { I18nProvider } from './i18n'
 import './index.css'
 import './design-system.css'
 
@@ -58,8 +59,9 @@ function App() {
   };
 
   return (
-    <Layout currentView={currentView} onNavigate={handleNavigate}>
-      {currentView === 'dashboard' && <AccountingDashboard />}
+    <I18nProvider>
+      <Layout currentView={currentView} onNavigate={handleNavigate}>
+        {currentView === 'dashboard' && <AccountingDashboard />}
       
       {/* Invoices Views */}
       {currentView === 'invoices' && (
@@ -136,7 +138,8 @@ function App() {
       {currentView === 'payment-groups' && <PaymentGroups />}
 
       {currentView === 'test-page' && <TestPage />}
-    </Layout>
+      </Layout>
+    </I18nProvider>
   )
 }
 

@@ -12,10 +12,12 @@ import {
   AgingResponse, 
   ReportMetadataResponse 
 } from '../services/api';
+import { useTranslation } from '../i18n';
 
 type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'aging';
 
 const FinancialReports: React.FC = () => {
+  const { translations } = useTranslation();
   const [activeTab, setActiveTab] = useState<ReportTab>('trial-balance');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -159,25 +161,25 @@ const FinancialReports: React.FC = () => {
               onClick={() => setActiveTab('trial-balance')}
               className={activeTab === 'trial-balance' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <FileText size={16} /> Mizan (Trial Balance)
+              <FileText size={16} /> {translations.reports.trialBalance}
             </button>
             <button
               onClick={() => setActiveTab('balance-sheet')}
               className={activeTab === 'balance-sheet' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <Landmark size={16} /> Bilanço (Balance Sheet)
+              <Landmark size={16} /> {translations.reports.balanceSheet}
             </button>
             <button
               onClick={() => setActiveTab('income-statement')}
               className={activeTab === 'income-statement' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <TrendingUp size={16} /> Gelir Tablosu (P&L)
+              <TrendingUp size={16} /> {translations.reports.incomeStatement}
             </button>
             <button
               onClick={() => setActiveTab('aging')}
               className={activeTab === 'aging' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <Clock size={16} /> Yaşlandırma (Aging)
+              <Clock size={16} /> {translations.reports.aging}
             </button>
           </div>
 

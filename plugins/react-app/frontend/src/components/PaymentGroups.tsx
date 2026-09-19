@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '../services/api';
+import { useTranslation } from '../i18n';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipler
@@ -51,11 +52,12 @@ interface AvailablePayment {
 // ─────────────────────────────────────────────────────────────────────────────
 // Yardımcılar
 // ─────────────────────────────────────────────────────────────────────────────
-const fmt = (n: number, currency = 'USD') =>
-  new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(n);
+const fmt = (n: number, currency = 'USD', locale = 'tr') =>
+  new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency }).format(n);
 
-const fmtDate = (s: string) =>
-  s ? new Date(s).toLocaleDateString('tr-TR') : '-';
+const fmtDate = (s: string, locale = 'tr') =>
+  s ? new Date(s).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US') : '-';
+
 
 const typeColor: Record<string, string> = {
   CHECK_RUN    : 'bg-blue-500/20 text-blue-300',
@@ -74,6 +76,7 @@ function CreateGroupModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { translations, locale } = useTranslation();
   const [form, setForm] = useState({
     paymentGroupName: '',
     paymentGroupTypeId: types[0]?.paymentGroupTypeId || 'BATCH_PAYMENT',
@@ -82,14 +85,14 @@ function CreateGroupModal({
   const [error, setError]   = useState('');
 
   const save = async () => {
-    if (!form.paymentGroupName.trim()) { setError('Grup adı gerekli'); return; }
+    if (!form.paymentGroupName.trim()) { setError(locale === 'tr' ? 'Grup adı gerekli' : 'Group name is required'); return; }
     setSaving(true);
     try {
       const data = await fetchApi(
         `/react-app/control/createPaymentGroup?paymentGroupName=${encodeURIComponent(form.paymentGroupName)}&paymentGroupTypeId=${form.paymentGroupTypeId}`
       );
       if (data.success) { onCreated(); onClose(); }
-      else setError(data.error || 'Oluşturulamadı');
+      else setError(data.error || (locale === 'tr' ? 'Oluşturulamadı' : 'Failed to create'));
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
   };
@@ -97,20 +100,20 @@ function CreateGroupModal({
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
       <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 my-auto">
-        <h2 className="text-xl font-bold text-white mb-4">Yeni Ödeme Grubu</h2>
+        <h2 className="text-xl font-bold text-white mb-4">{translations.paymentGroups.newGroup}</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Grup Adı *</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">{translations.paymentGroups.groupName} *</label>
             <input
               className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
               value={form.paymentGroupName}
               onChange={e => setForm(p => ({ ...p, paymentGroupName: e.target.value }))}
-              placeholder="Örn: Kasım Havale Bordrosu"
+              placeholder={locale === 'tr' ? 'Örn: Kasım Havale Bordrosu' : 'e.g. November Wire Batch'}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Grup Tipi</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">{translations.paymentGroups.groupType}</label>
             <select
               className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
               value={form.paymentGroupTypeId}
@@ -124,11 +127,11 @@ function CreateGroupModal({
         </div>
         <div className="flex gap-3 mt-6 justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm text-slate-300 border border-slate-600 rounded-xl hover:bg-slate-700 transition-colors">
-            İptal
+            {translations.common.cancel}
           </button>
           <button onClick={save} disabled={saving}
             className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl disabled:opacity-50 transition-colors">
-            {saving ? 'Kaydediliyor…' : 'Oluştur'}
+            {saving ? (locale === 'tr' ? 'Kaydediliyor…' : 'Saving…') : translations.common.create}
           </button>
         </div>
       </div>
@@ -148,6 +151,7 @@ function AddPaymentModal({
   onClose: () => void;
   onAdded: () => void;
 }) {
+  const { translations, locale } = useTranslation();
   const [payments, setPayments] = useState<AvailablePayment[]>([]);
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -170,7 +174,7 @@ function AddPaymentModal({
   };
 
   const addSelected = async () => {
-    if (selected.size === 0) { setError('En az bir ödeme seçin'); return; }
+    if (selected.size === 0) { setError(locale === 'tr' ? 'En az bir ödeme seçin' : 'Select at least one payment'); return; }
     setSaving(true);
     try {
       for (const paymentId of Array.from(selected)) {
@@ -185,23 +189,23 @@ function AddPaymentModal({
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
       <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-5 sm:p-6 max-h-[85vh] flex flex-col my-auto">
-        <h2 className="text-xl font-bold text-white mb-4">Gruba Ödeme Ekle</h2>
+        <h2 className="text-xl font-bold text-white mb-4">{translations.paymentGroups.addPayment}</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
         <div className="flex-1 overflow-y-auto overflow-x-auto rounded-xl border border-slate-700">
           {loading ? (
-            <div className="text-center py-10 text-slate-400">Yükleniyor…</div>
+            <div className="text-center py-10 text-slate-400">{translations.common.loading}</div>
           ) : payments.length === 0 ? (
-            <div className="text-center py-10 text-slate-500">Eklenebilecek ödeme bulunamadı</div>
+            <div className="text-center py-10 text-slate-500">{translations.paymentGroups.noPayments}</div>
           ) : (
             <table className="w-full text-sm min-w-[540px]">
               <thead>
                 <tr className="bg-slate-700/60 text-slate-400 text-xs uppercase">
                   <th className="px-3 py-2 text-left w-8"></th>
-                  <th className="px-3 py-2 text-left">Ödeme ID</th>
-                  <th className="px-3 py-2 text-left">Gönderen</th>
-                  <th className="px-3 py-2 text-left">Alıcı</th>
-                  <th className="px-3 py-2 text-right">Tutar</th>
-                  <th className="px-3 py-2 text-left">Tarih</th>
+                  <th className="px-3 py-2 text-left">{translations.payments.paymentId}</th>
+                  <th className="px-3 py-2 text-left">{translations.payments.fromParty}</th>
+                  <th className="px-3 py-2 text-left">{translations.payments.toParty}</th>
+                  <th className="px-3 py-2 text-right">{translations.payments.amount}</th>
+                  <th className="px-3 py-2 text-left">{translations.common.date}</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,8 +219,8 @@ function AddPaymentModal({
                     <td className="px-3 py-2 font-mono text-indigo-400">{p.paymentId}</td>
                     <td className="px-3 py-2 text-slate-200">{p.partyNameFrom}</td>
                     <td className="px-3 py-2 text-slate-200">{p.partyNameTo}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-white">{fmt(p.amount, p.currencyUomId)}</td>
-                    <td className="px-3 py-2 text-slate-400">{fmtDate(p.effectiveDate)}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-white">{fmt(p.amount, p.currencyUomId, locale)}</td>
+                    <td className="px-3 py-2 text-slate-400">{fmtDate(p.effectiveDate, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -224,14 +228,16 @@ function AddPaymentModal({
           )}
         </div>
         <div className="flex gap-3 mt-4 justify-between items-center">
-          <span className="text-sm text-slate-400">{selected.size} ödeme seçildi</span>
+          <span className="text-sm text-slate-400">
+            {selected.size} {locale === 'tr' ? 'ödeme seçildi' : 'payments selected'}
+          </span>
           <div className="flex gap-3">
             <button onClick={onClose} className="px-4 py-2 text-sm text-slate-300 border border-slate-600 rounded-xl hover:bg-slate-700 transition-colors">
-              İptal
+              {translations.common.cancel}
             </button>
             <button onClick={addSelected} disabled={saving || selected.size === 0}
               className="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl disabled:opacity-50 transition-colors">
-              {saving ? 'Ekleniyor…' : `${selected.size} Ödemeyi Ekle`}
+              {saving ? (locale === 'tr' ? 'Ekleniyor…' : 'Adding…') : `${translations.paymentGroups.addPayment} (${selected.size})`}
             </button>
           </div>
         </div>
@@ -252,6 +258,7 @@ function GroupDetailPanel({
   onBack: () => void;
   onDeleted: () => void;
 }) {
+  const { translations, locale } = useTranslation();
   const [detail, setDetail]        = useState<PaymentGroupDetail | null>(null);
   const [loading, setLoading]      = useState(true);
   const [showAddModal, setShowAdd] = useState(false);
@@ -295,7 +302,7 @@ function GroupDetailPanel({
         <div className="flex items-center gap-3">
           <button onClick={onBack}
             className="p-2 hover:bg-slate-700/60 rounded-xl text-slate-400 hover:text-white transition-colors">
-            ← Listeye Dön
+            ← {translations.common.back}
           </button>
           <div>
             <h2 className="text-xl font-bold text-white">{detail.paymentGroupName}</h2>
@@ -303,18 +310,20 @@ function GroupDetailPanel({
               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor[detail.paymentGroupTypeId] || 'bg-slate-600/40 text-slate-300'}`}>
                 {detail.paymentGroupTypeDesc}
               </span>
-              <span className="text-xs sm:text-sm text-slate-400">{detail.memberCount} ödeme · Toplam: {fmt(detail.totalAmount)}</span>
+              <span className="text-xs sm:text-sm text-slate-400">
+                {detail.memberCount} {locale === 'tr' ? 'ödeme' : 'payments'} · {translations.common.total}: {fmt(detail.totalAmount, 'USD', locale)}
+              </span>
             </div>
           </div>
         </div>
         <div className="flex gap-2 self-start sm:self-auto">
           <button onClick={() => setShowAdd(true)}
             className="px-3.5 py-2 text-xs sm:text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center gap-2 transition-colors">
-            + Ödeme Ekle
+            + {translations.paymentGroups.addPayment}
           </button>
           <button onClick={deleteGroup}
             className="px-3.5 py-2 text-xs sm:text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors">
-            Grubu Sil
+            {locale === 'tr' ? 'Grubu Sil' : 'Delete Group'}
           </button>
         </div>
       </div>
@@ -326,21 +335,21 @@ function GroupDetailPanel({
           <thead>
             <tr className="bg-slate-700/40 text-slate-400 text-xs uppercase border-b border-slate-700/50">
               <th className="px-4 py-3 text-left">#</th>
-              <th className="px-4 py-3 text-left">Ödeme ID</th>
-              <th className="px-4 py-3 text-left">Tip</th>
-              <th className="px-4 py-3 text-left">Gönderen</th>
-              <th className="px-4 py-3 text-left">Alıcı</th>
-              <th className="px-4 py-3 text-right">Tutar</th>
-              <th className="px-4 py-3 text-left">Durum</th>
-              <th className="px-4 py-3 text-left">Tarih</th>
-              <th className="px-4 py-3 text-left">İşlem</th>
+              <th className="px-4 py-3 text-left">{translations.payments.paymentId}</th>
+              <th className="px-4 py-3 text-left">{translations.payments.paymentType}</th>
+              <th className="px-4 py-3 text-left">{translations.payments.fromParty}</th>
+              <th className="px-4 py-3 text-left">{translations.payments.toParty}</th>
+              <th className="px-4 py-3 text-right">{translations.payments.amount}</th>
+              <th className="px-4 py-3 text-left">{translations.common.status}</th>
+              <th className="px-4 py-3 text-left">{translations.common.date}</th>
+              <th className="px-4 py-3 text-left">{translations.common.actions}</th>
             </tr>
           </thead>
           <tbody>
             {detail.members.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
-                  Bu grupta henüz ödeme yok. "Ödeme Ekle" butonuyla ödeme ekleyebilirsiniz.
+                  {translations.paymentGroups.noPayments}
                 </td>
               </tr>
             ) : (
@@ -390,6 +399,7 @@ function GroupDetailPanel({
 // Ana Bileşen: PaymentGroups
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PaymentGroups() {
+  const { translations, locale } = useTranslation();
   const [groups, setGroups]            = useState<PaymentGroup[]>([]);
   const [types, setTypes]              = useState<PaymentGroupType[]>([]);
   const [loading, setLoading]          = useState(true);
@@ -435,46 +445,46 @@ export default function PaymentGroups() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            📋 Ödeme Grupları & Bordrolar
+            📋 {translations.paymentGroups.title}
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Toplu tahsilat fişleri, çek run ve EFT bordrolarını yönetin
+            {translations.paymentGroups.subtitle}
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all cursor-pointer self-start sm:self-auto"
         >
-          + Yeni Grup
+          + {translations.paymentGroups.newGroup}
         </button>
       </div>
 
       {/* Filtre + Özet */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 flex items-center gap-3">
-          <label className="text-sm text-slate-400 whitespace-nowrap">Tip:</label>
+          <label className="text-sm text-slate-400 whitespace-nowrap">{translations.paymentGroups.groupType}:</label>
           <select
             className="flex-1 bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
           >
-            <option value="">Tümü</option>
+            <option value="">{translations.paymentGroups.allTypes}</option>
             {types.map(t => (
               <option key={t.paymentGroupTypeId} value={t.paymentGroupTypeId}>{t.description}</option>
             ))}
           </select>
         </div>
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-indigo-500">
-          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Grup</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">{translations.paymentGroups.totalGroups}</p>
           <p className="text-2xl font-bold text-white mt-1">{groups.length}</p>
         </div>
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-emerald-500">
-          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Ödeme</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">{translations.paymentGroups.totalPayments}</p>
           <p className="text-2xl font-bold text-white mt-1">{groups.reduce((s, g) => s + g.memberCount, 0)}</p>
         </div>
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 border-l-4 border-l-purple-500">
-          <p className="text-xs text-slate-400 uppercase tracking-wide">Toplam Tutar</p>
-          <p className="text-2xl font-bold text-indigo-400 mt-1">{fmt(groups.reduce((s, g) => s + g.totalAmount, 0))}</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wide">{translations.paymentGroups.totalAmount}</p>
+          <p className="text-2xl font-bold text-indigo-400 mt-1">{fmt(groups.reduce((s, g) => s + g.totalAmount, 0), 'USD', locale)}</p>
         </div>
       </div>
 
@@ -488,10 +498,10 @@ export default function PaymentGroups() {
       ) : groups.length === 0 ? (
         <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-12 text-center">
           <div className="text-5xl mb-4">📋</div>
-          <p className="text-slate-400">Henüz ödeme grubu yok</p>
+          <p className="text-slate-400">{translations.paymentGroups.noGroups}</p>
           <button onClick={() => setShowCreate(true)}
             className="mt-4 px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors">
-            İlk Grubu Oluştur
+            + {translations.paymentGroups.newGroup}
           </button>
         </div>
       ) : (
