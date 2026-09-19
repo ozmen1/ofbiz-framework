@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
-  Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus
+  Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
+  Menu, X
 } from 'lucide-react';
 import { ViewType } from '../App';
 
@@ -72,11 +73,9 @@ const NAV_GROUPS = [
   }
 ];
 
-// Hangi view'ın hangi nav item'ını aktif ettiğini belirle
 function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean {
   if (!itemView) return false;
   if (currentView === itemView) return true;
-  // Gruplar
   if (itemView === 'invoices' && ['create-invoice', 'invoice-detail'].includes(currentView)) return true;
   if (itemView === 'payments' && ['create-payment', 'payment-detail'].includes(currentView)) return true;
   if (itemView === 'journal-entries' && currentView === 'create-journal-entry') return true;
@@ -85,22 +84,50 @@ function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean 
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const meta = PAGE_META[currentView];
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
 
+  const handleNavClick = (view: ViewType) => {
+    onNavigate(view);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white">
-      {/* ── Sidebar ── */}
-      <aside className="w-72 shrink-0 border-r border-slate-800 bg-slate-900/80 backdrop-blur-xl flex flex-col sticky top-0 h-screen overflow-y-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <PieChart size={20} className="text-white" />
+    <div className="flex min-h-screen bg-slate-950 text-white relative">
+      {/* ── Mobile Backdrop Overlay ── */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar (Responsive: Drawer on mobile, Sticky on desktop) ── */}
+      <aside className={`
+        fixed lg:sticky top-0 left-0 z-50 h-screen w-72 shrink-0 
+        border-r border-slate-800 bg-slate-900/95 lg:bg-slate-900/80 backdrop-blur-xl 
+        flex flex-col transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
+        overflow-y-auto
+      `}>
+        {/* Logo & Mobile Close */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <PieChart size={20} className="text-white" />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-white tracking-tight">OFBiz Accounting</span>
+              <p className="text-xs text-slate-500">Finansal Yönetim</p>
+            </div>
           </div>
-          <div>
-            <span className="text-sm font-bold text-white tracking-tight">OFBiz Accounting</span>
-            <p className="text-xs text-slate-500">Finansal Yönetim</p>
-          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Nav Grupları */}
@@ -117,14 +144,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
                     <a
                       key={item.label}
                       href="#"
-                      onClick={e => { e.preventDefault(); if (item.view) onNavigate(item.view); }}
+                      onClick={e => { e.preventDefault(); if (item.view) handleNavClick(item.view); }}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                         active
                           ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                          : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
                       }`}
                     >
-                      <span className={active ? 'text-indigo-400' : 'text-slate-600'}>{item.icon}</span>
+                      <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
                       {item.label}
                     </a>
                   );
@@ -146,31 +173,47 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
 
       {/* ── İçerik Alanı ── */}
       <main className="flex-1 min-w-0 overflow-y-auto">
-        {/* Üst Bar */}
-        <header className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 px-8 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-white leading-none">
-              {meta?.title || ''}
-            </h2>
-            {meta?.subtitle && (
-              <p className="text-xs text-slate-500 mt-0.5">{meta.subtitle}</p>
-            )}
+        {/* Üst Bar (Sticky & Mobile-friendly) */}
+        <header className="sticky top-0 z-20 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger Button for Mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors shrink-0"
+              aria-label="Menüyü Aç"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white leading-tight truncate">
+                {meta?.title || ''}
+              </h2>
+              {meta?.subtitle && (
+                <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">{meta.subtitle}</p>
+              )}
+            </div>
           </div>
-          <div className="flex gap-3">
+
+          {/* Quick Action Button */}
+          <div className="flex gap-2 shrink-0">
             {isPaymentView ? (
-              <button className="ds-btn-primary" onClick={() => onNavigate('create-payment')}>
-                <Plus size={16} /> Yeni Ödeme
+              <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
+                <Plus size={16} /> 
+                <span className="hidden sm:inline">Yeni Ödeme</span>
+                <span className="sm:hidden">Ödeme</span>
               </button>
             ) : (
-              <button className="ds-btn-primary" onClick={() => onNavigate('create-invoice')}>
-                <Plus size={16} /> Yeni Fatura
+              <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
+                <Plus size={16} /> 
+                <span className="hidden sm:inline">Yeni Fatura</span>
+                <span className="sm:hidden">Fatura</span>
               </button>
             )}
           </div>
         </header>
 
-        {/* Sayfa İçeriği */}
-        <div className="px-8 py-6">
+        {/* Sayfa İçeriği (Responsive Padding) */}
+        <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
           {children}
         </div>
       </main>

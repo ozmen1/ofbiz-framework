@@ -315,60 +315,65 @@ const FinancialReports: React.FC = () => {
 
               {/* Trial Balance Table */}
               <div className="ds-card overflow-hidden p-0">
-                <table className="ds-table">
-                  <thead>
-                    <tr className="ds-thead-row">
-                      <th className="ds-th">Hesap Kodu</th>
-                      <th className="ds-th">Hesap Adı</th>
-                      <th className="ds-th">Hesap Sınıfı</th>
-                      <th className="ds-th-right">Toplam Borç</th>
-                      <th className="ds-th-right">Toplam Alacak</th>
-                      <th className="ds-th-right">Net Bakiye</th>
-                      <th className="ds-th text-center">B/A</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTbAccounts.map(acc => (
-                      <tr key={acc.glAccountId} className="ds-tbody-row">
-                        <td className="ds-td-primary">
-                          #{acc.accountCode || acc.glAccountId}
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">Hesap Kodu</th>
+                        <th className="ds-th">Hesap Adı</th>
+                        <th className="ds-th">Hesap Sınıfı</th>
+                        <th className="ds-th-right">Toplam Borç</th>
+                        <th className="ds-th-right">Toplam Alacak</th>
+                        <th className="ds-th-right">Net Bakiye</th>
+                        <th className="ds-th text-center">B/A</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredTbAccounts.map(acc => (
+                        <tr key={acc.glAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-indigo-400 font-semibold">
+                            #{acc.accountCode || acc.glAccountId}
+                          </td>
+                          <td className="ds-td font-medium text-white">
+                            {acc.accountName}
+                          </td>
+                          <td className="ds-td-muted text-xs">
+                            <span className="ds-badge ds-badge-slate">{acc.glAccountClassId}</span>
+                          </td>
+                          <td className="ds-td-right text-blue-400">
+                            {acc.debits > 0 ? `$${acc.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                          </td>
+                          <td className="ds-td-right text-purple-400">
+                            {acc.credits > 0 ? `$${acc.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                          </td>
+                          <td className={`ds-td-right font-bold ${acc.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            ${Math.abs(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="ds-td text-center">
+                            <span className={`ds-badge ${acc.debitCreditFlag === 'D' ? 'ds-badge-blue' : 'ds-badge-purple'}`}>
+                              {acc.debitCreditFlag === 'D' ? 'Borç (D)' : 'Alacak (C)'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-white/[0.04] font-bold border-t-2 border-slate-700">
+                        <td colSpan={3} className="ds-td text-right text-white">
+                          GENEL TOPLAMLAR:
                         </td>
-                        <td className="ds-td">
-                          {acc.accountName}
+                        <td className="ds-td-right text-blue-400">
+                          ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="ds-td-muted text-xs">
-                          {acc.glAccountClassId}
+                        <td className="ds-td-right text-purple-400">
+                          ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="ds-td-right">
-                          {acc.debits > 0 ? `$${acc.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                        </td>
-                        <td className="ds-td-right">
-                          {acc.credits > 0 ? `$${acc.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                        </td>
-                        <td className={`ds-td-right font-bold ${acc.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          ${Math.abs(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="ds-td text-center">
-                          <span className={`ds-badge ${acc.debitCreditFlag === 'D' ? 'ds-badge-blue' : 'ds-badge-purple'}`}>
-                            {acc.debitCreditFlag === 'D' ? 'Borç (D)' : 'Alacak (C)'}
-                          </span>
+                        <td colSpan={2} className="ds-td text-center text-green-400">
+                          Dengede (Fark: $0.00)
                         </td>
                       </tr>
-                    ))}
-                    <tr className="bg-white/[0.04] font-bold text-[0.95rem]">
-                      <td colSpan={3} className="ds-td">GENEL TOPLAM</td>
-                      <td className="ds-td-right text-blue-400">
-                        ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="ds-td-right text-purple-400">
-                        ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td colSpan={2} className="ds-td text-center text-green-400">
-                        Dengede (Fark: $0.00)
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </tbody>
+
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -396,7 +401,7 @@ const FinancialReports: React.FC = () => {
               </div>
 
               {/* Side by Side Grid: Aktif (Assets) vs Pasif (Liabilities & Equity) */}
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* AKTİFLER (ASSETS) */}
                 <div className="ds-card p-6 flex flex-col gap-6">
                   <div className="border-b-2 border-indigo-500/30 pb-3 flex justify-between items-center">
@@ -683,54 +688,56 @@ const FinancialReports: React.FC = () => {
 
               {/* Aging Breakdown Table */}
               <div className="ds-card overflow-hidden p-0">
-                <table className="ds-table">
-                  <thead>
-                    <tr className="ds-thead-row">
-                      <th className="ds-th">Cari ID</th>
-                      <th className="ds-th">Cari Ünvanı</th>
-                      <th className="ds-th-right text-green-400">Vadesi Gelmemiş</th>
-                      <th className="ds-th-right text-amber-400">1 - 30 Gün</th>
-                      <th className="ds-th-right text-orange-400">31 - 60 Gün</th>
-                      <th className="ds-th-right text-red-400">61 - 90 Gün</th>
-                      <th className="ds-th-right text-red-500">90+ Gün</th>
-                      <th className="ds-th-right font-bold">Toplam Bakiye</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {agingData.rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="text-center py-12 text-slate-400">
-                          Açık bakiye içeren cari bulunamadı.
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">Cari ID</th>
+                        <th className="ds-th">Cari Ünvanı</th>
+                        <th className="ds-th-right text-green-400">Vadesi Gelmemiş</th>
+                        <th className="ds-th-right text-amber-400">1 - 30 Gün</th>
+                        <th className="ds-th-right text-orange-400">31 - 60 Gün</th>
+                        <th className="ds-th-right text-red-400">61 - 90 Gün</th>
+                        <th className="ds-th-right text-red-500">90+ Gün</th>
+                        <th className="ds-th-right font-bold">Toplam Bakiye</th>
                       </tr>
-                    ) : (
-                      agingData.rows.map(row => (
-                        <tr key={row.partyId} className="ds-tbody-row">
-                          <td className="ds-td font-semibold">{row.partyId}</td>
-                          <td className="ds-td">{row.partyName}</td>
-                          <td className="ds-td-right">
-                            {row.current > 0 ? `$${row.current.toFixed(2)}` : '-'}
-                          </td>
-                          <td className="ds-td-right">
-                            {row.days1_30 > 0 ? `$${row.days1_30.toFixed(2)}` : '-'}
-                          </td>
-                          <td className="ds-td-right">
-                            {row.days31_60 > 0 ? `$${row.days31_60.toFixed(2)}` : '-'}
-                          </td>
-                          <td className="ds-td-right">
-                            {row.days61_90 > 0 ? `$${row.days61_90.toFixed(2)}` : '-'}
-                          </td>
-                          <td className={`ds-td-right ${row.daysOver90 > 0 ? 'text-red-500' : ''}`}>
-                            {row.daysOver90 > 0 ? `$${row.daysOver90.toFixed(2)}` : '-'}
-                          </td>
-                          <td className="ds-td-right font-bold text-white">
-                            ${row.total.toFixed(2)}
+                    </thead>
+                    <tbody>
+                      {agingData.rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="text-center py-12 text-slate-400">
+                            Açık bakiye içeren cari bulunamadı.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        agingData.rows.map(row => (
+                          <tr key={row.partyId} className="ds-tbody-row">
+                            <td className="ds-td font-semibold">{row.partyId}</td>
+                            <td className="ds-td">{row.partyName}</td>
+                            <td className="ds-td-right text-green-400 font-mono">
+                              ${row.current.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="ds-td-right text-amber-400 font-mono">
+                              ${row.days1_30.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="ds-td-right text-orange-400 font-mono">
+                              ${row.days31_60.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="ds-td-right text-red-400 font-mono">
+                              ${row.days61_90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="ds-td-right text-red-500 font-mono font-bold">
+                              ${row.daysOver90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="ds-td-right font-bold font-mono">
+                              ${row.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

@@ -870,52 +870,54 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                     </div>
                   ) : (
                     <div className="ds-card overflow-hidden">
-                      <table className="ds-table text-xs">
-                        <thead>
-                          <tr className="ds-thead-row">
-                            <th className="ds-th">Tarih</th>
-                            <th className="ds-th">Fiş No</th>
-                            <th className="ds-th">İşlem Türü</th>
-                            <th className="ds-th">Açıklama</th>
-                            <th className="ds-th-right">Borç (Debit)</th>
-                            <th className="ds-th-right">Alacak (Credit)</th>
-                            <th className="ds-th">Cari / İlgili</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {accountEntries.map(e => (
-                            <tr key={`${e.acctgTransId}-${e.acctgTransEntrySeqId}`} className="ds-tbody-row">
-                              <td className="ds-td-muted whitespace-nowrap">
-                                {e.transactionDate ? e.transactionDate.substring(0, 10) : '-'}
-                              </td>
-                              <td className="ds-td-mono font-bold">
-                                {onSelectTransaction ? (
-                                  <button
-                                    onClick={() => {
-                                      setShowDetailModal(false);
-                                      onSelectTransaction(e.acctgTransId);
-                                    }}
-                                    className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
-                                  >
-                                    #{e.acctgTransId}
-                                  </button>
-                                ) : (
-                                  <span>#{e.acctgTransId}</span>
-                                )}
-                              </td>
-                              <td className="ds-td">{e.transTypeDescription || e.acctgTransTypeId}</td>
-                              <td className="ds-td-muted">{e.description || '-'}</td>
-                              <td className="ds-td-right text-blue-400">
-                                {e.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
-                              </td>
-                              <td className="ds-td-right text-amber-400">
-                                {e.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
-                              </td>
-                              <td className="ds-td-muted">{e.partyName || e.partyId || '-'}</td>
+                      <div className="overflow-x-auto">
+                        <table className="ds-table text-xs">
+                          <thead>
+                            <tr className="ds-thead-row">
+                              <th className="ds-th">Tarih</th>
+                              <th className="ds-th">Fiş No</th>
+                              <th className="ds-th">İşlem Türü</th>
+                              <th className="ds-th">Açıklama</th>
+                              <th className="ds-th-right">Borç (Debit)</th>
+                              <th className="ds-th-right">Alacak (Credit)</th>
+                              <th className="ds-th">Cari / İlgili</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {accountEntries.map(e => (
+                              <tr key={`${e.acctgTransId}-${e.acctgTransEntrySeqId}`} className="ds-tbody-row">
+                                <td className="ds-td-muted whitespace-nowrap">
+                                  {e.transactionDate ? e.transactionDate.substring(0, 10) : '-'}
+                                </td>
+                                <td className="ds-td-mono font-bold">
+                                  {onSelectTransaction ? (
+                                    <button
+                                      onClick={() => {
+                                        setShowDetailModal(false);
+                                        onSelectTransaction(e.acctgTransId);
+                                      }}
+                                      className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                                    >
+                                      #{e.acctgTransId}
+                                    </button>
+                                  ) : (
+                                    <span>#{e.acctgTransId}</span>
+                                  )}
+                                </td>
+                                <td className="ds-td">{e.transTypeDescription || e.acctgTransTypeId}</td>
+                                <td className="ds-td-muted">{e.description || '-'}</td>
+                                <td className="ds-td-right text-blue-400">
+                                  {e.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
+                                </td>
+                                <td className="ds-td-right text-amber-400">
+                                  {e.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
+                                </td>
+                                <td className="ds-td-muted">{e.partyName || e.partyId || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>

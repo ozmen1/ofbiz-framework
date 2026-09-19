@@ -95,8 +95,8 @@ function CreateGroupModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 my-auto">
         <h2 className="text-xl font-bold text-white mb-4">Yeni Ödeme Grubu</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
         <div className="space-y-4">
@@ -183,17 +183,17 @@ function AddPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-5 sm:p-6 max-h-[85vh] flex flex-col my-auto">
         <h2 className="text-xl font-bold text-white mb-4">Gruba Ödeme Ekle</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
-        <div className="flex-1 overflow-y-auto rounded-xl border border-slate-700">
+        <div className="flex-1 overflow-y-auto overflow-x-auto rounded-xl border border-slate-700">
           {loading ? (
             <div className="text-center py-10 text-slate-400">Yükleniyor…</div>
           ) : payments.length === 0 ? (
             <div className="text-center py-10 text-slate-500">Eklenebilecek ödeme bulunamadı</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[540px]">
               <thead>
                 <tr className="bg-slate-700/60 text-slate-400 text-xs uppercase">
                   <th className="px-3 py-2 text-left w-8"></th>
@@ -291,27 +291,29 @@ function GroupDetailPanel({
   return (
     <div>
       {/* Başlık */}
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack}
-          className="p-2 hover:bg-slate-700/60 rounded-xl text-slate-400 hover:text-white transition-colors">
-          ← Listeye Dön
-        </button>
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-white">{detail.paymentGroupName}</h2>
-          <div className="flex items-center gap-3 mt-1">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor[detail.paymentGroupTypeId] || 'bg-slate-600/40 text-slate-300'}`}>
-              {detail.paymentGroupTypeDesc}
-            </span>
-            <span className="text-sm text-slate-400">{detail.memberCount} ödeme · Toplam: {fmt(detail.totalAmount)}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack}
+            className="p-2 hover:bg-slate-700/60 rounded-xl text-slate-400 hover:text-white transition-colors">
+            ← Listeye Dön
+          </button>
+          <div>
+            <h2 className="text-xl font-bold text-white">{detail.paymentGroupName}</h2>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeColor[detail.paymentGroupTypeId] || 'bg-slate-600/40 text-slate-300'}`}>
+                {detail.paymentGroupTypeDesc}
+              </span>
+              <span className="text-xs sm:text-sm text-slate-400">{detail.memberCount} ödeme · Toplam: {fmt(detail.totalAmount)}</span>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 self-start sm:self-auto">
           <button onClick={() => setShowAdd(true)}
-            className="px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center gap-2 transition-colors">
+            className="px-3.5 py-2 text-xs sm:text-sm text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center gap-2 transition-colors">
             + Ödeme Ekle
           </button>
           <button onClick={deleteGroup}
-            className="px-4 py-2 text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors">
+            className="px-3.5 py-2 text-xs sm:text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors">
             Grubu Sil
           </button>
         </div>
@@ -319,7 +321,8 @@ function GroupDetailPanel({
 
       {/* Üye Ödemeler Tablosu */}
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
           <thead>
             <tr className="bg-slate-700/40 text-slate-400 text-xs uppercase border-b border-slate-700/50">
               <th className="px-4 py-3 text-left">#</th>
@@ -373,6 +376,7 @@ function GroupDetailPanel({
             </tfoot>
           )}
         </table>
+        </div>
       </div>
 
       {showAddModal && (

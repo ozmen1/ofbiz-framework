@@ -495,60 +495,62 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                   </div>
 
                   <div className="ds-card overflow-hidden">
-                    <table className="ds-table text-xs">
-                      <thead>
-                        <tr className="ds-thead-row">
-                          <th className="ds-th text-center w-12">Sıra</th>
-                          <th className="ds-th">GL Hesap Kodu</th>
-                          <th className="ds-th">Hesap Adı</th>
-                          <th className="ds-th">Açıklama</th>
-                          <th className="ds-th-right">Borç (Debit)</th>
-                          <th className="ds-th-right">Alacak (Credit)</th>
-                          <th className="ds-th">Cari / İlgili</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDetail.entries.map((entry, idx) => (
-                          <tr key={entry.acctgTransEntrySeqId} className="ds-tbody-row">
-                            <td className="ds-td text-center text-slate-500">
-                              {idx + 1}
-                            </td>
-                            <td className="ds-td-mono font-bold">
-                              {entry.accountCode || entry.glAccountId}
-                            </td>
-                            <td className="ds-td-primary">
-                              {entry.accountName}
-                            </td>
-                            <td className="ds-td-muted">
-                              {entry.description || '-'}
-                            </td>
-                            <td className="ds-td-right text-blue-400">
-                              {entry.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: entry.currencyUomId || 'USD' }).format(entry.amount) : '-'}
-                            </td>
-                            <td className="ds-td-right text-amber-400">
-                              {entry.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: entry.currencyUomId || 'USD' }).format(entry.amount) : '-'}
-                            </td>
-                            <td className="ds-td-muted">
-                              {entry.partyName || entry.partyId || '-'}
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="ds-table text-xs">
+                        <thead>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th text-center w-12">Sıra</th>
+                            <th className="ds-th">GL Hesap Kodu</th>
+                            <th className="ds-th">Hesap Adı</th>
+                            <th className="ds-th">Açıklama</th>
+                            <th className="ds-th-right">Borç (Debit)</th>
+                            <th className="ds-th-right">Alacak (Credit)</th>
+                            <th className="ds-th">Cari / İlgili</th>
                           </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-700/40 font-bold border-t-2 border-slate-700/70">
-                          <td colSpan={4} className="px-4 py-3 text-right text-slate-300">
-                            GENEL TOPLAMLAR:
-                          </td>
-                          <td className="px-4 py-3 text-right text-blue-400 text-sm">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedDetail.totalDebit)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-amber-400 text-sm">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedDetail.totalCredit)}
-                          </td>
-                          <td className="px-4 py-3"></td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {selectedDetail.entries.map((entry, idx) => (
+                            <tr key={entry.acctgTransEntrySeqId} className="ds-tbody-row">
+                              <td className="ds-td text-center text-slate-500">
+                                {idx + 1}
+                              </td>
+                              <td className="ds-td-mono font-bold">
+                                {entry.accountCode || entry.glAccountId}
+                              </td>
+                              <td className="ds-td-primary">
+                                {entry.accountName}
+                              </td>
+                              <td className="ds-td-muted">
+                                {entry.description || '-'}
+                              </td>
+                              <td className="ds-td-right text-blue-400">
+                                {entry.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: entry.currencyUomId || 'USD' }).format(entry.amount) : '-'}
+                              </td>
+                              <td className="ds-td-right text-amber-400">
+                                {entry.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: entry.currencyUomId || 'USD' }).format(entry.amount) : '-'}
+                              </td>
+                              <td className="ds-td-muted">
+                                {entry.partyName || entry.partyId || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-700/40 font-bold border-t-2 border-slate-700/70">
+                            <td colSpan={4} className="px-4 py-3 text-right text-slate-300">
+                              GENEL TOPLAMLAR:
+                            </td>
+                            <td className="px-4 py-3 text-right text-blue-400 text-sm">
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedDetail.totalDebit)}
+                            </td>
+                            <td className="px-4 py-3 text-right text-amber-400 text-sm">
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedDetail.totalCredit)}
+                            </td>
+                            <td className="px-4 py-3"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
                   </div>
                 </div>
 
