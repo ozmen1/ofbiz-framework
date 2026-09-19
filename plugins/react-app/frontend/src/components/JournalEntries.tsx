@@ -7,6 +7,7 @@ import {
 import { 
   api, 
   AcctgTransListItem, 
+  AcctgTransactionsResponse,
   AcctgTransDetailResponse, 
   GlMetadataResponse 
 } from '../services/api';
@@ -18,7 +19,11 @@ interface JournalEntriesProps {
 }
 
 export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, initialSelectedId }) => {
-  const { translations } = useTranslation();
+  const { translations, locale } = useTranslation();
+  const j = translations.journalEntries;
+  const common = translations.common;
+  const coa = translations.chartOfAccounts;
+
   const [transactions, setTransactions] = useState<AcctgTransListItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,118 +34,113 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
   const [isPostedFilter, setIsPostedFilter] = useState<string>(''); // '', 'Y', 'N'
   const [transTypeFilter, setTransTypeFilter] = useState<string>('');
   const [viewIndex, setViewIndex] = useState<number>(0);
-  const [viewSize] = useState<number>(25);
+  const [viewSize] = useState<number>(20);
   const [totalCount, setTotalCount] = useState<number>(0);
+
+  // Stats
+  const [postedCount, setPostedCount] = useState<number>(0);
+  const [draftCount, setDraftCount] = useState<number>(0);
+  const [totalVolume, setTotalVolume] = useState<number>(0);
+
+  // Modal / Detail state
+  const [selectedDetail, setSelectedDetail] = useState<AcctgTransDetailResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [postingLoading, setPostingLoading] = useState<boolean>(false);
 
   // Metadata
   const [metadata, setMetadata] = useState<GlMetadataResponse['metadata'] | null>(null);
 
-  // Detail Modal
-  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
-  const [selectedDetail, setSelectedDetail] = useState<AcctgTransDetailResponse | null>(null);
-  const [detailLoading, setDetailLoading] = useState<boolean>(false);
-  const [postingLoading, setPostingLoading] = useState<boolean>(false);
-
-  // Load Metadata
-  useEffect(() => {
-    api.getGlMetadata()
-      .then(res => {
-        if (res?.metadata) setMetadata(res.metadata);
-      })
-      .catch(err => console.warn('Could not load GL metadata:', err));
-  }, []);
-
-  // Fetch Transactions
   const loadTransactions = useCallback(() => {
     setLoading(true);
     setError(null);
-
-    const payload: Record<string, any> = {
+    api.getAcctgTransactions({
+      search: searchTerm || undefined,
+      isPosted: isPostedFilter || undefined,
+      acctgTransTypeId: transTypeFilter || undefined,
       viewIndex,
       viewSize
-    };
-
-    if (searchTerm) payload.search = searchTerm;
-    if (isPostedFilter) payload.isPosted = isPostedFilter;
-    if (transTypeFilter) payload.acctgTransTypeId = transTypeFilter;
-
-    api.getAcctgTransactions(payload)
-      .then(res => {
-        setTransactions(res.transactions || []);
-        setTotalCount(res.totalCount || 0);
+    })
+      .then((res: AcctgTransactionsResponse) => {
+        const list = res.transactions || [];
+        setTransactions(list);
+        setTotalCount(res.totalCount ?? list.length);
+        setPostedCount(list.filter(t => t.isPosted === 'Y').length);
+        setDraftCount(list.filter(t => t.isPosted !== 'Y').length);
+        setTotalVolume(list.reduce((sum, t) => sum + (t.totalDebit || 0), 0));
       })
-      .catch(err => setError(err.message || 'Yevmiye fişleri yüklenemedi.'))
-      .finally(() => setLoading(false));
-  }, [viewIndex, viewSize, searchTerm, isPostedFilter, transTypeFilter]);
+      .catch((err: any) => {
+        setError(err.message || common.error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [searchTerm, isPostedFilter, transTypeFilter, viewIndex, viewSize, common.error]);
 
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions]);
 
-  // Open Detail Modal
-  const handleOpenDetail = useCallback(async (acctgTransId: string) => {
-    setDetailLoading(true);
-    setShowDetailModal(true);
-    setSelectedDetail(null);
-
-    try {
-      const res = await api.getAcctgTransDetails(acctgTransId);
-      setSelectedDetail(res);
-    } catch (err: any) {
-      setError(err.message || 'Fiş detayı yüklenemedi.');
-    } finally {
-      setDetailLoading(false);
-    }
+  useEffect(() => {
+    api.getGlMetadata()
+      .then(res => {
+        if (res?.metadata) setMetadata(res.metadata);
+      })
+      .catch(() => {});
   }, []);
 
-  // Handle Initial Selected ID if navigated from outside
   useEffect(() => {
     if (initialSelectedId) {
       handleOpenDetail(initialSelectedId);
     }
-  }, [initialSelectedId, handleOpenDetail]);
+  }, [initialSelectedId]);
 
-  // Post Transaction to General Ledger
+  const handleOpenDetail = (acctgTransId: string) => {
+    setShowDetailModal(true);
+    setDetailLoading(true);
+    api.getAcctgTransDetails(acctgTransId)
+      .then((res: AcctgTransDetailResponse) => {
+        setSelectedDetail(res);
+      })
+      .catch((err: any) => {
+        setError(err.message || common.error);
+        setShowDetailModal(false);
+      })
+      .finally(() => {
+        setDetailLoading(false);
+      });
+  };
+
   const handlePostTransaction = async (acctgTransId: string) => {
-    if (!window.confirm(`Yevmiye Fişi #${acctgTransId} Defter-i Kebir'e (General Ledger) işlenecektir. Onaylıyor musunuz?`)) {
+    if (!confirm(j.postConfirm)) {
       return;
     }
-
     setPostingLoading(true);
     try {
       const res = await api.postJournalEntry(acctgTransId);
-      setSuccessMsg(res._EVENT_MESSAGE_ || `Fiş #${acctgTransId} başarıyla defter-i kebir'e işlendi.`);
-      setTimeout(() => setSuccessMsg(null), 3500);
-
-      // Refresh detail if open
+      setSuccessMsg(res._EVENT_MESSAGE_ || j.postSuccess);
+      loadTransactions();
       if (selectedDetail && selectedDetail.transaction.acctgTransId === acctgTransId) {
         handleOpenDetail(acctgTransId);
       }
-      loadTransactions();
     } catch (err: any) {
-      alert('Fiş onaylanırken hata oluştu: ' + err.message);
+      alert(err.message || common.error);
     } finally {
       setPostingLoading(false);
     }
   };
 
-  // Stats calculation
-  const postedCount = transactions.filter(t => t.isPosted === 'Y').length;
-  const draftCount = transactions.filter(t => t.isPosted !== 'Y').length;
-  const totalVolume = transactions.reduce((sum, t) => sum + (Number(t.totalDebit) || 0), 0);
-
   return (
-    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
-      
-      {/* Header */}
+    <div className="space-y-5">
+      {/* Top Header */}
       <div className="ds-page-header">
         <div>
-          <h1 className="ds-page-title">
-            <FileText className="text-indigo-400" size={26} />
-            Yevmiye ve Mahsup Fişleri (Journal Entries)
+          <h1 className="ds-page-title flex items-center gap-3">
+            <BookOpen size={24} className="text-indigo-400" />
+            {j.title}
           </h1>
           <p className="ds-page-subtitle">
-            Defter-i kebir kayıtları, mahsup fişleri, açılış/kapanış ve yevmiye hareketleri
+            {j.subtitle}
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
             className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Yenile
+            {common.refresh}
           </button>
           {onCreateNew && (
             <button 
@@ -158,7 +158,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
               className="ds-btn-primary"
             >
               <Plus size={18} />
-              Yeni Yevmiye Fişi
+              {j.newEntry}
             </button>
           )}
         </div>
@@ -184,36 +184,36 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="ds-stat-card border-l-4 border-l-indigo-500">
           <div className="ds-stat-label flex items-center gap-2">
-            <Layers size={16} /> Toplam Fiş Sayısı
+            <Layers size={16} /> {j.registeredTrans}
           </div>
           <div className="ds-stat-value">{totalCount}</div>
-          <div className="ds-stat-sub">Sistemdeki tüm kayıtlar</div>
+          <div className="ds-stat-sub">{common.all}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-emerald-500">
           <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
-            <CheckCircle2 size={16} /> Defter-i Kebir'e İşlenmiş
+            <CheckCircle2 size={16} /> {j.postedToGlTrans}
           </div>
           <div className="ds-stat-value text-emerald-400">{postedCount}</div>
-          <div className="ds-stat-sub">Onaylı resmi yevmiye fişleri</div>
+          <div className="ds-stat-sub">{j.postedStatus}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-amber-500">
           <div className="ds-stat-label flex items-center gap-2 text-amber-400">
-            <Clock size={16} /> Taslak Fişler
+            <Clock size={16} /> {j.draftTrans}
           </div>
           <div className="ds-stat-value text-amber-400">{draftCount}</div>
-          <div className="ds-stat-sub">Onay bekleyen kayıtlar</div>
+          <div className="ds-stat-sub">{j.draftStatus}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-blue-500">
           <div className="ds-stat-label flex items-center gap-2 text-blue-400">
-            <BookOpen size={16} /> Toplam İşlem Tutarı
+            <BookOpen size={16} /> {j.totalTransVolume}
           </div>
           <div className="ds-stat-value text-blue-400">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalVolume)}
+            {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'USD' }).format(totalVolume)}
           </div>
-          <div className="ds-stat-sub">Sayfalanan fişlerin hacmi</div>
+          <div className="ds-stat-sub">{common.total}</div>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input 
             type="text"
-            placeholder="Fiş No, açıklama veya belge no ile ara..."
+            placeholder={common.search}
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setViewIndex(0); }}
             className="ds-input pl-10"
@@ -236,9 +236,9 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
           onChange={e => { setIsPostedFilter(e.target.value); setViewIndex(0); }}
           className="ds-select w-auto min-w-[180px]"
         >
-          <option value="">Tüm Durumlar (Hepsi)</option>
-          <option value="Y">Yalnızca Onaylı (Posted)</option>
-          <option value="N">Yalnızca Taslak (Draft)</option>
+          <option value="">{j.allStatusesAll}</option>
+          <option value="Y">{j.onlyPosted}</option>
+          <option value="N">{j.onlyDraft}</option>
         </select>
 
         {/* Transaction Type Filter */}
@@ -247,7 +247,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
           onChange={e => { setTransTypeFilter(e.target.value); setViewIndex(0); }}
           className="ds-select w-auto min-w-[180px] max-w-[240px]"
         >
-          <option value="">Tüm Fiş Türleri</option>
+          <option value="">{j.allTransTypes}</option>
           {metadata?.acctgTransTypes?.map(t => (
             <option key={t.acctgTransTypeId} value={t.acctgTransTypeId}>
               {t.description || t.acctgTransTypeId}
@@ -331,7 +331,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                       <td className="ds-td text-center">
                         <span className={`inline-flex items-center gap-1.5 ds-badge ${isPosted ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
                           {isPosted ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                          {isPosted ? 'Onaylı' : 'Taslak'}
+                          {isPosted ? j.postedStatus : j.draftStatus}
                         </span>
                       </td>
                       <td className="ds-td-right">
@@ -339,19 +339,19 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                           <button
                             onClick={() => handleOpenDetail(tr.acctgTransId)}
                             className="ds-btn-secondary px-2.5 py-1 text-xs"
-                            title="Fiş Detayı ve Satırlar"
+                            title={j.inspect}
                           >
                             <Eye size={14} />
-                            İncele
+                            {j.inspect}
                           </button>
                           {!isPosted && (
                             <button
                               onClick={() => handlePostTransaction(tr.acctgTransId)}
-                              title="Defter-i Kebir'e İşle (Post)"
+                              title={j.postToGlButton}
                               className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-xl text-xs font-semibold transition-colors"
                             >
                               <Send size={12} />
-                              Onayla
+                              {common.confirm}
                             </button>
                           )}
                         </div>
@@ -367,7 +367,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
         {/* Pagination Footer */}
         <div className="flex justify-between items-center px-5 py-4 border-t border-slate-700/50 bg-slate-800/30">
           <span className="text-xs text-slate-400">
-            Toplam <strong>{totalCount}</strong> fiş kaydı (Sayfa {viewIndex + 1} / {Math.max(1, Math.ceil(totalCount / viewSize))})
+            {j.totalEntriesCount} <strong>{totalCount}</strong> {j.pageOf} ({common.page} {viewIndex + 1} / {Math.max(1, Math.ceil(totalCount / viewSize))})
           </span>
           <div className="flex gap-2">
             <button
@@ -375,14 +375,14 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
               onClick={() => setViewIndex(prev => Math.max(0, prev - 1))}
               className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Önceki
+              {common.previous}
             </button>
             <button
               disabled={(viewIndex + 1) * viewSize >= totalCount}
               onClick={() => setViewIndex(prev => prev + 1)}
               className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Sonraki
+              {common.next}
             </button>
           </div>
         </div>
@@ -396,11 +396,11 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <FileText size={20} className="text-indigo-400" />
-                  Yevmiye Fişi Detayı: #{selectedDetail?.transaction.acctgTransId}
+                  {j.title}: #{selectedDetail?.transaction.acctgTransId}
                 </h2>
                 {selectedDetail && (
                   <div className="text-xs text-slate-400 mt-1">
-                    Tarih: {selectedDetail.transaction.transactionDate?.substring(0, 19)} | Tür: {selectedDetail.transaction.acctgTransTypeDesc}
+                    {common.date}: {selectedDetail.transaction.transactionDate?.substring(0, 19)} | {common.type}: {selectedDetail.transaction.acctgTransTypeDesc}
                   </div>
                 )}
               </div>
@@ -415,7 +415,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
             {detailLoading ? (
               <div className="py-16 text-center">
                 <div className="ds-spinner mx-auto mb-3" />
-                <p className="text-slate-400 text-sm">Fiş satırları getiriliyor...</p>
+                <p className="text-slate-400 text-sm">{j.entriesLoading}</p>
               </div>
             ) : selectedDetail ? (
               <div className="space-y-5">
@@ -434,12 +434,12 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                     )}
                     <div>
                       <div className={`font-bold ${selectedDetail.transaction.isPosted === 'Y' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        {selectedDetail.transaction.isPosted === 'Y' ? 'Defter-i Kebir’e Onaylandı (Posted)' : 'Taslak Kayıt (Draft)'}
+                        {selectedDetail.transaction.isPosted === 'Y' ? j.postedNotice : j.draftNotice}
                       </div>
                       <div className="text-xs text-slate-400 mt-0.5">
                         {selectedDetail.transaction.isPosted === 'Y' 
-                          ? `Onay Tarihi: ${selectedDetail.transaction.postedDate?.substring(0, 19)}` 
-                          : 'Bu kayıt henüz resmi defter-i kebir kayıtlarına intikal ettirilmemiştir.'}
+                          ? `${j.transDate}: ${selectedDetail.transaction.postedDate?.substring(0, 19)}` 
+                          : j.draftNotice}
                       </div>
                     </div>
                   </div>
@@ -451,7 +451,7 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                       className="ds-btn-primary"
                     >
                       {postingLoading ? <div className="ds-spinner-sm" /> : <Send size={16} />}
-                      Defter-i Kebir'e İşle (Post)
+                      {j.postToGlButton}
                     </button>
                   )}
                 </div>
@@ -459,24 +459,24 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                 {/* Header Information Grid */}
                 <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Mali Tür (Fiscal Type): </span>
+                    <span className="text-slate-400 block mb-0.5">{j.fiscalType}: </span>
                     <strong className="text-slate-200">{selectedDetail.transaction.glFiscalTypeDesc || selectedDetail.transaction.glFiscalTypeId}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Belge / Fiş Ref No: </span>
+                    <span className="text-slate-400 block mb-0.5">{j.documentRef}: </span>
                     <strong className="text-slate-200">{selectedDetail.transaction.voucherRef || '-'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">İlişkili Fatura: </span>
+                    <span className="text-slate-400 block mb-0.5">{j.relatedInvoice}: </span>
                     <strong className="text-slate-200">{selectedDetail.transaction.invoiceId ? `#${selectedDetail.transaction.invoiceId}` : '-'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">İlişkili Ödeme: </span>
+                    <span className="text-slate-400 block mb-0.5">{j.relatedPayment}: </span>
                     <strong className="text-slate-200">{selectedDetail.transaction.paymentId ? `#${selectedDetail.transaction.paymentId}` : '-'}</strong>
                   </div>
                   {selectedDetail.transaction.description && (
                     <div className="sm:col-span-2 lg:col-span-4 mt-1 pt-2 border-t border-slate-700/50">
-                      <span className="text-slate-400 block mb-0.5">Açıklama: </span>
+                      <span className="text-slate-400 block mb-0.5">{common.description}: </span>
                       <strong className="text-slate-200">{selectedDetail.transaction.description}</strong>
                     </div>
                   )}
@@ -486,13 +486,13 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <h3 className="text-sm font-bold text-white">
-                      Yevmiye Kalemleri ({selectedDetail.entries.length} satır)
+                      {j.entryRows} ({selectedDetail.entries.length})
                     </h3>
                     <div className={`text-xs font-semibold flex items-center gap-1.5 ${
                       selectedDetail.isBalanced ? 'text-emerald-400' : 'text-red-400'
                     }`}>
                       {selectedDetail.isBalanced ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
-                      {selectedDetail.isBalanced ? 'Fiş Dengeli (Borç = Alacak)' : 'Dengesiz Fiş!'}
+                      {selectedDetail.isBalanced ? j.balanced : j.unbalanced}
                     </div>
                   </div>
 
@@ -501,13 +501,13 @@ export const JournalEntries: React.FC<JournalEntriesProps> = ({ onCreateNew, ini
                       <table className="ds-table text-xs">
                         <thead>
                           <tr className="ds-thead-row">
-                            <th className="ds-th text-center w-12">Sıra</th>
-                            <th className="ds-th">GL Hesap Kodu</th>
-                            <th className="ds-th">Hesap Adı</th>
-                            <th className="ds-th">Açıklama</th>
-                            <th className="ds-th-right">Borç (Debit)</th>
-                            <th className="ds-th-right">Alacak (Credit)</th>
-                            <th className="ds-th">Cari / İlgili</th>
+                            <th className="ds-th text-center w-12">{j.lineSeq}</th>
+                            <th className="ds-th">{coa.accountCode}</th>
+                            <th className="ds-th">{coa.accountName}</th>
+                            <th className="ds-th">{common.description}</th>
+                            <th className="ds-th-right">{j.totalDebit}</th>
+                            <th className="ds-th-right">{j.totalCredit}</th>
+                            <th className="ds-th">{common.party}</th>
                           </tr>
                         </thead>
                         <tbody>

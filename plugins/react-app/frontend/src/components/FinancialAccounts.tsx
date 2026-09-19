@@ -19,10 +19,13 @@ import {
   TransferFinAccountsPayload,
   CreateGlReconciliationPayload
 } from '../services/api';
+import { useTranslation } from '../i18n';
 
 type FinAccountTab = 'accounts' | 'transactions' | 'reconciliation';
 
 export const FinancialAccounts: React.FC = () => {
+  const { translations, locale } = useTranslation();
+
   const [activeTab, setActiveTab] = useState<FinAccountTab>('accounts');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +125,18 @@ export const FinancialAccounts: React.FC = () => {
   // Action loaders
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
+  // Currency & Number Formatters
+  const formatCurrency = useCallback((val: number | undefined | null, currency: string = 'USD') => {
+    return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(val || 0);
+  }, [locale]);
+
+  const formatNumber = useCallback((val: number | undefined | null) => {
+    return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US').format(val || 0);
+  }, [locale]);
+
   // Load Metadata once
   useEffect(() => {
     api.getFinAccountMetadata()
@@ -149,9 +164,9 @@ export const FinancialAccounts: React.FC = () => {
         setTotalAccountsCount(res.totalCount || 0);
         setTotalActiveBalance(res.totalActiveBalance || 0);
       })
-      .catch(err => setError(err.message || 'Hesaplar yüklenemedi.'))
+      .catch(err => setError(err.message || translations.financialAccounts.messages.loadAccountsError))
       .finally(() => setLoading(false));
-  }, [accSearch, accTypeFilter, accStatusFilter]);
+  }, [accSearch, accTypeFilter, accStatusFilter, translations.financialAccounts.messages.loadAccountsError]);
 
   // Fetch Transactions
   const loadTransactions = useCallback(() => {
@@ -172,9 +187,9 @@ export const FinancialAccounts: React.FC = () => {
         setTransactions(res.transactions || []);
         setTotalTransCount(res.totalCount || 0);
       })
-      .catch(err => setError(err.message || 'Hesap hareketleri yüklenemedi.'))
+      .catch(err => setError(err.message || translations.financialAccounts.messages.loadTransError))
       .finally(() => setLoading(false));
-  }, [transViewIndex, transSearch, transAccountFilter, transTypeFilter, transStatusFilter]);
+  }, [transViewIndex, transSearch, transAccountFilter, transTypeFilter, transStatusFilter, translations.financialAccounts.messages.loadTransError]);
 
   // Fetch Reconciliations
   const loadReconciliations = useCallback(() => {
@@ -185,9 +200,9 @@ export const FinancialAccounts: React.FC = () => {
       .then(res => {
         setReconciliations(res.reconciliations || []);
       })
-      .catch(err => setError(err.message || 'Mutabakat listesi yüklenemedi.'))
+      .catch(err => setError(err.message || translations.financialAccounts.messages.loadRecError))
       .finally(() => setLoading(false));
-  }, []);
+  }, [translations.financialAccounts.messages.loadRecError]);
 
   // Dispatch fetch based on active tab
   useEffect(() => {
@@ -204,7 +219,7 @@ export const FinancialAccounts: React.FC = () => {
       const res = await api.getGlReconciliationDetails(glReconciliationId);
       setReconciliationDetail(res);
     } catch (err: any) {
-      alert('Mutabakat detayı yüklenemedi: ' + err.message);
+      alert((locale === 'tr' ? 'Mutabakat detayı yüklenemedi: ' : 'Could not load reconciliation detail: ') + err.message);
     } finally {
       setRecDetailLoading(false);
     }
@@ -222,7 +237,7 @@ export const FinancialAccounts: React.FC = () => {
       setSelectedAccountDetail(res.account);
       setAccountTransList(res.transactions || []);
     } catch (err: any) {
-      setError(err.message || 'Hesap detayları yüklenemedi.');
+      setError(err.message || (locale === 'tr' ? 'Hesap detayları yüklenemedi.' : 'Could not load account details.'));
     } finally {
       setAccountDetailLoading(false);
     }
@@ -273,7 +288,7 @@ export const FinancialAccounts: React.FC = () => {
     setActionLoading(true);
     try {
       const res = await api.createFinAccount(createAccountForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Finansal hesap başarıyla oluşturuldu.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || translations.financialAccounts.messages.accountSaved);
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowCreateAccountModal(false);
       setCreateAccountForm({
@@ -288,7 +303,7 @@ export const FinancialAccounts: React.FC = () => {
       });
       loadAccounts();
     } catch (err: any) {
-      alert('Hesap oluşturulurken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Hesap oluşturulurken hata: ' : 'Error creating account: ') + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -300,12 +315,12 @@ export const FinancialAccounts: React.FC = () => {
     setActionLoading(true);
     try {
       const res = await api.updateFinAccount(editAccountForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Hesap güncellendi.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || translations.financialAccounts.messages.accountUpdated);
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowEditAccountModal(false);
       loadAccounts();
     } catch (err: any) {
-      alert('Hesap güncellenirken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Hesap güncellenirken hata: ' : 'Error updating account: ') + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -315,14 +330,14 @@ export const FinancialAccounts: React.FC = () => {
   const handleCreateTransSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (transForm.amount <= 0 && transForm.finAccountTransTypeId !== 'ADJUSTMENT') {
-      alert('Tutar sıfırdan büyük olmalıdır.');
+      alert(locale === 'tr' ? 'Tutar sıfırdan büyük olmalıdır.' : 'Amount must be greater than zero.');
       return;
     }
 
     setActionLoading(true);
     try {
       const res = await api.createFinAccountTrans(transForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'İşlem başarıyla kaydedildi.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || translations.financialAccounts.messages.transSaved);
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowTransModal(false);
       if (activeTab === 'accounts') loadAccounts();
@@ -331,7 +346,7 @@ export const FinancialAccounts: React.FC = () => {
         handleOpenAccountDetail(selectedAccountDetail.finAccountId);
       }
     } catch (err: any) {
-      alert('İşlem kaydedilirken hata: ' + err.message);
+      alert((locale === 'tr' ? 'İşlem kaydedilirken hata: ' : 'Error recording transaction: ') + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -341,24 +356,24 @@ export const FinancialAccounts: React.FC = () => {
   const handleTransferSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (transferForm.fromFinAccountId === transferForm.toFinAccountId) {
-      alert('Kaynak ve hedef hesap aynı olamaz.');
+      alert(locale === 'tr' ? 'Kaynak ve hedef hesap aynı olamaz.' : 'Source and destination accounts cannot be the same.');
       return;
     }
     if (transferForm.amount <= 0) {
-      alert('Transfer tutarı sıfırdan büyük olmalıdır.');
+      alert(locale === 'tr' ? 'Transfer tutarı sıfırdan büyük olmalıdır.' : 'Transfer amount must be greater than zero.');
       return;
     }
 
     setActionLoading(true);
     try {
       const res = await api.transferBetweenFinAccounts(transferForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Virman işlemi tamamlandı.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || translations.financialAccounts.messages.transferSuccess);
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowTransferModal(false);
       if (activeTab === 'accounts') loadAccounts();
       else loadTransactions();
     } catch (err: any) {
-      alert('Virman işleminde hata: ' + err.message);
+      alert((locale === 'tr' ? 'Virman işleminde hata: ' : 'Error during transfer: ') + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -370,13 +385,13 @@ export const FinancialAccounts: React.FC = () => {
     setActionLoading(true);
     try {
       const res = await api.createGlReconciliation(createRecForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Mutabakat kaydı oluşturuldu.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || translations.financialAccounts.messages.recSaved);
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowCreateRecModal(false);
       loadReconciliations();
       handleOpenReconciliationDetail(res.glReconciliationId);
     } catch (err: any) {
-      alert('Mutabakat oluşturulurken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Mutabakat oluşturulurken hata: ' : 'Error creating reconciliation: ') + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -394,14 +409,14 @@ export const FinancialAccounts: React.FC = () => {
       // Refresh reconciliation detail
       handleOpenReconciliationDetail(selectedReconciliationId);
     } catch (err: any) {
-      alert('İşlem mutabakata bağlanırken hata: ' + err.message);
+      alert((locale === 'tr' ? 'İşlem mutabakata bağlanırken hata: ' : 'Error linking transaction to reconciliation: ') + err.message);
     }
   };
 
   // ACTION: Complete Reconciliation
   const handleCompleteReconciliation = async () => {
     if (!selectedReconciliationId) return;
-    if (!window.confirm('Bu mutabakatı onaylayıp kapatmak istediğinize emin misiniz?')) return;
+    if (!window.confirm(locale === 'tr' ? 'Bu mutabakatı onaylayıp kapatmak istediğinize emin misiniz?' : 'Are you sure you want to approve and close this reconciliation?')) return;
 
     try {
       await api.reconcileTransactions({
@@ -409,18 +424,30 @@ export const FinancialAccounts: React.FC = () => {
         finAccountTransIds: [],
         markReconciled: 'Y'
       });
-      setSuccessMsg('Mutabakat başarıyla tamamlandı ve kapatıldı.');
+      setSuccessMsg(translations.financialAccounts.reconciliation.reconciledSuccess);
       setTimeout(() => setSuccessMsg(null), 3500);
       handleOpenReconciliationDetail(selectedReconciliationId);
       loadReconciliations();
     } catch (err: any) {
-      alert('Mutabakat kapatılırken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Mutabakat kapatılırken hata: ' : 'Error closing reconciliation: ') + err.message);
     }
   };
 
   // Stats calculation
   const bankAccountsCount = accounts.filter(a => a.finAccountTypeId === 'BANK_ACCOUNT').length;
-  const cashAccountsCount = accounts.filter(a => a.finAccountTypeId === 'DEPOSIT_ACCOUNT' || a.finAccountName.toLowerCase().includes('kasa')).length;
+  const cashAccountsCount = accounts.filter(a => a.finAccountTypeId === 'DEPOSIT_ACCOUNT' || a.finAccountName.toLowerCase().includes('kasa') || a.finAccountName.toLowerCase().includes('cash')).length;
+
+  const transInflow = transactions
+    .filter(t => t.finAccountTransTypeId === 'DEPOSIT')
+    .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+  const transOutflow = transactions
+    .filter(t => t.finAccountTransTypeId === 'WITHDRAWAL')
+    .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
+  const transNet = transInflow - transOutflow;
+
+  const totalRecsCount = reconciliations.length;
+  const openRecsCount = reconciliations.filter(r => r.statusId !== 'GLREC_RECONCILED').length;
+  const totalMatchedTransCount = reconciliations.reduce((acc, r) => acc + (Number(r.transactionCount) || 0), 0);
 
   return (
     <div className="space-y-6 w-full max-w-[1400px] mx-auto">
@@ -430,10 +457,10 @@ export const FinancialAccounts: React.FC = () => {
         <div>
           <h1 className="ds-page-title">
             <Landmark size={26} className="text-indigo-400" />
-            Kasa & Banka Yönetimi (Financial Accounts)
+            {translations.financialAccounts.title}
           </h1>
           <p className="ds-page-subtitle">
-            Banka hesapları, nakit kasalar, hesap hareketleri, virman transferleri ve banka mutabakatı
+            {translations.financialAccounts.subtitle}
           </p>
         </div>
 
@@ -447,7 +474,7 @@ export const FinancialAccounts: React.FC = () => {
             className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Yenile
+            {translations.common.refresh}
           </button>
           
           <button 
@@ -455,16 +482,38 @@ export const FinancialAccounts: React.FC = () => {
             className="ds-btn-secondary text-blue-400 hover:text-blue-300"
           >
             <ArrowRightLeft size={16} />
-            Virman (Transfer)
+            {translations.financialAccounts.transactions.transfer}
           </button>
 
-          <button 
-            onClick={() => setShowCreateAccountModal(true)} 
-            className="ds-btn-primary"
-          >
-            <Plus size={18} />
-            Yeni Hesap Ekle
-          </button>
+          {activeTab === 'transactions' && (
+            <button 
+              onClick={() => handleOpenTransModal(accounts[0]?.finAccountId || '', 'DEPOSIT')} 
+              className="ds-btn-secondary text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
+            >
+              <Plus size={16} />
+              {translations.financialAccounts.transactions.newTrans}
+            </button>
+          )}
+
+          {activeTab === 'reconciliation' && (
+            <button 
+              onClick={() => setShowCreateRecModal(true)} 
+              className="ds-btn-primary"
+            >
+              <Plus size={16} />
+              {translations.financialAccounts.reconciliation.newRec}
+            </button>
+          )}
+
+          {activeTab === 'accounts' && (
+            <button 
+              onClick={() => setShowCreateAccountModal(true)} 
+              className="ds-btn-primary"
+            >
+              <Plus size={18} />
+              {translations.financialAccounts.accounts.newAccount}
+            </button>
+          )}
         </div>
       </div>
 
@@ -484,49 +533,129 @@ export const FinancialAccounts: React.FC = () => {
         </div>
       )}
 
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="ds-stat-card border-l-4 border-l-emerald-500">
-          <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
-            <DollarSign size={16} /> Toplam Kasa & Banka Varlığı
+      {/* Top Metric KPI Cards across tabs */}
+      {activeTab === 'accounts' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="ds-stat-card border-l-4 border-l-emerald-500">
+            <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
+              <DollarSign size={16} /> {translations.financialAccounts.stats.activeBalance}
+            </div>
+            <div className="ds-stat-value text-emerald-400">
+              {formatCurrency(totalActiveBalance, 'USD')}
+            </div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.activeBalanceSub}</div>
           </div>
-          <div className="ds-stat-value text-emerald-400">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalActiveBalance)}
-          </div>
-          <div className="ds-stat-sub">Aktif hesapların toplam fiili bakiyesi</div>
-        </div>
 
-        <div className="ds-stat-card border-l-4 border-l-blue-500">
-          <div className="ds-stat-label flex items-center gap-2 text-blue-400">
-            <Landmark size={16} /> Banka Hesapları
+          <div className="ds-stat-card border-l-4 border-l-blue-500">
+            <div className="ds-stat-label flex items-center gap-2 text-blue-400">
+              <Landmark size={16} /> {locale === 'tr' ? 'Banka Hesapları' : 'Bank Accounts'}
+            </div>
+            <div className="ds-stat-value text-blue-400">{formatNumber(bankAccountsCount)}</div>
+            <div className="ds-stat-sub">{locale === 'tr' ? 'Vadesiz mevduat & ticari hesaplar' : 'Checking & commercial accounts'}</div>
           </div>
-          <div className="ds-stat-value text-blue-400">{bankAccountsCount}</div>
-          <div className="ds-stat-sub">Vadesiz mevduat & ticari hesaplar</div>
-        </div>
 
-        <div className="ds-stat-card border-l-4 border-l-amber-500">
-          <div className="ds-stat-label flex items-center gap-2 text-amber-400">
-            <Wallet size={16} /> Kasa Hesapları
+          <div className="ds-stat-card border-l-4 border-l-amber-500">
+            <div className="ds-stat-label flex items-center gap-2 text-amber-400">
+              <Wallet size={16} /> {locale === 'tr' ? 'Kasa Hesapları' : 'Cash Accounts'}
+            </div>
+            <div className="ds-stat-value text-amber-400">{formatNumber(cashAccountsCount)}</div>
+            <div className="ds-stat-sub">{locale === 'tr' ? 'Nakit & depozito kasaları' : 'Cash & deposit registers'}</div>
           </div>
-          <div className="ds-stat-value text-amber-400">{cashAccountsCount}</div>
-          <div className="ds-stat-sub">Nakit & depozito kasaları</div>
-        </div>
 
-        <div className="ds-stat-card border-l-4 border-l-purple-500">
-          <div className="ds-stat-label flex items-center gap-2 text-purple-400">
-            <FileSpreadsheet size={16} /> Toplam Hesap Sayısı
+          <div className="ds-stat-card border-l-4 border-l-purple-500">
+            <div className="ds-stat-label flex items-center gap-2 text-purple-400">
+              <FileSpreadsheet size={16} /> {translations.financialAccounts.stats.totalAccounts}
+            </div>
+            <div className="ds-stat-value">{formatNumber(totalAccountsCount)}</div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.totalAccountsSub}</div>
           </div>
-          <div className="ds-stat-value">{totalAccountsCount}</div>
-          <div className="ds-stat-sub">Sistemde kayıtlı tüm hesaplar</div>
         </div>
-      </div>
+      )}
+
+      {activeTab === 'transactions' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="ds-stat-card border-l-4 border-l-blue-500">
+            <div className="ds-stat-label flex items-center gap-2 text-blue-400">
+              <ArrowRightLeft size={16} /> {translations.financialAccounts.stats.totalTrans}
+            </div>
+            <div className="ds-stat-value text-blue-400">{formatNumber(totalTransCount)}</div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.totalTransSub}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-emerald-500">
+            <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
+              <ArrowDownLeft size={16} /> {translations.financialAccounts.stats.totalInflow}
+            </div>
+            <div className="ds-stat-value text-emerald-400">
+              {formatCurrency(transInflow, 'USD')}
+            </div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.totalInflowSub}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-red-500">
+            <div className="ds-stat-label flex items-center gap-2 text-red-400">
+              <ArrowUpRight size={16} /> {translations.financialAccounts.stats.totalOutflow}
+            </div>
+            <div className="ds-stat-value text-red-400">
+              {formatCurrency(transOutflow, 'USD')}
+            </div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.totalOutflowSub}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-purple-500">
+            <div className="ds-stat-label flex items-center gap-2 text-purple-400">
+              <DollarSign size={16} /> {translations.financialAccounts.stats.netChange}
+            </div>
+            <div className={`ds-stat-value ${transNet >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {formatCurrency(transNet, 'USD')}
+            </div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.netChangeSub}</div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'reconciliation' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="ds-stat-card border-l-4 border-l-purple-500">
+            <div className="ds-stat-label flex items-center gap-2 text-purple-400">
+              <FileSpreadsheet size={16} /> {translations.financialAccounts.stats.totalRecs}
+            </div>
+            <div className="ds-stat-value text-purple-400">{formatNumber(totalRecsCount)}</div>
+            <div className="ds-stat-sub">{locale === 'tr' ? 'Kayıtlı banka mutabakatları' : 'All recorded reconciliations'}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-amber-500">
+            <div className="ds-stat-label flex items-center gap-2 text-amber-400">
+              <Clock size={16} /> {translations.financialAccounts.stats.openRecs}
+            </div>
+            <div className="ds-stat-value text-amber-400">{formatNumber(openRecsCount)}</div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.pendingRecSub}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-emerald-500">
+            <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
+              <CheckCircle2 size={16} /> {translations.financialAccounts.stats.matchedTrans}
+            </div>
+            <div className="ds-stat-value text-emerald-400">{formatNumber(totalMatchedTransCount)}</div>
+            <div className="ds-stat-sub">{locale === 'tr' ? 'Eşleştirilen toplam hareket' : 'Total reconciled transactions'}</div>
+          </div>
+
+          <div className="ds-stat-card border-l-4 border-l-blue-500">
+            <div className="ds-stat-label flex items-center gap-2 text-blue-400">
+              <Landmark size={16} /> {translations.financialAccounts.stats.activeBalance}
+            </div>
+            <div className="ds-stat-value text-blue-400">{formatCurrency(totalActiveBalance, 'USD')}</div>
+            <div className="ds-stat-sub">{translations.financialAccounts.stats.activeBalanceSub}</div>
+          </div>
+        </div>
+      )}
 
       {/* Main Navigation Tabs */}
       <div className="ds-tab-bar">
         {[
-          { id: 'accounts', label: 'Kasa & Banka Hesapları', icon: <Landmark size={18} /> },
-          { id: 'transactions', label: 'Hesap Hareketleri (Transactions)', icon: <ArrowRightLeft size={18} /> },
-          { id: 'reconciliation', label: 'Banka Mutabakatı (Reconciliation)', icon: <FileSpreadsheet size={18} /> }
+          { id: 'accounts', label: translations.financialAccounts.tabs.accounts, icon: <Landmark size={18} /> },
+          { id: 'transactions', label: translations.financialAccounts.tabs.transactions, icon: <ArrowRightLeft size={18} /> },
+          { id: 'reconciliation', label: translations.financialAccounts.tabs.reconciliation, icon: <FileSpreadsheet size={18} /> }
         ].map(tab => (
           <button
             key={tab.id}
@@ -544,43 +673,27 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* TAB 1: ACCOUNTS LIST */}
       {activeTab === 'accounts' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="space-y-4">
           
           {/* Filters Bar */}
-          <div className="glass-card" style={{ padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text"
-                placeholder="Hesap adı, kodu veya ID ile ara..."
+                placeholder={translations.financialAccounts.accounts.searchPlaceholder}
                 value={accSearch}
                 onChange={e => setAccSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.75rem',
-                  background: 'rgba(0,0,0,0.2)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  outline: 'none',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={accTypeFilter}
               onChange={e => setAccTypeFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select w-auto min-w-[180px]"
             >
-              <option value="">Tüm Hesap Türleri</option>
+              <option value="">{translations.financialAccounts.accounts.allTypes}</option>
               {metadata?.finAccountTypes?.map(t => (
                 <option key={t.finAccountTypeId} value={t.finAccountTypeId}>
                   {t.description || t.finAccountTypeId}
@@ -591,16 +704,9 @@ export const FinancialAccounts: React.FC = () => {
             <select
               value={accStatusFilter}
               onChange={e => setAccStatusFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select w-auto min-w-[160px]"
             >
-              <option value="">Tüm Durumlar</option>
+              <option value="">{translations.financialAccounts.accounts.allStatuses}</option>
               {metadata?.finAccountStatuses?.map(s => (
                 <option key={s.statusId} value={s.statusId}>
                   {s.description || s.statusId}
@@ -610,125 +716,102 @@ export const FinancialAccounts: React.FC = () => {
           </div>
 
           {/* Accounts Grid / Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap No / ID</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap Adı</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tür</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>GL Eşlemesi</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Fiili Bakiye</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Kullanılabilir</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Durum</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlemler</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{translations.financialAccounts.accounts.accountId}</th>
+                    <th className="ds-th">{translations.financialAccounts.accounts.accountName}</th>
+                    <th className="ds-th">{translations.financialAccounts.accounts.accountType}</th>
+                    <th className="ds-th">{translations.financialAccounts.accounts.glAccount}</th>
+                    <th className="ds-th-right">{translations.financialAccounts.accounts.actualBalance}</th>
+                    <th className="ds-th-right">{translations.financialAccounts.accounts.availableBalance}</th>
+                    <th className="ds-th text-center">{translations.common.status}</th>
+                    <th className="ds-th-right">{translations.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                          <Loader2 className="animate-spin" size={24} color="var(--primary)" />
-                          <span>Hesaplar yükleniyor...</span>
+                      <td colSpan={8} className="py-16 text-center text-slate-400">
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="ds-spinner-sm" />
+                          <span>{translations.common.loading}</span>
                         </div>
                       </td>
                     </tr>
                   ) : accounts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        <Filter size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
-                        <p>Kriterlere uygun finansal hesap bulunamadı.</p>
+                      <td colSpan={8} className="py-16 text-center text-slate-400">
+                        <Filter size={32} className="mx-auto mb-3 opacity-50" />
+                        <p>{translations.financialAccounts.accounts.noAccounts}</p>
                       </td>
                     </tr>
                   ) : (
                     accounts.map(acc => {
                       const isActive = acc.statusId === 'FNACT_ACTIVE';
                       return (
-                        <tr key={acc.finAccountId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s ease' }} className="table-row-hover">
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 700, fontFamily: 'monospace', color: '#e2e8f0' }}>
+                        <tr key={acc.finAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono font-bold text-slate-200">
                             {acc.finAccountId}
                             {acc.finAccountCode && (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '0.15rem' }}>
+                              <div className="text-xs text-slate-400 font-mono mt-0.5">
                                 {acc.finAccountCode}
                               </div>
                             )}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 600 }}>
+                          <td className="ds-td font-semibold text-white">
                             {acc.finAccountName}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              background: acc.finAccountTypeId === 'BANK_ACCOUNT' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(249, 115, 22, 0.15)',
-                              color: acc.finAccountTypeId === 'BANK_ACCOUNT' ? '#60a5fa' : '#fb923c',
-                              border: `1px solid ${acc.finAccountTypeId === 'BANK_ACCOUNT' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(249, 115, 22, 0.3)'}`
-                            }}>
+                          <td className="ds-td">
+                            <span className={`ds-badge ${acc.finAccountTypeId === 'BANK_ACCOUNT' ? 'ds-badge-blue' : 'ds-badge-yellow'}`}>
                               {acc.finAccountTypeDesc || acc.finAccountTypeId}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                          <td className="ds-td text-slate-400 text-xs">
                             {acc.postToGlAccountName || acc.postToGlAccountId || '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 800, color: '#4ade80', fontSize: '0.9375rem' }}>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: acc.currencyUomId || 'USD' }).format(acc.actualBalance)}
+                          <td className="ds-td-right font-extrabold text-emerald-400">
+                            {formatCurrency(acc.actualBalance, acc.currencyUomId || 'USD')}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)' }}>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: acc.currencyUomId || 'USD' }).format(acc.availableBalance)}
+                          <td className="ds-td-right font-semibold text-slate-300">
+                            {formatCurrency(acc.availableBalance, acc.currencyUomId || 'USD')}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '20px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              background: isActive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                              color: isActive ? '#4ade80' : '#f87171'
-                            }}>
-                              {isActive ? <CheckCircle2 size={12} /> : <Ban size={12} />}
-                              {acc.statusDesc || acc.statusId}
+                          <td className="ds-td text-center">
+                            <span className={`ds-badge ${isActive ? 'ds-badge-green' : 'ds-badge-red'}`}>
+                              {isActive ? <CheckCircle2 size={12} className="mr-1" /> : <Ban size={12} className="mr-1" />}
+                              {acc.statusDesc || (isActive ? translations.financialAccounts.accounts.active : translations.financialAccounts.accounts.inactive)}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
+                          <td className="ds-td-right">
+                            <div className="inline-flex gap-1.5 items-center justify-end">
                               <button
                                 onClick={() => handleOpenAccountDetail(acc.finAccountId)}
-                                className="glass-card"
-                                title="Hesap Detayı & Hareketler"
-                                style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                                className="ds-btn-secondary !px-2.5 !py-1 text-xs"
+                                title={translations.financialAccounts.accounts.accountDetail}
                               >
                                 <Eye size={14} />
-                                İncele
+                                {translations.common.details}
                               </button>
                               <button
                                 onClick={() => handleOpenTransModal(acc.finAccountId, 'DEPOSIT')}
-                                className="glass-card"
-                                title="Para Girişi (Deposit)"
-                                style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', cursor: 'pointer', color: '#4ade80' }}
+                                className="ds-btn-secondary !px-2.5 !py-1 text-xs text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
+                                title={translations.financialAccounts.transactions.deposit}
                               >
-                                + Giriş
+                                + {locale === 'tr' ? 'Giriş' : 'Deposit'}
                               </button>
                               <button
                                 onClick={() => handleOpenTransModal(acc.finAccountId, 'WITHDRAWAL')}
-                                className="glass-card"
-                                title="Para Çıkışı (Withdrawal)"
-                                style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', cursor: 'pointer', color: '#f87171' }}
+                                className="ds-btn-secondary !px-2.5 !py-1 text-xs text-red-400 hover:text-red-300 border-red-500/30"
+                                title={translations.financialAccounts.transactions.withdrawal}
                               >
-                                - Çıkış
+                                - {locale === 'tr' ? 'Çıkış' : 'Withdraw'}
                               </button>
                               <button
                                 onClick={() => handleOpenEditAccount(acc)}
-                                className="glass-card"
-                                title="Hesabı Düzenle"
-                                style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                                className="ds-btn-secondary !px-2 !py-1 text-xs"
+                                title={translations.financialAccounts.accounts.editAccount}
                               >
                                 <Edit3 size={14} />
                               </button>
@@ -747,42 +830,26 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* TAB 2: TRANSACTIONS LIST */}
       {activeTab === 'transactions' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="glass-card" style={{ padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text"
-                placeholder="İşlem No veya açıklama ara..."
+                placeholder={translations.financialAccounts.transactions.searchPlaceholder}
                 value={transSearch}
                 onChange={e => setTransSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.75rem',
-                  background: 'rgba(0,0,0,0.2)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  outline: 'none',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={transAccountFilter}
               onChange={e => setTransAccountFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select w-auto min-w-[180px]"
             >
-              <option value="">Tüm Hesaplar</option>
+              <option value="">{translations.financialAccounts.transactions.allAccounts}</option>
               {accounts.map(a => (
                 <option key={a.finAccountId} value={a.finAccountId}>
                   {a.finAccountName} ({a.finAccountId})
@@ -793,72 +860,58 @@ export const FinancialAccounts: React.FC = () => {
             <select
               value={transTypeFilter}
               onChange={e => setTransTypeFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select w-auto min-w-[170px]"
             >
-              <option value="">Tüm İşlem Türleri</option>
-              <option value="DEPOSIT">Para Girişi (Deposit)</option>
-              <option value="WITHDRAWAL">Para Çıkışı (Withdrawal)</option>
-              <option value="ADJUSTMENT">Bakiye Düzeltme (Adjustment)</option>
+              <option value="">{translations.financialAccounts.transactions.allTypes}</option>
+              <option value="DEPOSIT">{translations.financialAccounts.transactions.deposit}</option>
+              <option value="WITHDRAWAL">{translations.financialAccounts.transactions.withdrawal}</option>
+              <option value="ADJUSTMENT">{translations.financialAccounts.transactions.adjustment}</option>
             </select>
 
             <select
               value={transStatusFilter}
               onChange={e => setTransStatusFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select w-auto min-w-[160px]"
             >
-              <option value="">Tüm Durumlar</option>
-              <option value="FINACT_TRNS_CREATED">Oluşturuldu (Created)</option>
-              <option value="FINACT_TRNS_APPROVED">Onaylandı (Approved)</option>
-              <option value="FINACT_TRNS_CANCELED">İptal Edildi (Canceled)</option>
+              <option value="">{translations.financialAccounts.transactions.allStatuses}</option>
+              <option value="FINACT_TRNS_CREATED">{locale === 'tr' ? 'Oluşturuldu (Created)' : 'Created'}</option>
+              <option value="FINACT_TRNS_APPROVED">{locale === 'tr' ? 'Onaylandı (Approved)' : 'Approved'}</option>
+              <option value="FINACT_TRNS_CANCELED">{locale === 'tr' ? 'İptal Edildi (Canceled)' : 'Canceled'}</option>
             </select>
           </div>
 
           {/* Transactions Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>İşlem No</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tarih</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>İşlem Türü</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Tutar</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Açıklama</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Cari</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Durum</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Mutabakat</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{translations.financialAccounts.transactions.transId}</th>
+                    <th className="ds-th">{translations.financialAccounts.transactions.transDate}</th>
+                    <th className="ds-th">{translations.financialAccounts.tabs.accounts}</th>
+                    <th className="ds-th">{translations.financialAccounts.transactions.transType}</th>
+                    <th className="ds-th-right">{translations.financialAccounts.transactions.amount}</th>
+                    <th className="ds-th">{translations.financialAccounts.transactions.reason}</th>
+                    <th className="ds-th">{translations.financialAccounts.transactions.party}</th>
+                    <th className="ds-th text-center">{translations.common.status}</th>
+                    <th className="ds-th text-center">{translations.financialAccounts.reconciliation.recId}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={9} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                          <Loader2 className="animate-spin" size={24} color="var(--primary)" />
-                          <span>Hareketler yükleniyor...</span>
+                      <td colSpan={9} className="py-16 text-center text-slate-400">
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="ds-spinner-sm" />
+                          <span>{translations.common.loading}</span>
                         </div>
                       </td>
                     </tr>
                   ) : transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        <Filter size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
-                        <p>Kriterlere uygun hareket kaydı bulunamadı.</p>
+                      <td colSpan={9} className="py-16 text-center text-slate-400">
+                        <Filter size={32} className="mx-auto mb-3 opacity-50" />
+                        <p>{translations.financialAccounts.transactions.noTrans}</p>
                       </td>
                     </tr>
                   ) : (
@@ -866,62 +919,44 @@ export const FinancialAccounts: React.FC = () => {
                       const isDeposit = tr.finAccountTransTypeId === 'DEPOSIT';
                       const isWithdrawal = tr.finAccountTransTypeId === 'WITHDRAWAL';
                       return (
-                        <tr key={tr.finAccountTransId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 700, fontFamily: 'monospace' }}>
+                        <tr key={tr.finAccountTransId} className="ds-tbody-row">
+                          <td className="ds-td-mono font-bold">
                             #{tr.finAccountTransId}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          <td className="ds-td-muted whitespace-nowrap">
                             {tr.transactionDate ? tr.transactionDate.substring(0, 10) : '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 600 }}>
+                          <td className="ds-td font-semibold text-white">
                             {tr.finAccountName || tr.finAccountId}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              background: isDeposit ? 'rgba(34, 197, 94, 0.15)' : isWithdrawal ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                              color: isDeposit ? '#4ade80' : isWithdrawal ? '#f87171' : '#60a5fa'
-                            }}>
-                              {isDeposit ? <ArrowDownLeft size={12} /> : isWithdrawal ? <ArrowUpRight size={12} /> : <ArrowRightLeft size={12} />}
+                          <td className="ds-td">
+                            <span className={`ds-badge ${isDeposit ? 'ds-badge-green' : isWithdrawal ? 'ds-badge-red' : 'ds-badge-blue'}`}>
+                              {isDeposit ? <ArrowDownLeft size={12} className="mr-1" /> : isWithdrawal ? <ArrowUpRight size={12} className="mr-1" /> : <ArrowRightLeft size={12} className="mr-1" />}
                               {tr.finAccountTransTypeDesc || tr.finAccountTransTypeId}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 800, color: isDeposit ? '#4ade80' : '#f87171' }}>
+                          <td className={`ds-td-right font-extrabold ${isDeposit ? 'text-emerald-400' : 'text-red-400'}`}>
                             {isDeposit ? '+' : isWithdrawal ? '-' : ''}
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(tr.amount)}
+                            {formatCurrency(tr.amount, 'USD')}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                          <td className="ds-td-muted">
                             {tr.comments || '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                          <td className="ds-td-muted">
                             {tr.partyName || tr.partyId || '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '12px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              background: tr.statusId === 'FINACT_TRNS_APPROVED' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                              color: tr.statusId === 'FINACT_TRNS_APPROVED' ? '#4ade80' : '#facc15'
-                            }}>
+                          <td className="ds-td text-center">
+                            <span className={`ds-badge ${tr.statusId === 'FINACT_TRNS_APPROVED' ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
                               {tr.statusDesc || tr.statusId}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
+                          <td className="ds-td text-center">
                             {tr.glReconciliationId ? (
-                              <span style={{ color: '#4ade80', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <Check size={12} /> #{tr.glReconciliationId}
+                              <span className="ds-badge ds-badge-indigo">
+                                <Check size={12} className="mr-1" /> #{tr.glReconciliationId}
                               </span>
                             ) : (
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Açıkta</span>
+                              <span className="text-slate-500 text-xs">{locale === 'tr' ? 'Açıkta' : 'Unmatched'}</span>
                             )}
                           </td>
                         </tr>
@@ -933,26 +968,24 @@ export const FinancialAccounts: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderTop: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Toplam <strong>{totalTransCount}</strong> hareket kaydı
+            <div className="flex justify-between items-center px-4 py-3 border-t border-slate-700/50 text-xs text-slate-400">
+              <span>
+                {locale === 'tr' ? 'Toplam' : 'Total'} <strong className="text-white mx-1">{formatNumber(totalTransCount)}</strong> {locale === 'tr' ? 'hareket kaydı' : 'transactions'}
               </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="flex gap-2">
                 <button
                   disabled={transViewIndex === 0}
                   onClick={() => setTransViewIndex(prev => Math.max(0, prev - 1))}
-                  className="glass-card"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8125rem', cursor: transViewIndex === 0 ? 'not-allowed' : 'pointer', opacity: transViewIndex === 0 ? 0.5 : 1 }}
+                  className="ds-btn-secondary !py-1 !px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Önceki
+                  {translations.common.previous}
                 </button>
                 <button
                   disabled={(transViewIndex + 1) * 50 >= totalTransCount}
                   onClick={() => setTransViewIndex(prev => prev + 1)}
-                  className="glass-card"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8125rem', cursor: (transViewIndex + 1) * 50 >= totalTransCount ? 'not-allowed' : 'pointer', opacity: (transViewIndex + 1) * 50 >= totalTransCount ? 0.5 : 1 }}
+                  className="ds-btn-secondary !py-1 !px-3 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Sonraki
+                  {translations.common.next}
                 </button>
               </div>
             </div>
@@ -962,142 +995,136 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* TAB 3: BANK RECONCILIATION */}
       {activeTab === 'reconciliation' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="space-y-6">
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Banka Mutabakat Listesi</h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Banka hesap ekstreleri ile OFBiz defter kayıtlarını eşleştirerek mutabakat sağlayın.
+              <h2 className="text-xl font-bold text-white">
+                {locale === 'tr' ? 'Banka Mutabakat Listesi' : 'Bank Reconciliation List'}
+              </h2>
+              <p className="text-sm text-slate-400">
+                {locale === 'tr' ? 'Banka hesap ekstreleri ile OFBiz defter kayıtlarını eşleştirerek mutabakat sağlayın.' : 'Reconcile bank statements against OFBiz general ledger records.'}
               </p>
             </div>
             <button
               onClick={() => setShowCreateRecModal(true)}
-              className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem' }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
-              Yeni Mutabakat Başlat
+              {translations.financialAccounts.reconciliation.newRec}
             </button>
           </div>
 
           {/* Reconciliations Table */}
-          <div className="glass-card" style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mutabakat ID</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mutabakat Tanımı</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>GL Hesabı</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Hedef Bakiye</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Eşleşen Hareket</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Durum</th>
-                  <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Loader2 className="animate-spin" size={24} color="var(--primary)" style={{ margin: '0 auto' }} />
-                    </td>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
+                <thead>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{translations.financialAccounts.reconciliation.recId}</th>
+                    <th className="ds-th">{translations.financialAccounts.reconciliation.recName}</th>
+                    <th className="ds-th">{translations.financialAccounts.reconciliation.glAccountId}</th>
+                    <th className="ds-th-right">{translations.financialAccounts.reconciliation.closingBalance}</th>
+                    <th className="ds-th text-center">{translations.financialAccounts.reconciliation.linkedTrans}</th>
+                    <th className="ds-th text-center">{translations.common.status}</th>
+                    <th className="ds-th-right">{translations.common.actions}</th>
                   </tr>
-                ) : reconciliations.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      Henüz oluşturulmuş bir banka mutabakatı bulunmuyor.
-                    </td>
-                  </tr>
-                ) : (
-                  reconciliations.map(r => {
-                    const isReconciled = r.statusId === 'GLREC_RECONCILED';
-                    return (
-                      <tr key={r.glReconciliationId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, fontFamily: 'monospace' }}>
-                          #{r.glReconciliationId}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: 600 }}>
-                          {r.glReconciliationName}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
-                          {r.glAccountName}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: '#60a5fa' }}>
-                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(r.reconciledBalance)}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                          <span style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', fontWeight: 600 }}>
-                            {r.transactionCount} adet
-                          </span>
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            background: isReconciled ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                            color: isReconciled ? '#4ade80' : '#facc15'
-                          }}>
-                            {isReconciled ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                            {r.statusDesc}
-                          </span>
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                          <button
-                            onClick={() => handleOpenReconciliationDetail(r.glReconciliationId)}
-                            className="btn-primary"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-                          >
-                            <FileSpreadsheet size={14} />
-                            Çalışma Ekranı
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-slate-400">
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="ds-spinner-sm" />
+                          <span>{translations.common.loading}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : reconciliations.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-slate-400">
+                        <FileSpreadsheet size={32} className="mx-auto mb-3 opacity-50" />
+                        <p>{translations.financialAccounts.reconciliation.noRecs}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    reconciliations.map(r => {
+                      const isReconciled = r.statusId === 'GLREC_RECONCILED';
+                      return (
+                        <tr key={r.glReconciliationId} className="ds-tbody-row">
+                          <td className="ds-td-mono font-bold">
+                            #{r.glReconciliationId}
+                          </td>
+                          <td className="ds-td font-semibold text-white">
+                            {r.glReconciliationName}
+                          </td>
+                          <td className="ds-td text-slate-400 text-xs">
+                            {r.glAccountName}
+                          </td>
+                          <td className="ds-td-right font-bold text-blue-400">
+                            {formatCurrency(r.reconciledBalance, 'USD')}
+                          </td>
+                          <td className="ds-td text-center">
+                            <span className="ds-badge ds-badge-slate">
+                              {r.transactionCount} {locale === 'tr' ? 'adet' : 'items'}
+                            </span>
+                          </td>
+                          <td className="ds-td text-center">
+                            <span className={`ds-badge ${isReconciled ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
+                              {isReconciled ? <CheckCircle2 size={12} className="mr-1" /> : <Clock size={12} className="mr-1" />}
+                              {r.statusDesc}
+                            </span>
+                          </td>
+                          <td className="ds-td-right">
+                            <button
+                              onClick={() => handleOpenReconciliationDetail(r.glReconciliationId)}
+                              className="ds-btn-primary !px-3 !py-1.5 text-xs inline-flex items-center gap-1.5"
+                            >
+                              <FileSpreadsheet size={14} />
+                              {locale === 'tr' ? 'Çalışma Ekranı' : 'Workspace'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Interactive Reconciliation Workspace (when selected) */}
           {selectedReconciliationId && reconciliationDetail && (
-            <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+            <div className="ds-card-elevated p-6 space-y-6 border border-indigo-500/30">
               
               {/* Workspace Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div className="flex justify-between items-center flex-wrap gap-4 pb-4 border-b border-slate-700/50">
                 <div>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileSpreadsheet size={20} color="var(--primary)" />
-                    Mutabakat Çalışma Ekranı: #{reconciliationDetail.reconciliation.glReconciliationId} - {reconciliationDetail.reconciliation.glReconciliationName}
-                    {recDetailLoading && <Loader2 size={16} className="animate-spin" style={{ color: 'var(--primary)', marginLeft: '0.5rem' }} />}
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <FileSpreadsheet size={20} className="text-indigo-400" />
+                    {locale === 'tr' ? 'Mutabakat Çalışma Ekranı' : 'Reconciliation Workspace'}: #{reconciliationDetail.reconciliation.glReconciliationId} - {reconciliationDetail.reconciliation.glReconciliationName}
+                    {recDetailLoading && <Loader2 size={16} className="animate-spin text-indigo-400 ml-2" />}
                   </h3>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Hesap: {reconciliationDetail.reconciliation.glAccountName} | Durum: {reconciliationDetail.reconciliation.statusDesc}
+                  <div className="text-xs text-slate-400 mt-1">
+                    {translations.financialAccounts.reconciliation.glAccountId}: <strong className="text-slate-200">{reconciliationDetail.reconciliation.glAccountName}</strong> | {translations.common.status}: <strong className="text-slate-200">{reconciliationDetail.reconciliation.statusDesc}</strong>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex items-center gap-3">
                   {reconciliationDetail.reconciliation.statusId !== 'GLREC_RECONCILED' && (
                     <button
                       onClick={handleCompleteReconciliation}
-                      className="btn-primary"
-                      style={{ padding: '0.5rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      className="ds-btn-primary"
                     >
                       <CheckCircle2 size={16} />
-                      Mutabakatı Onayla ve Kapat
+                      {translations.financialAccounts.reconciliation.reconcileNow}
                     </button>
                   )}
                   <button
                     onClick={() => { setSelectedReconciliationId(null); setReconciliationDetail(null); }}
-                    className="glass-card"
-                    style={{ padding: '0.5rem 0.875rem', cursor: 'pointer' }}
+                    className="ds-btn-secondary"
                   >
-                    Kapat
+                    {translations.common.close}
                   </button>
                 </div>
               </div>
@@ -1110,44 +1137,38 @@ export const FinancialAccounts: React.FC = () => {
                 const isMatched = Math.abs(diff) < 0.01;
 
                 return (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    padding: '1.25rem',
-                    borderRadius: '12px',
-                    background: isMatched ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    border: `1px solid ${isMatched ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                  }}>
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl border ${
+                    isMatched ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'
+                  }`}>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Banka Ekstresi (Hedef Bakiye)</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#60a5fa' }}>
-                        ${targetBal.toFixed(2)}
+                      <div className="text-xs text-slate-400">{translations.financialAccounts.reconciliation.closingBalance}</div>
+                      <div className="text-xl font-bold text-blue-400">
+                        {formatCurrency(targetBal, 'USD')}
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Eşleştirilen Toplam Tutar</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fb923c' }}>
-                        ${totalLinked.toFixed(2)}
+                      <div className="text-xs text-slate-400">{locale === 'tr' ? 'Eşleştirilen Toplam Tutar' : 'Total Reconciled Amount'}</div>
+                      <div className="text-xl font-bold text-amber-400">
+                        {formatCurrency(totalLinked, 'USD')}
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kalan Mutabakat Farkı</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isMatched ? '#4ade80' : '#f87171' }}>
-                        ${diff.toFixed(2)}
+                      <div className="text-xs text-slate-400">{translations.financialAccounts.reconciliation.difference}</div>
+                      <div className={`text-xl font-bold ${isMatched ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatCurrency(diff, 'USD')}
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="flex items-center">
                       {isMatched ? (
-                        <span style={{ color: '#4ade80', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.875rem' }}>
-                          <CheckCircle2 size={18} /> Tam Uyuşma Sağlandı
+                        <span className="text-emerald-400 font-bold flex items-center gap-1.5 text-sm">
+                          <CheckCircle2 size={18} /> {locale === 'tr' ? 'Tam Uyuşma Sağlandı' : 'Fully Balanced'}
                         </span>
                       ) : (
-                        <span style={{ color: '#f87171', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem' }}>
-                          <AlertCircle size={16} /> Fark var, eksik işlemleri eşleştirin
+                        <span className="text-red-400 font-semibold flex items-center gap-1.5 text-xs">
+                          <AlertCircle size={16} /> {locale === 'tr' ? 'Fark var, eksik işlemleri eşleştirin' : 'Difference detected, match pending transactions'}
                         </span>
                       )}
                     </div>
@@ -1156,44 +1177,44 @@ export const FinancialAccounts: React.FC = () => {
               })()}
 
               {/* Linked vs Unlinked Split Table */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem' }}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 
                 {/* Left: Linked Transactions */}
-                <div className="glass-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Link2 size={16} /> Eşleşen Hareketler ({reconciliationDetail.linkedTransactions.length})
+                <div className="ds-card p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                      <Link2 size={16} /> {translations.financialAccounts.reconciliation.linkedTrans} ({reconciliationDetail.linkedTransactions.length})
                     </h4>
                   </div>
 
-                  <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  <div className="max-h-[350px] overflow-y-auto">
                     {reconciliationDetail.linkedTransactions.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                        Henüz eşleşen hareket bulunmuyor. Sağdaki listeden ekleyebilirsiniz.
+                      <div className="p-8 text-center text-slate-500 text-xs">
+                        {locale === 'tr' ? 'Henüz eşleşen hareket bulunmuyor. Sağdaki listeden ekleyebilirsiniz.' : 'No matched transactions yet. Add from the unmatched list.'}
                       </div>
                     ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                      <table className="ds-table text-xs">
                         <thead>
-                          <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tarih</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tür</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'right' }}>Tutar</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>İşlem</th>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">{translations.common.date}</th>
+                            <th className="ds-th">{translations.common.type}</th>
+                            <th className="ds-th-right">{translations.common.amount}</th>
+                            <th className="ds-th text-center">{translations.common.actions}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {reconciliationDetail.linkedTransactions.map(tr => (
-                            <tr key={tr.finAccountTransId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                              <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{tr.transactionDate?.substring(0, 10)}</td>
-                              <td style={{ padding: '0.5rem' }}>{tr.finAccountTransTypeId}</td>
-                              <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 700 }}>
-                                ${Number(tr.amount).toFixed(2)}
+                            <tr key={tr.finAccountTransId} className="ds-tbody-row">
+                              <td className="ds-td-muted">{tr.transactionDate?.substring(0, 10)}</td>
+                              <td className="ds-td">{tr.finAccountTransTypeId}</td>
+                              <td className="ds-td-right font-bold text-white">
+                                {formatCurrency(Number(tr.amount), 'USD')}
                               </td>
-                              <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                              <td className="ds-td text-center">
                                 <button
                                   onClick={() => handleToggleReconcileTrans(tr.finAccountTransId, true)}
-                                  title="Eşleşmeyi Kaldır"
-                                  style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}
+                                  title={translations.financialAccounts.reconciliation.unlinkTrans}
+                                  className="text-red-400 hover:text-red-300 p-1 transition-colors"
                                 >
                                   <Unlink2 size={14} />
                                 </button>
@@ -1207,43 +1228,42 @@ export const FinancialAccounts: React.FC = () => {
                 </div>
 
                 {/* Right: Unlinked Transactions */}
-                <div className="glass-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fb923c', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Unlink2 size={16} /> Açıkta Kalan Hareketler ({reconciliationDetail.unlinkedTransactions.length})
+                <div className="ds-card p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                      <Unlink2 size={16} /> {translations.financialAccounts.reconciliation.unlinkedTrans} ({reconciliationDetail.unlinkedTransactions.length})
                     </h4>
                   </div>
 
-                  <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  <div className="max-h-[350px] overflow-y-auto">
                     {reconciliationDetail.unlinkedTransactions.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                        Bu hesaba ait açıkta kalan hareket bulunmuyor.
+                      <div className="p-8 text-center text-slate-500 text-xs">
+                        {locale === 'tr' ? 'Bu hesaba ait açıkta kalan hareket bulunmuyor.' : 'No unmatched transactions found for this account.'}
                       </div>
                     ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                      <table className="ds-table text-xs">
                         <thead>
-                          <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tarih</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tür</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'right' }}>Tutar</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>İşlem</th>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">{translations.common.date}</th>
+                            <th className="ds-th">{translations.common.type}</th>
+                            <th className="ds-th-right">{translations.common.amount}</th>
+                            <th className="ds-th text-center">{translations.common.actions}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {reconciliationDetail.unlinkedTransactions.map(tr => (
-                            <tr key={tr.finAccountTransId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                              <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{tr.transactionDate?.substring(0, 10)}</td>
-                              <td style={{ padding: '0.5rem' }}>{tr.finAccountTransTypeId}</td>
-                              <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 700 }}>
-                                ${Number(tr.amount).toFixed(2)}
+                            <tr key={tr.finAccountTransId} className="ds-tbody-row">
+                              <td className="ds-td-muted">{tr.transactionDate?.substring(0, 10)}</td>
+                              <td className="ds-td">{tr.finAccountTransTypeId}</td>
+                              <td className="ds-td-right font-bold text-white">
+                                {formatCurrency(Number(tr.amount), 'USD')}
                               </td>
-                              <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                              <td className="ds-td text-center">
                                 <button
                                   onClick={() => handleToggleReconcileTrans(tr.finAccountTransId, false)}
-                                  className="btn-primary"
-                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                                  className="ds-btn-primary !px-2 !py-1 text-xs"
                                 >
-                                  Dahil Et
+                                  {translations.financialAccounts.reconciliation.linkTrans}
                                 </button>
                               </td>
                             </tr>
@@ -1264,70 +1284,57 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: CREATE ACCOUNT */}
       {showCreateAccountModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Plus size={20} color="var(--primary)" />
-                Yeni Kasa / Banka Hesabı Tanımla
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plus size={20} className="text-indigo-400" />
+                {translations.financialAccounts.accounts.newAccount}
               </h2>
-              <button onClick={() => setShowCreateAccountModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowCreateAccountModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateAccountSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <form onSubmit={handleCreateAccountSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap No / ID (Opsiyonel)
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountId} ({locale === 'tr' ? 'Opsiyonel' : 'Optional'})
                   </label>
                   <input
                     type="text"
-                    placeholder="Örn: GARANTI_01"
+                    placeholder={locale === 'tr' ? 'Örn: BANKA_01' : 'e.g. BANK_01'}
                     value={createAccountForm.finAccountId || ''}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, finAccountId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap Adı *
+                <div className="sm:col-span-2">
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountName} *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Örn: Garanti BBVA Ticari TL"
+                    placeholder={locale === 'tr' ? 'Örn: İş Bankası Ticari TL' : 'e.g. Chase Commercial Checking'}
                     value={createAccountForm.finAccountName}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, finAccountName: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap Türü *
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountType} *
                   </label>
                   <select
                     value={createAccountForm.finAccountTypeId}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, finAccountTypeId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {metadata?.finAccountTypes?.map(t => (
                       <option key={t.finAccountTypeId} value={t.finAccountTypeId}>
@@ -1335,25 +1342,22 @@ export const FinancialAccounts: React.FC = () => {
                       </option>
                     )) || (
                       <>
-                        <option value="BANK_ACCOUNT">Banka Hesabı</option>
-                        <option value="DEPOSIT_ACCOUNT">Nakit Kasa / Depozito</option>
-                        <option value="CREDIT_CARD_ACCOUNT">Kredi Kartı Hesabı</option>
+                        <option value="BANK_ACCOUNT">{locale === 'tr' ? 'Banka Hesabı' : 'Bank Account'}</option>
+                        <option value="DEPOSIT_ACCOUNT">{locale === 'tr' ? 'Nakit Kasa / Depozito' : 'Deposit / Cash Register'}</option>
+                        <option value="CREDIT_CARD_ACCOUNT">{locale === 'tr' ? 'Kredi Kartı Hesabı' : 'Credit Card Account'}</option>
                       </>
                     )}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Para Birimi
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.currency}
                   </label>
                   <select
                     value={createAccountForm.currencyUomId}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, currencyUomId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     <option value="USD">USD ($)</option>
                     <option value="TRY">TRY (₺)</option>
@@ -1362,36 +1366,30 @@ export const FinancialAccounts: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap No / IBAN
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountId} / IBAN
                   </label>
                   <input
                     type="text"
                     placeholder="TR00 0000 0000..."
                     value={createAccountForm.finAccountCode || ''}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, finAccountCode: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Defter-i Kebir (GL) Eşlemesi
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.glAccount}
                   </label>
                   <select
                     value={createAccountForm.postToGlAccountId || ''}
                     onChange={e => setCreateAccountForm({ ...createAccountForm, postToGlAccountId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
-                    <option value="">-- Eşleme Yok --</option>
+                    <option value="">-- {translations.common.none} --</option>
                     {metadata?.glAccounts?.map(g => (
                       <option key={g.glAccountId} value={g.glAccountId}>
                         {g.accountCode} - {g.accountName}
@@ -1402,8 +1400,8 @@ export const FinancialAccounts: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Açılış Bakiyesi ($)
+                <label className="ds-label">
+                  {locale === 'tr' ? 'Açılış Bakiyesi ($)' : 'Opening Balance ($)'}
                 </label>
                 <input
                   type="number"
@@ -1411,34 +1409,28 @@ export const FinancialAccounts: React.FC = () => {
                   placeholder="0.00"
                   value={createAccountForm.initialBalance || ''}
                   onChange={e => setCreateAccountForm({ ...createAccountForm, initialBalance: parseFloat(e.target.value) || 0 })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                    fontWeight: 700
-                  }}
+                  className="ds-input font-bold"
                 />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Açılış bakiyesi girilirse otomatik onaylı para girişi (Deposit) hareketi oluşturulur.
+                <span className="text-xs text-slate-500 mt-1 block">
+                  {locale === 'tr' ? 'Açılış bakiyesi girilirse otomatik onaylı para girişi (Deposit) hareketi oluşturulur.' : 'If specified, an initial approved deposit transaction will be created.'}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowCreateAccountModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                  Hesabı Kaydet
+                  {translations.common.save}
                 </button>
               </div>
             </form>
@@ -1448,51 +1440,41 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: EDIT ACCOUNT */}
       {showEditAccountModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Edit3 size={20} color="var(--primary)" />
-                Hesabı Düzenle: {editAccountForm.finAccountId}
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 size={20} className="text-indigo-400" />
+                {translations.financialAccounts.accounts.editAccount}: {editAccountForm.finAccountId}
               </h2>
-              <button onClick={() => setShowEditAccountModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowEditAccountModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleEditAccountSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleEditAccountSubmit} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Hesap Adı *
+                <label className="ds-label">
+                  {translations.financialAccounts.accounts.accountName} *
                 </label>
                 <input
                   type="text"
                   required
                   value={editAccountForm.finAccountName}
                   onChange={e => setEditAccountForm({ ...editAccountForm, finAccountName: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap Türü
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountType}
                   </label>
                   <select
                     value={editAccountForm.finAccountTypeId}
                     onChange={e => setEditAccountForm({ ...editAccountForm, finAccountTypeId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {metadata?.finAccountTypes?.map(t => (
                       <option key={t.finAccountTypeId} value={t.finAccountTypeId}>
@@ -1503,53 +1485,44 @@ export const FinancialAccounts: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Durum
+                  <label className="ds-label">
+                    {translations.common.status}
                   </label>
                   <select
                     value={editAccountForm.statusId}
                     onChange={e => setEditAccountForm({ ...editAccountForm, statusId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
-                    <option value="FNACT_ACTIVE">Aktif (Active)</option>
-                    <option value="FNACT_MANFROZEN">Donduruldu (Frozen)</option>
-                    <option value="FNACT_CANCELLED">İptal Edildi (Cancelled)</option>
+                    <option value="FNACT_ACTIVE">{translations.financialAccounts.accounts.active}</option>
+                    <option value="FNACT_MANFROZEN">{locale === 'tr' ? 'Donduruldu (Frozen)' : 'Frozen'}</option>
+                    <option value="FNACT_CANCELLED">{locale === 'tr' ? 'İptal Edildi (Cancelled)' : 'Cancelled'}</option>
                   </select>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hesap No / IBAN
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.accountId} / IBAN
                   </label>
                   <input
                     type="text"
                     value={editAccountForm.finAccountCode || ''}
                     onChange={e => setEditAccountForm({ ...editAccountForm, finAccountCode: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Defter-i Kebir (GL) Eşlemesi
+                  <label className="ds-label">
+                    {translations.financialAccounts.accounts.glAccount}
                   </label>
                   <select
                     value={editAccountForm.postToGlAccountId || ''}
                     onChange={e => setEditAccountForm({ ...editAccountForm, postToGlAccountId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
-                    <option value="">-- Eşleme Yok --</option>
+                    <option value="">-- {translations.common.none} --</option>
                     {metadata?.glAccounts?.map(g => (
                       <option key={g.glAccountId} value={g.glAccountId}>
                         {g.accountCode} - {g.accountName}
@@ -1559,23 +1532,21 @@ export const FinancialAccounts: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowEditAccountModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                  Güncelle
+                  {translations.common.save}
                 </button>
               </div>
             </form>
@@ -1585,69 +1556,59 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: QUICK TRANSACTION (DEPOSIT / WITHDRAWAL) */}
       {showTransModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '550px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 {transForm.finAccountTransTypeId === 'DEPOSIT' ? (
-                  <ArrowDownLeft size={20} color="#4ade80" />
+                  <ArrowDownLeft size={20} className="text-emerald-400" />
                 ) : (
-                  <ArrowUpRight size={20} color="#f87171" />
+                  <ArrowUpRight size={20} className="text-red-400" />
                 )}
-                {transForm.finAccountTransTypeId === 'DEPOSIT' ? 'Hesaba Para Girişi (Deposit)' : 'Hesaptan Para Çıkışı (Withdrawal)'}
+                {transForm.finAccountTransTypeId === 'DEPOSIT' ? translations.financialAccounts.transactions.deposit : translations.financialAccounts.transactions.withdrawal}
               </h2>
-              <button onClick={() => setShowTransModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowTransModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTransSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateTransSubmit} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  İlgili Finansal Hesap *
+                <label className="ds-label">
+                  {translations.financialAccounts.tabs.accounts} *
                 </label>
                 <select
                   value={transForm.finAccountId}
                   onChange={e => setTransForm({ ...transForm, finAccountId: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-select"
                 >
                   {accounts.map(a => (
                     <option key={a.finAccountId} value={a.finAccountId}>
-                      {a.finAccountName} ({a.finAccountId}) - Bakiye: ${Number(a.actualBalance).toFixed(2)}
+                      {a.finAccountName} ({a.finAccountId}) - {translations.financialAccounts.accounts.balance}: {formatCurrency(a.actualBalance, a.currencyUomId || 'USD')}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    İşlem Yönü *
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.transType} *
                   </label>
                   <select
                     value={transForm.finAccountTransTypeId}
                     onChange={e => setTransForm({ ...transForm, finAccountTransTypeId: e.target.value as any })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
-                    <option value="DEPOSIT">Giriş (+) Deposit</option>
-                    <option value="WITHDRAWAL">Çıkış (-) Withdrawal</option>
-                    <option value="ADJUSTMENT">Düzeltme (Adjustment)</option>
+                    <option value="DEPOSIT">{translations.financialAccounts.transactions.deposit}</option>
+                    <option value="WITHDRAWAL">{translations.financialAccounts.transactions.withdrawal}</option>
+                    <option value="ADJUSTMENT">{translations.financialAccounts.transactions.adjustment}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Tutar ($) *
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.amount} ($) *
                   </label>
                   <input
                     type="number"
@@ -1656,63 +1617,51 @@ export const FinancialAccounts: React.FC = () => {
                     placeholder="0.00"
                     value={transForm.amount || ''}
                     onChange={e => setTransForm({ ...transForm, amount: parseFloat(e.target.value) || 0 })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                      fontWeight: 800
-                    }}
+                    className="ds-input font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  İşlem Tarihi
+                <label className="ds-label">
+                  {translations.financialAccounts.transactions.transDate}
                 </label>
                 <input
                   type="date"
                   value={transForm.transactionDate}
                   onChange={e => setTransForm({ ...transForm, transactionDate: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Açıklama / Not
+                <label className="ds-label">
+                  {translations.financialAccounts.transactions.reason}
                 </label>
                 <input
                   type="text"
-                  placeholder="İşlem açıklaması giriniz..."
+                  placeholder={locale === 'tr' ? 'İşlem açıklaması giriniz...' : 'Enter transaction notes...'}
                   value={transForm.comments || ''}
                   onChange={e => setTransForm({ ...transForm, comments: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowTransModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                  İşlemi Onayla
+                  {locale === 'tr' ? 'İşlemi Onayla' : 'Record Transaction'}
                 </button>
               </div>
             </form>
@@ -1722,69 +1671,59 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: TRANSFER (VIRMAN) */}
       {showTransferModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '550px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ArrowRightLeft size={20} color="var(--primary)" />
-                Virman / Hesaplar Arası Transfer
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <ArrowRightLeft size={20} className="text-indigo-400" />
+                {translations.financialAccounts.transactions.transfer}
               </h2>
-              <button onClick={() => setShowTransferModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowTransferModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleTransferSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <form onSubmit={handleTransferSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Kaynak Hesap (Çıkış Yapılacak) *
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.fromAccount} *
                   </label>
                   <select
                     value={transferForm.fromFinAccountId}
                     onChange={e => setTransferForm({ ...transferForm, fromFinAccountId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {accounts.map(a => (
                       <option key={a.finAccountId} value={a.finAccountId}>
-                        {a.finAccountName} (${Number(a.actualBalance).toFixed(2)})
+                        {a.finAccountName} ({formatCurrency(a.actualBalance, a.currencyUomId || 'USD')})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Hedef Hesap (Giriş Yapılacak) *
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.toAccount} *
                   </label>
                   <select
                     value={transferForm.toFinAccountId}
                     onChange={e => setTransferForm({ ...transferForm, toFinAccountId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {accounts.map(a => (
                       <option key={a.finAccountId} value={a.finAccountId}>
-                        {a.finAccountName} (${Number(a.actualBalance).toFixed(2)})
+                        {a.finAccountName} ({formatCurrency(a.actualBalance, a.currencyUomId || 'USD')})
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Transfer Tutarı ($) *
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.transferAmount} ($) *
                   </label>
                   <input
                     type="number"
@@ -1793,63 +1732,51 @@ export const FinancialAccounts: React.FC = () => {
                     placeholder="0.00"
                     value={transferForm.amount || ''}
                     onChange={e => setTransferForm({ ...transferForm, amount: parseFloat(e.target.value) || 0 })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                      fontWeight: 800
-                    }}
+                    className="ds-input font-bold"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Transfer Tarihi
+                  <label className="ds-label">
+                    {translations.financialAccounts.transactions.transDate}
                   </label>
                   <input
                     type="date"
                     value={transferForm.transactionDate}
                     onChange={e => setTransferForm({ ...transferForm, transactionDate: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Açıklama (Opsiyonel)
+                <label className="ds-label">
+                  {translations.financialAccounts.transactions.reason} ({locale === 'tr' ? 'Opsiyonel' : 'Optional'})
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Garanti'den Merkez Kasaya nakit aktarımı"
+                  placeholder={locale === 'tr' ? "Örn: Garanti'den Nakit Kasaya aktarım" : 'e.g. Transfer to petty cash'}
                   value={transferForm.comments || ''}
                   onChange={e => setTransferForm({ ...transferForm, comments: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowTransferModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                  Virmanı Gerçekleştir
+                  {translations.financialAccounts.transactions.transfer}
                 </button>
               </div>
             </form>
@@ -1859,51 +1786,41 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: CREATE RECONCILIATION */}
       {showCreateRecModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '550px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileSpreadsheet size={20} color="var(--primary)" />
-                Yeni Banka Mutabakatı Başlat
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <FileSpreadsheet size={20} className="text-indigo-400" />
+                {translations.financialAccounts.reconciliation.newRec}
               </h2>
-              <button onClick={() => setShowCreateRecModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowCreateRecModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRecSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateRecSubmit} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Mutabakat Tanımı / Dönemi *
+                <label className="ds-label">
+                  {translations.financialAccounts.reconciliation.recName} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Garanti BBVA Eylül 2026 Ekstre Mutabakatı"
+                  placeholder={locale === 'tr' ? 'Örn: Garanti BBVA Eylül 2026 Ekstre Mutabakatı' : 'e.g. Chase September 2026 Reconciliation'}
                   value={createRecForm.glReconciliationName}
                   onChange={e => setCreateRecForm({ ...createRecForm, glReconciliationName: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  İlgili Defter-i Kebir (GL) Hesabı *
+                <label className="ds-label">
+                  {translations.financialAccounts.reconciliation.glAccountId} *
                 </label>
                 <select
                   value={createRecForm.glAccountId}
                   onChange={e => setCreateRecForm({ ...createRecForm, glAccountId: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-select"
                 >
                   {metadata?.glAccounts?.map(g => (
                     <option key={g.glAccountId} value={g.glAccountId}>
@@ -1913,10 +1830,10 @@ export const FinancialAccounts: React.FC = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Ekstre Hedef Bakiye ($) *
+                  <label className="ds-label">
+                    {translations.financialAccounts.reconciliation.closingBalance} ($) *
                   </label>
                   <input
                     type="number"
@@ -1925,62 +1842,50 @@ export const FinancialAccounts: React.FC = () => {
                     placeholder="0.00"
                     value={createRecForm.reconciledBalance || ''}
                     onChange={e => setCreateRecForm({ ...createRecForm, reconciledBalance: parseFloat(e.target.value) || 0 })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                      fontWeight: 700
-                    }}
+                    className="ds-input font-bold"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Ekstre Tarihi
+                  <label className="ds-label">
+                    {translations.common.date}
                   </label>
                   <input
                     type="date"
                     value={createRecForm.reconciledDate}
                     onChange={e => setCreateRecForm({ ...createRecForm, reconciledDate: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Açıklama (Opsiyonel)
+                <label className="ds-label">
+                  {translations.common.description} ({locale === 'tr' ? 'Opsiyonel' : 'Optional'})
                 </label>
                 <textarea
                   rows={2}
                   value={createRecForm.description || ''}
                   onChange={e => setCreateRecForm({ ...createRecForm, description: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowCreateRecModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
                   {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                  Mutabakatı Başlat
+                  {translations.financialAccounts.reconciliation.newRec}
                 </button>
               </div>
             </form>
@@ -1990,147 +1895,143 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* MODAL: ACCOUNT DETAIL & TRANSACTIONS */}
       {showAccountDetailModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-4xl p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Landmark size={20} color="var(--primary)" />
-                  Hesap Detayı & Hareketleri
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Landmark size={20} className="text-indigo-400" />
+                  {translations.financialAccounts.accounts.accountDetail}
                 </h2>
                 {selectedAccountDetail && (
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  <div className="text-xs text-slate-400 mt-1">
                     {selectedAccountDetail.finAccountName} ({selectedAccountDetail.finAccountId})
                   </div>
                 )}
               </div>
-              <button onClick={() => setShowAccountDetailModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button onClick={() => setShowAccountDetailModal(false)} className="text-slate-400 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             {accountDetailLoading ? (
-              <div style={{ padding: '4rem', textAlign: 'center' }}>
-                <Loader2 className="animate-spin" size={32} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
-                <p style={{ color: 'var(--text-muted)' }}>Hesap hareketleri getiriliyor...</p>
+              <div className="py-16 text-center">
+                <div className="ds-spinner mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">{translations.common.loading}</p>
               </div>
             ) : selectedAccountDetail ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="space-y-5">
                 
                 {/* Balance Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                  <div className="glass-card" style={{ padding: '1rem', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Fiili Bakiye (Actual Balance)</div>
-                    <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#4ade80' }}>
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedAccountDetail.currencyUomId || 'USD' }).format(selectedAccountDetail.actualBalance)}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="ds-stat-card border border-indigo-500/30">
+                    <div className="ds-stat-label text-emerald-400">{translations.financialAccounts.accounts.actualBalance}</div>
+                    <div className="ds-stat-value text-emerald-400">
+                      {formatCurrency(selectedAccountDetail.actualBalance, selectedAccountDetail.currencyUomId || 'USD')}
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: '1rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Kullanılabilir Bakiye</div>
-                    <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#60a5fa' }}>
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedAccountDetail.currencyUomId || 'USD' }).format(selectedAccountDetail.availableBalance)}
+                  <div className="ds-stat-card">
+                    <div className="ds-stat-label text-blue-400">{translations.financialAccounts.accounts.availableBalance}</div>
+                    <div className="ds-stat-value text-blue-400">
+                      {formatCurrency(selectedAccountDetail.availableBalance, selectedAccountDetail.currencyUomId || 'USD')}
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: '1rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Hesap Türü</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 700 }}>
+                  <div className="ds-stat-card">
+                    <div className="ds-stat-label text-slate-400">{translations.financialAccounts.accounts.accountType}</div>
+                    <div className="text-base font-bold text-white mt-1">
                       {selectedAccountDetail.finAccountTypeDesc || selectedAccountDetail.finAccountTypeId}
                     </div>
                   </div>
                 </div>
 
                 {/* Account Properties */}
-                <div className="glass-card" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.8125rem' }}>
+                <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Hesap Kodu / IBAN: </span>
-                    <strong>{selectedAccountDetail.finAccountCode || '-'}</strong>
+                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.accountId} / IBAN:</span>
+                    <strong className="text-white font-mono">{selectedAccountDetail.finAccountCode || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>GL Eşlemesi: </span>
-                    <strong>{selectedAccountDetail.postToGlAccountName || selectedAccountDetail.postToGlAccountId || 'Yok'}</strong>
+                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.glAccount}:</span>
+                    <strong className="text-white">{selectedAccountDetail.postToGlAccountName || selectedAccountDetail.postToGlAccountId || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Hesap Sahibi: </span>
-                    <strong>{selectedAccountDetail.ownerPartyName || selectedAccountDetail.ownerPartyId}</strong>
+                    <span className="text-slate-400 block mb-0.5">{translations.financialAccounts.accounts.ownerParty}:</span>
+                    <strong className="text-white">{selectedAccountDetail.ownerPartyName || selectedAccountDetail.ownerPartyId || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Durum: </span>
-                    <strong style={{ color: selectedAccountDetail.statusId === 'FNACT_ACTIVE' ? '#4ade80' : '#f87171' }}>
+                    <span className="text-slate-400 block mb-0.5">{translations.common.status}:</span>
+                    <span className={`ds-badge ${selectedAccountDetail.statusId === 'FNACT_ACTIVE' ? 'ds-badge-green' : 'ds-badge-red'}`}>
                       {selectedAccountDetail.statusDesc}
-                    </strong>
+                    </span>
                   </div>
                 </div>
 
                 {/* Account Transactions List */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>
-                      Son Hesap Hareketleri ({accountTransList.length})
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-bold text-white">
+                      {locale === 'tr' ? 'Son Hesap Hareketleri' : 'Recent Account Transactions'} ({accountTransList.length})
                     </h3>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'DEPOSIT'); }}
-                        className="glass-card"
-                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', color: '#4ade80', cursor: 'pointer' }}
+                        className="ds-btn-secondary !px-2.5 !py-1 text-xs text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
                       >
-                        + Para Girişi
+                        + {locale === 'tr' ? 'Para Girişi' : 'Deposit'}
                       </button>
                       <button
                         onClick={() => { setShowAccountDetailModal(false); handleOpenTransModal(selectedAccountDetail.finAccountId, 'WITHDRAWAL'); }}
-                        className="glass-card"
-                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', color: '#f87171', cursor: 'pointer' }}
+                        className="ds-btn-secondary !px-2.5 !py-1 text-xs text-red-400 hover:text-red-300 border-red-500/30"
                       >
-                        - Para Çıkışı
+                        - {locale === 'tr' ? 'Para Çıkışı' : 'Withdrawal'}
                       </button>
                     </div>
                   </div>
 
                   {accountTransList.length === 0 ? (
-                    <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                      Bu hesaba ait henüz bir işlem hareketi kaydedilmemiş.
+                    <div className="ds-card p-8 text-center text-slate-500 text-xs">
+                      {locale === 'tr' ? 'Bu hesaba ait henüz bir işlem hareketi kaydedilmemiş.' : 'No transactions recorded for this account yet.'}
                     </div>
                   ) : (
-                    <div className="glass-card" style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Tarih</th>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>İşlem No</th>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Tür</th>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>Tutar</th>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Açıklama</th>
-                            <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>Durum</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {accountTransList.map(tr => {
-                            const isDep = tr.finAccountTransTypeId === 'DEPOSIT';
-                            return (
-                              <tr key={tr.finAccountTransId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>{tr.transactionDate?.substring(0, 10)}</td>
-                                <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700 }}>#{tr.finAccountTransId}</td>
-                                <td style={{ padding: '0.5rem 0.75rem' }}>{tr.finAccountTransTypeDesc || tr.finAccountTransTypeId}</td>
-                                <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 700, color: isDep ? '#4ade80' : '#f87171' }}>
-                                  {isDep ? '+' : '-'}
-                                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedAccountDetail.currencyUomId || 'USD' }).format(tr.amount)}
-                                </td>
-                                <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>{tr.comments || '-'}</td>
-                                <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
-                                  <span style={{ fontSize: '0.75rem', color: tr.statusId === 'FINACT_TRNS_APPROVED' ? '#4ade80' : '#facc15' }}>
-                                    {tr.statusDesc}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <div className="ds-card overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="ds-table text-xs">
+                          <thead>
+                            <tr className="ds-thead-row">
+                              <th className="ds-th">{translations.financialAccounts.transactions.transDate}</th>
+                              <th className="ds-th">{translations.financialAccounts.transactions.transId}</th>
+                              <th className="ds-th">{translations.financialAccounts.transactions.transType}</th>
+                              <th className="ds-th-right">{translations.financialAccounts.transactions.amount}</th>
+                              <th className="ds-th">{translations.financialAccounts.transactions.reason}</th>
+                              <th className="ds-th text-center">{translations.common.status}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {accountTransList.map(tr => {
+                              const isDep = tr.finAccountTransTypeId === 'DEPOSIT';
+                              return (
+                                <tr key={tr.finAccountTransId} className="ds-tbody-row">
+                                  <td className="ds-td-muted">{tr.transactionDate?.substring(0, 10)}</td>
+                                  <td className="ds-td-mono font-bold">#{tr.finAccountTransId}</td>
+                                  <td className="ds-td">{tr.finAccountTransTypeDesc || tr.finAccountTransTypeId}</td>
+                                  <td className={`ds-td-right font-bold ${isDep ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {isDep ? '+' : '-'}
+                                    {formatCurrency(tr.amount, selectedAccountDetail.currencyUomId || 'USD')}
+                                  </td>
+                                  <td className="ds-td-muted">{tr.comments || '-'}</td>
+                                  <td className="ds-td text-center">
+                                    <span className={`ds-badge ${tr.statusId === 'FINACT_TRNS_APPROVED' ? 'ds-badge-green' : 'ds-badge-yellow'}`}>
+                                      {tr.statusDesc || tr.statusId}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2138,13 +2039,12 @@ export const FinancialAccounts: React.FC = () => {
               </div>
             ) : null}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <div className="flex justify-end pt-4 mt-5 border-t border-slate-700/50">
               <button
                 onClick={() => setShowAccountDetailModal(false)}
-                className="glass-card"
-                style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                className="ds-btn-secondary"
               >
-                Kapat
+                {translations.common.close}
               </button>
             </div>
           </div>
@@ -2154,4 +2054,5 @@ export const FinancialAccounts: React.FC = () => {
     </div>
   );
 };
+
 export default FinancialAccounts;

@@ -224,7 +224,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors shrink-0"
-              aria-label="Menüyü Aç"
+              aria-label={locale === 'tr' ? 'Menüyü Aç' : 'Open Menu'}
             >
               <Menu size={22} />
             </button>

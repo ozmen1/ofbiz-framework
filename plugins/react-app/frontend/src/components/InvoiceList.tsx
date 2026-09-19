@@ -24,27 +24,15 @@ const getStatusIcon = (statusId: string) => {
   }
 };
 
-const getStatusLabel = (statusId: string, locale: string): string => {
-  if (locale === 'tr') {
-    switch (statusId) {
-      case 'INVOICE_PAID': return 'Ödendi';
-      case 'INVOICE_APPROVED': return 'Onaylandı';
-      case 'INVOICE_SENT': return 'Gönderildi';
-      case 'INVOICE_READY': return 'Hazır';
-      case 'INVOICE_IN_PROCESS': return 'Hazırlanıyor';
-      case 'INVOICE_CANCELLED': return 'İptal Edildi';
-      default: return (statusId || '').replace('INVOICE_', '').replace(/_/g, ' ');
-    }
-  } else {
-    switch (statusId) {
-      case 'INVOICE_PAID': return 'Paid';
-      case 'INVOICE_APPROVED': return 'Approved';
-      case 'INVOICE_SENT': return 'Sent';
-      case 'INVOICE_READY': return 'Ready';
-      case 'INVOICE_IN_PROCESS': return 'In Process';
-      case 'INVOICE_CANCELLED': return 'Cancelled';
-      default: return (statusId || '').replace('INVOICE_', '').replace(/_/g, ' ');
-    }
+const getStatusLabel = (statusId: string, inv: any): string => {
+  switch (statusId) {
+    case 'INVOICE_PAID': return inv.statusPaid;
+    case 'INVOICE_APPROVED': return inv.statusApproved;
+    case 'INVOICE_SENT': return inv.statusSent;
+    case 'INVOICE_READY': return inv.statusReady;
+    case 'INVOICE_IN_PROCESS': return inv.statusInProcess;
+    case 'INVOICE_CANCELLED': return inv.statusCancelled;
+    default: return (statusId || '').replace('INVOICE_', '').replace(/_/g, ' ');
   }
 };
 
@@ -223,7 +211,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <div className="flex justify-end gap-3 mt-1">
             <button type="button" onClick={handleReset} className="ds-btn-secondary" disabled={loading}>
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> {locale === 'tr' ? 'Sıfırla' : 'Reset'}
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> {translations.common.reset}
             </button>
             <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={loading}>
               <Search size={18} /> {translations.common.filter}
@@ -236,7 +224,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
       <div className="ds-card overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-700/50">
           <h3 className="text-white text-lg font-semibold m-0">
-            {locale === 'tr' ? `Kayıtlar (${invoices.length} / Toplam: ${totalCount})` : `Records (${invoices.length} / Total: ${totalCount})`}
+            {locale === 'tr' ? 'Kayıtlar' : 'Records'} ({invoices.length} / {translations.common.total}: {totalCount})
           </h3>
           <button
             className="ds-btn-secondary text-sm py-1.5 px-3"
@@ -282,7 +270,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                     <td className="ds-td">
                       <span className={getStatusBadgeClass(inv.statusId)}>
                         {getStatusIcon(inv.statusId)}
-                        {getStatusLabel(inv.statusId, locale)}
+                        {getStatusLabel(inv.statusId, translations.invoices)}
                       </span>
                     </td>
                     <td className="ds-td-mono ds-td-right">

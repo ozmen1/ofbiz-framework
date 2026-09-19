@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '../services/api';
+import { useTranslation } from '../i18n';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipler
@@ -30,31 +31,27 @@ interface InvoiceTerm {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yardımcılar
-// ─────────────────────────────────────────────────────────────────────────────
-const fmtDate = (s: string) =>
-  s ? new Date(s).toLocaleString('tr-TR') : '-';
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Not Formu
 // ─────────────────────────────────────────────────────────────────────────────
 function NoteForm({ invoiceId, onAdded }: { invoiceId: string; onAdded: () => void }) {
-  const [form, setForm] = useState({ noteName: 'Fatura Notu', noteInfo: '' });
+  const { translations } = useTranslation();
+  const t = translations.invoiceNotesAndTerms;
+  const [form, setForm] = useState({ noteName: t.notesTitle, noteInfo: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
   const save = async () => {
-    if (!form.noteInfo.trim()) { setError('Not içeriği gerekli'); return; }
+    if (!form.noteInfo.trim()) { setError(t.noteRequired); return; }
     setSaving(true);
     try {
       const params = new URLSearchParams({ invoiceId, noteName: form.noteName, noteInfo: form.noteInfo });
       const data = await fetchApi(`/react-app/control/createInvoiceNote?${params}`);
       if (data.success) {
-        setForm({ noteName: 'Fatura Notu', noteInfo: '' });
+        setForm({ noteName: t.notesTitle, noteInfo: '' });
         setError('');
         onAdded();
       } else {
-        setError(data.error || 'Not eklenemedi');
+        setError(data.error || t.noteRequired);
       }
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
@@ -62,18 +59,18 @@ function NoteForm({ invoiceId, onAdded }: { invoiceId: string; onAdded: () => vo
 
   return (
     <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/40 mt-3">
-      <p className="text-sm font-medium text-slate-300 mb-2">Yeni Not Ekle</p>
+      <p className="text-sm font-medium text-slate-300 mb-2">{t.addNote}</p>
       {error && <div className="mb-2 text-xs text-red-400 bg-red-500/10 px-3 py-1 rounded border border-red-500/20">{error}</div>}
       <div className="space-y-2">
         <input
           className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none"
-          placeholder="Not başlığı"
+          placeholder={t.notePlaceholder}
           value={form.noteName}
           onChange={e => setForm(p => ({ ...p, noteName: e.target.value }))}
         />
         <textarea
           className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none resize-none h-20"
-          placeholder="Not içeriğini buraya yazın…"
+          placeholder={t.contentPlaceholder}
           value={form.noteInfo}
           onChange={e => setForm(p => ({ ...p, noteInfo: e.target.value }))}
         />
@@ -81,7 +78,7 @@ function NoteForm({ invoiceId, onAdded }: { invoiceId: string; onAdded: () => vo
       <div className="flex justify-end mt-2">
         <button onClick={save} disabled={saving}
           className="px-4 py-1.5 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg disabled:opacity-50 transition-colors">
-          {saving ? 'Kaydediliyor…' : 'Notu Kaydet'}
+          {saving ? t.saving : t.saveNote}
         </button>
       </div>
     </div>
@@ -92,6 +89,8 @@ function NoteForm({ invoiceId, onAdded }: { invoiceId: string; onAdded: () => vo
 // Şart Formu
 // ─────────────────────────────────────────────────────────────────────────────
 function TermForm({ invoiceId, termTypes, onAdded }: { invoiceId: string; termTypes: TermType[]; onAdded: () => void }) {
+  const { translations } = useTranslation();
+  const t = translations.invoiceNotesAndTerms;
   const [form, setForm] = useState({
     termTypeId: termTypes[0]?.termTypeId || 'FIN_PAYMENT_TERM',
     termValue: '', termDays: '', textValue: '', description: '',
@@ -116,7 +115,7 @@ function TermForm({ invoiceId, termTypes, onAdded }: { invoiceId: string; termTy
         setError('');
         onAdded();
       } else {
-        setError(data.error || 'Şart eklenemedi');
+        setError(data.error || t.termError);
       }
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
@@ -124,40 +123,40 @@ function TermForm({ invoiceId, termTypes, onAdded }: { invoiceId: string; termTy
 
   return (
     <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/40 mt-3">
-      <p className="text-sm font-medium text-slate-300 mb-2">Yeni Vade Şartı Ekle</p>
+      <p className="text-sm font-medium text-slate-300 mb-2">{t.addTerm}</p>
       {error && <div className="mb-2 text-xs text-red-400 bg-red-500/10 px-3 py-1 rounded border border-red-500/20">{error}</div>}
       <div className="grid grid-cols-2 gap-2">
         <div className="col-span-2">
-          <label className="text-xs text-slate-400 mb-0.5 block">Şart Tipi</label>
+          <label className="text-xs text-slate-400 mb-0.5 block">{t.termType}</label>
           <select
             className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none"
             value={form.termTypeId}
             onChange={e => setForm(p => ({ ...p, termTypeId: e.target.value }))}
           >
-            {termTypes.map(t => <option key={t.termTypeId} value={t.termTypeId}>{t.description}</option>)}
+            {termTypes.map(item => <option key={item.termTypeId} value={item.termTypeId}>{item.description}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-slate-400 mb-0.5 block">Değer</label>
+          <label className="text-xs text-slate-400 mb-0.5 block">{t.termValue}</label>
           <input type="number" placeholder="0.00"
             className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 outline-none"
             value={form.termValue} onChange={e => setForm(p => ({ ...p, termValue: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs text-slate-400 mb-0.5 block">Gün</label>
+          <label className="text-xs text-slate-400 mb-0.5 block">{t.termDays}</label>
           <input type="number" placeholder="0"
             className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 outline-none"
             value={form.termDays} onChange={e => setForm(p => ({ ...p, termDays: e.target.value }))} />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-slate-400 mb-0.5 block">Metin Değeri</label>
-          <input placeholder="Örn: Net 30"
+          <label className="text-xs text-slate-400 mb-0.5 block">{t.textValue}</label>
+          <input placeholder={t.textValuePlaceholder}
             className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 outline-none"
             value={form.textValue} onChange={e => setForm(p => ({ ...p, textValue: e.target.value }))} />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-slate-400 mb-0.5 block">Açıklama</label>
-          <input placeholder="Opsiyonel açıklama"
+          <label className="text-xs text-slate-400 mb-0.5 block">{t.description}</label>
+          <input placeholder={t.descPlaceholder}
             className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 outline-none"
             value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
         </div>
@@ -165,7 +164,7 @@ function TermForm({ invoiceId, termTypes, onAdded }: { invoiceId: string; termTy
       <div className="flex justify-end mt-2">
         <button onClick={save} disabled={saving}
           className="px-4 py-1.5 text-sm text-white bg-purple-600 hover:bg-purple-500 rounded-lg disabled:opacity-50 transition-colors">
-          {saving ? 'Kaydediliyor…' : 'Şartı Kaydet'}
+          {saving ? t.saving : t.saveTerm}
         </button>
       </div>
     </div>
@@ -176,6 +175,10 @@ function TermForm({ invoiceId, termTypes, onAdded }: { invoiceId: string; termTy
 // Ana Bileşen: InvoiceNotesAndTerms
 // ─────────────────────────────────────────────────────────────────────────────
 export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string }) {
+  const { translations, locale } = useTranslation();
+  const t = translations.invoiceNotesAndTerms;
+  const common = translations.common;
+
   const [activeTab, setActiveTab] = useState<'notes' | 'terms'>('notes');
   const [notes, setNotes]         = useState<InvoiceNote[]>([]);
   const [terms, setTerms]         = useState<InvoiceTerm[]>([]);
@@ -183,6 +186,9 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
   const [loading, setLoading]     = useState(true);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [showTermForm, setShowTermForm] = useState(false);
+
+  const fmtDate = (s: string) =>
+    s ? new Date(s).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US') : '-';
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -202,13 +208,13 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
   useEffect(() => { loadData(); }, [loadData]);
 
   const deleteNote = async (noteId: string) => {
-    if (!confirm('Bu notu silmek istiyor musunuz?')) return;
+    if (!confirm(t.deleteNoteConfirm)) return;
     await fetchApi(`/react-app/control/deleteInvoiceNote?invoiceId=${invoiceId}&noteId=${noteId}`);
     loadData();
   };
 
   const deleteTerm = async (invoiceTermId: string) => {
-    if (!confirm('Bu vade şartını silmek istiyor musunuz?')) return;
+    if (!confirm(t.deleteTermConfirm)) return;
     await fetchApi(`/react-app/control/deleteInvoiceTerm?invoiceTermId=${invoiceTermId}`);
     loadData();
   };
@@ -225,7 +231,7 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
           }`}
           onClick={() => setActiveTab('notes')}
         >
-          📝 Notlar {!loading && `(${notes.length})`}
+          📝 {t.notesTab} {!loading && `(${notes.length})`}
         </button>
         <button
           className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -235,7 +241,7 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
           }`}
           onClick={() => setActiveTab('terms')}
         >
-          📋 Vade Şartları {!loading && `(${terms.length})`}
+          📋 {t.termsTab} {!loading && `(${terms.length})`}
         </button>
       </div>
 
@@ -248,10 +254,10 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
           /* ── NOTLAR ── */
           <div>
             <div className="flex justify-between items-center mb-1">
-              <p className="text-sm font-medium text-slate-300">Fatura Notları</p>
+              <p className="text-sm font-medium text-slate-300">{t.notesTitle}</p>
               <button onClick={() => setShowNoteForm(!showNoteForm)}
                 className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">
-                {showNoteForm ? 'Formu Kapat' : '+ Not Ekle'}
+                {showNoteForm ? t.closeForm : t.addNote}
               </button>
             </div>
 
@@ -261,7 +267,7 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
 
             {notes.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">
-                Henüz fatura notu yok
+                {t.noNotes}
               </div>
             ) : (
               <div className="space-y-3 mt-3">
@@ -280,7 +286,7 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
                       )}
                     </div>
                     <button onClick={() => deleteNote(note.noteId)}
-                      className="text-slate-600 hover:text-red-400 transition-colors text-sm shrink-0" title="Notu sil">
+                      className="text-slate-600 hover:text-red-400 transition-colors text-sm shrink-0" title={common.delete}>
                       ✕
                     </button>
                   </div>
@@ -292,10 +298,10 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
           /* ── VADE ŞARTLARI ── */
           <div>
             <div className="flex justify-between items-center mb-1">
-              <p className="text-sm font-medium text-slate-300">Vade & Ödeme Şartları</p>
+              <p className="text-sm font-medium text-slate-300">{t.termsTitle}</p>
               <button onClick={() => setShowTermForm(!showTermForm)}
                 className="text-xs text-purple-400 hover:text-purple-300 hover:underline transition-colors">
-                {showTermForm ? 'Formu Kapat' : '+ Şart Ekle'}
+                {showTermForm ? t.closeForm : t.addTerm}
               </button>
             </div>
 
@@ -305,42 +311,44 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
 
             {terms.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">
-                Henüz vade şartı eklenmemiş
+                {t.noTerms}
               </div>
             ) : (
-              <table className="w-full text-sm mt-3">
-                <thead>
-                  <tr className="bg-slate-700/40 text-xs uppercase text-slate-400">
-                    <th className="px-3 py-2 text-left rounded-l-lg">Şart Tipi</th>
-                    <th className="px-3 py-2 text-right">Değer</th>
-                    <th className="px-3 py-2 text-right">Gün</th>
-                    <th className="px-3 py-2 text-left">Metin</th>
-                    <th className="px-3 py-2 text-left">Açıklama</th>
-                    <th className="px-3 py-2 text-left rounded-r-lg">İşlem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {terms.map(term => (
-                    <tr key={term.invoiceTermId} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
-                      <td className="px-3 py-2">
-                        <span className="bg-purple-500/20 text-purple-300 text-xs px-2 py-0.5 rounded-full">
-                          {term.termTypeDesc}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-slate-200">{term.termValue || 0}</td>
-                      <td className="px-3 py-2 text-right text-slate-300">{term.termDays || 0} gün</td>
-                      <td className="px-3 py-2 text-slate-400">{term.textValue || '-'}</td>
-                      <td className="px-3 py-2 text-slate-500">{term.description || '-'}</td>
-                      <td className="px-3 py-2">
-                        <button onClick={() => deleteTerm(term.invoiceTermId)}
-                          className="text-xs text-red-400 hover:text-red-300 hover:underline transition-colors">
-                          Sil
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm mt-3 min-w-[500px]">
+                  <thead>
+                    <tr className="bg-slate-700/40 text-xs uppercase text-slate-400">
+                      <th className="px-3 py-2 text-left rounded-l-lg">{t.termType}</th>
+                      <th className="px-3 py-2 text-right">{t.termValue}</th>
+                      <th className="px-3 py-2 text-right">{t.termDays}</th>
+                      <th className="px-3 py-2 text-left">{t.textValue}</th>
+                      <th className="px-3 py-2 text-left">{t.description}</th>
+                      <th className="px-3 py-2 text-left rounded-r-lg">{common.actions}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {terms.map(term => (
+                      <tr key={term.invoiceTermId} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                        <td className="px-3 py-2">
+                          <span className="bg-purple-500/20 text-purple-300 text-xs px-2 py-0.5 rounded-full">
+                            {term.termTypeDesc}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-slate-200">{term.termValue || 0}</td>
+                        <td className="px-3 py-2 text-right text-slate-300">{term.termDays || 0} {t.daysSuffix}</td>
+                        <td className="px-3 py-2 text-slate-400">{term.textValue || '-'}</td>
+                        <td className="px-3 py-2 text-slate-500">{term.description || '-'}</td>
+                        <td className="px-3 py-2">
+                          <button onClick={() => deleteTerm(term.invoiceTermId)}
+                            className="text-xs text-red-400 hover:text-red-300 hover:underline transition-colors">
+                            {common.delete}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}

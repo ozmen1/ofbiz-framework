@@ -9,7 +9,7 @@ interface CreateInvoiceProps {
 }
 
 const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
-  const { translations, locale } = useTranslation();
+  const { translations } = useTranslation();
   const [formData, setFormData] = useState({
     partyIdFrom: 'Company',
     partyIdTo: '',
@@ -65,7 +65,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
       setLoading(false);
       onSave(res.invoiceId);
     } catch (err: any) {
-      setError(err.message || 'Fatura oluşturulurken bir hata meydana geldi.');
+      setError(err.message || translations.common.error);
       setLoading(false);
     }
   };
@@ -77,10 +77,10 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
       <div className="ds-page-header mb-6">
         <div className="flex items-center gap-3">
           <FileText size={24} className="text-indigo-400" />
-          <h1 className="ds-page-title">Yeni Fatura Oluştur</h1>
+          <h1 className="ds-page-title">{translations.invoices.newInvoice}</h1>
         </div>
         <button type="button" onClick={onCancel} className="ds-btn-secondary flex items-center gap-2">
-          <X size={16} /> İptal
+          <X size={16} /> {translations.common.cancel}
         </button>
       </div>
 
@@ -88,7 +88,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
       {error && (
         <div className="ds-alert-error mb-5 flex items-center gap-3">
           <AlertCircle size={20} className="shrink-0" />
-          <div><strong>Hata:</strong> {error}</div>
+          <div><strong>{translations.common.error}:</strong> {error}</div>
         </div>
       )}
 
@@ -97,12 +97,12 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
         {/* Parties Section */}
         <div className="ds-card p-6 space-y-5">
           <h3 className="flex items-center gap-2 text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-3">
-            <Building2 size={18} className="text-indigo-400" /> Cari Bilgileri
+            <Building2 size={18} className="text-indigo-400" /> {translations.common.party}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="ds-label">Gönderen Cari (Party From)</label>
+              <label className="ds-label">{translations.invoices.partyFrom}</label>
               <div className="relative">
                 <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 <input
@@ -119,7 +119,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
             </div>
 
             <div>
-              <label className="ds-label">Alıcı Cari (Party To)</label>
+              <label className="ds-label">{translations.invoices.partyTo}</label>
               <div className="relative">
                 <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 <input
@@ -147,12 +147,12 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
         {/* Invoice Details Section */}
         <div className="ds-card p-6 space-y-5">
           <h3 className="flex items-center gap-2 text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-3">
-            <FileText size={18} className="text-indigo-400" /> Fatura Detayları
+            <FileText size={18} className="text-indigo-400" /> {translations.invoices.headerInfo}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="ds-label">Fatura Türü</label>
+              <label className="ds-label">{translations.invoices.type}</label>
               <div className="relative">
                 <FileText size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 <select
@@ -167,8 +167,8 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
                     ))
                   ) : (
                     <>
-                      <option value="SALES_INVOICE">Satış Faturası (SALES_INVOICE)</option>
-                      <option value="PURCHASE_INVOICE">Alış Faturası (PURCHASE_INVOICE)</option>
+                      <option value="SALES_INVOICE">{translations.invoices.salesInvoice} (SALES_INVOICE)</option>
+                      <option value="PURCHASE_INVOICE">{translations.invoices.purchaseInvoice} (PURCHASE_INVOICE)</option>
                     </>
                   )}
                 </select>
@@ -227,7 +227,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
           </div>
 
           <div>
-            <label className="ds-label">Referans Numarası (Belge No / İrsaliye No)</label>
+            <label className="ds-label">{translations.common.reference}</label>
             <div className="relative">
               <Hash size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
               <input
@@ -235,7 +235,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
                 name="referenceNumber"
                 value={formData.referenceNumber}
                 onChange={handleChange}
-                placeholder="Örn: REF-2026-001"
+                placeholder="REF-..."
                 className="ds-input pl-9 w-full"
               />
             </div>
@@ -249,7 +249,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder={locale === 'tr' ? 'Faturaya dair genel açıklama veya proje detayı...' : 'General invoice description or notes...'}
+                placeholder={translations.invoices.descriptionPlaceholder}
                 className="ds-input pl-9 w-full min-h-[100px] resize-y"
               />
             </div>
@@ -263,7 +263,7 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
           </button>
           <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={loading}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            {loading ? (locale === 'tr' ? 'Oluşturuluyor...' : 'Creating...') : translations.common.create}
+            {loading ? translations.invoices.creating : translations.common.create}
           </button>
         </div>
 

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Beaker } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 const TestPage: React.FC = () => {
+  const { translations } = useTranslation();
+  const t = translations.testPage;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,13 +20,13 @@ const TestPage: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`API isteği başarısız oldu: ${response.status}`);
+        throw new Error(`HTTP ${response.status}`);
       }
       
       const result = await response.json();
       setData(result);
     } catch (err: any) {
-      setError(err.message || 'Bilinmeyen bir hata oluştu');
+      setError(err.message || translations.common.error);
     } finally {
       setLoading(false);
     }
@@ -34,11 +37,10 @@ const TestPage: React.FC = () => {
       <div>
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
           <Beaker size={22} className="text-indigo-400" />
-          API Test Sayfası
+          {t.title}
         </h3>
         <p className="text-sm text-slate-400 mt-1">
-          Bu sayfa <code className="bg-slate-700/60 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs">AGENT_INSTRUCTIONS.md</code> kurallarına uygun olarak oluşturulmuştur. 
-          OFBiz REST API entegrasyonunu test etmek için kullanılabilir.
+          {t.description}
         </p>
       </div>
 
@@ -48,22 +50,22 @@ const TestPage: React.FC = () => {
           onClick={fetchTestData} 
           disabled={loading}
         >
-          {loading ? 'Yükleniyor...' : 'Test API İsteği Gönder'}
+          {loading ? t.loading : t.sendRequest}
         </button>
       </div>
 
       {error && (
         <div className="ds-alert-error space-y-1">
-          <strong>Hata:</strong> {error}
+          <strong>{t.errorTitle}</strong> {error}
           <div className="text-xs opacity-80">
-            Not: Eğer OFBiz çalışmıyorsa veya <code className="bg-red-500/20 px-1 py-0.5 rounded">/api/example-endpoint</code> tanımlı değilse bu hatayı almanız normaldir.
+            {t.errorNote}
           </div>
         </div>
       )}
 
       {data && (
         <div className="space-y-2">
-          <h4 className="text-sm font-bold text-white">API Yanıtı:</h4>
+          <h4 className="text-sm font-bold text-white">{t.responseTitle}</h4>
           <pre className="bg-slate-900 border border-slate-700/50 p-4 rounded-xl overflow-x-auto text-indigo-300 font-mono text-xs">
             {JSON.stringify(data, null, 2)}
           </pre>

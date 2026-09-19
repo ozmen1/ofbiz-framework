@@ -52,8 +52,11 @@ const formatStatus = (statusId: string) => {
   return (statusId || '').replace('INVOICE_', '').replace(/_/g, ' ');
 };
 
-const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onViewInvoice, onViewPayment }) => {
-  const { translations } = useTranslation();
+export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onViewInvoice, onViewPayment }) => {
+  const { translations, locale } = useTranslation();
+  const inv = translations.invoices;
+  const common = translations.common;
+
   const [detail, setDetail] = useState<InvoiceDetailResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -83,6 +86,13 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
   // Metadata for item types
   const [itemTypes, setItemTypes] = useState<{ invoiceItemTypeId: string; description: string }[]>([]);
 
+  const formatCurrency = useCallback((val: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+      style: 'currency',
+      currency
+    }).format(val || 0);
+  }, [locale]);
+
   // Load Invoice Details
   const loadInvoice = useCallback(() => {
     if (!invoiceId) return;
@@ -103,10 +113,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message || 'Fatura detayları yüklenemedi.');
+        setError(err.message || (locale === 'tr' ? 'Fatura detayları yüklenemedi.' : 'Could not load invoice details.'));
         setLoading(false);
       });
-  }, [invoiceId]);
+  }, [invoiceId, locale]);
 
   useEffect(() => {
     loadInvoice();
@@ -141,10 +151,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         currencyUomId: headerForm.currencyUomId
       });
       setIsEditingHeader(false);
-      flashMessage('Fatura başlığı başarıyla güncellendi.');
+      flashMessage(locale === 'tr' ? 'Fatura başlığı başarıyla güncellendi.' : 'Invoice header updated successfully.');
       loadInvoice();
     } catch (err: any) {
-      setError(err.message || 'Başlık güncellenirken hata oluştu.');
+      setError(err.message || (locale === 'tr' ? 'Başlık güncellenirken hata oluştu.' : 'Error updating invoice header.'));
     } finally {
       setActionLoading(false);
     }
@@ -153,17 +163,17 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
   // Status Change
   const handleStatusChange = async (newStatusId: string) => {
     if (!invoiceId) return;
-    if (!confirm(`Fatura durumunu "${formatStatus(newStatusId)}" olarak değiştirmek istediğinize emin misiniz?`)) {
+    if (!confirm(locale === 'tr' ? `Fatura durumunu "${formatStatus(newStatusId)}" olarak değiştirmek istediğinize emin misiniz?` : `Are you sure you want to change invoice status to "${formatStatus(newStatusId)}"?`)) {
       return;
     }
     setActionLoading(true);
     setError(null);
     try {
       const res = await api.setInvoiceStatus(invoiceId, newStatusId);
-      flashMessage(res._EVENT_MESSAGE_ || `Fatura durumu güncellendi: ${formatStatus(newStatusId)}`);
+      flashMessage(res._EVENT_MESSAGE_ || (locale === 'tr' ? `Fatura durumu güncellendi: ${formatStatus(newStatusId)}` : `Invoice status updated: ${formatStatus(newStatusId)}`));
       loadInvoice();
     } catch (err: any) {
-      setError(err.message || 'Durum değiştirilemedi.');
+      setError(err.message || (locale === 'tr' ? 'Durum değiştirilemedi.' : 'Could not change invoice status.'));
     } finally {
       setActionLoading(false);
     }
@@ -174,7 +184,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
     e.preventDefault();
     if (!invoiceId) return;
     if (!itemForm.description) {
-      setError('Kalem açıklaması zorunludur.');
+      setError(locale === 'tr' ? 'Kalem açıklaması zorunludur.' : 'Item description is required.');
       return;
     }
     setActionLoading(true);
@@ -190,10 +200,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       });
       setShowAddItem(false);
       setItemForm({ invoiceItemTypeId: 'INV_PROD_ITEM', productId: '', description: '', quantity: 1, amount: 0 });
-      flashMessage('Yeni kalem başarıyla eklendi.');
+      flashMessage(locale === 'tr' ? 'Yeni kalem başarıyla eklendi.' : 'Item added successfully.');
       loadInvoice();
     } catch (err: any) {
-      setError(err.message || 'Kalem eklenemedi.');
+      setError(err.message || (locale === 'tr' ? 'Kalem eklenemedi.' : 'Could not add item.'));
     } finally {
       setActionLoading(false);
     }
@@ -202,17 +212,17 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
   // Delete Item
   const handleDeleteItem = async (seqId: string) => {
     if (!invoiceId) return;
-    if (!confirm(`${seqId} nolu faturanın kalemini silmek istiyor musunuz?`)) {
+    if (!confirm(locale === 'tr' ? `${seqId} nolu faturanın kalemini silmek istiyor musunuz?` : `Delete invoice item ${seqId}?`)) {
       return;
     }
     setActionLoading(true);
     setError(null);
     try {
       await api.removeInvoiceItem(invoiceId, seqId);
-      flashMessage('Kalem silindi.');
+      flashMessage(locale === 'tr' ? 'Kalem silindi.' : 'Item deleted.');
       loadInvoice();
     } catch (err: any) {
-      setError(err.message || 'Kalem silinirken hata oluştu.');
+      setError(err.message || (locale === 'tr' ? 'Kalem silinirken hata oluştu.' : 'Error deleting item.'));
     } finally {
       setActionLoading(false);
     }
@@ -221,21 +231,21 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
   // Copy Invoice
   const handleCopyInvoice = async () => {
     if (!invoiceId) return;
-    if (!confirm(`"${invoiceId}" nolu faturayı kopyalamak istiyor musunuz?`)) {
+    if (!confirm(inv.copyConfirm || (locale === 'tr' ? `"${invoiceId}" nolu faturayı kopyalamak istiyor musunuz?` : `Copy invoice "${invoiceId}"?`))) {
       return;
     }
     setActionLoading(true);
     setError(null);
     try {
       const res = await api.copyInvoice(invoiceId);
-      flashMessage(`Fatura kopyalandı! Yeni Fatura: ${res.invoiceId}`);
+      flashMessage(locale === 'tr' ? `Fatura kopyalandı! Yeni Fatura: ${res.invoiceId}` : `Invoice copied! New Invoice: ${res.invoiceId}`);
       if (onViewInvoice && res.invoiceId) {
         onViewInvoice(res.invoiceId);
       } else {
         loadInvoice();
       }
     } catch (err: any) {
-      setError(err.message || 'Fatura kopyalanamadı.');
+      setError(err.message || (locale === 'tr' ? 'Fatura kopyalanamadı.' : 'Failed to copy invoice.'));
     } finally {
       setActionLoading(false);
     }
@@ -245,7 +255,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
         <Loader2 size={36} className="animate-spin text-indigo-500" />
-        <span className="text-slate-400">Fatura detayları OFBiz'den yükleniyor...</span>
+        <span className="text-slate-400">{common.loading}</span>
       </div>
     );
   }
@@ -254,10 +264,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
     return (
       <div className="ds-card p-8 text-center">
         <ShieldAlert size={48} className="text-red-400 mx-auto mb-4" />
-        <h3 className="text-white text-lg font-semibold mb-4">Fatura Bulunamadı</h3>
-        <p className="text-slate-400 mb-6">{error || 'Belirtilen fatura sistemde mevcut değil.'}</p>
+        <h3 className="text-white text-lg font-semibold mb-4">{inv.notFound}</h3>
+        <p className="text-slate-400 mb-6">{error || inv.notFoundSub}</p>
         <button className="ds-btn-secondary" onClick={onBack}>
-          <ArrowLeft size={16} /> Faturalara Geri Dön
+          <ArrowLeft size={16} /> {inv.backToList}
         </button>
       </div>
     );
@@ -272,7 +282,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       {/* Top Bar / Navigation */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <button className="ds-btn-secondary" onClick={onBack}>
-          <ArrowLeft size={18} /> Faturalar Listesine Dön
+          <ArrowLeft size={18} /> {inv.backToList}
         </button>
 
         <div className="flex items-center gap-4">
@@ -280,9 +290,9 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             className="ds-btn-secondary flex items-center gap-2"
             onClick={handleCopyInvoice}
             disabled={actionLoading}
-            title="Bu faturanın bir kopyasını oluştur"
+            title={inv.copyInvoice}
           >
-            <Copy size={16} /> Faturayı Kopyala
+            <Copy size={16} /> {inv.copyInvoice}
           </button>
 
           <span className={`${getStatusBadgeClass(invoice.statusId)} flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
@@ -304,37 +314,37 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       {error && (
         <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={20} />
-          <div><strong>Hata:</strong> {error}</div>
+          <div><strong>{common.error}:</strong> {error}</div>
         </div>
       )}
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
         <div className="ds-stat-card">
-          <div className="ds-stat-label">Ara Toplam (KDV Hariç)</div>
+          <div className="ds-stat-label">{inv.subtotalWithoutTax}</div>
           <div className="ds-stat-value">
-            {totals.subTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+            {formatCurrency(totals.subTotal, invoice.currencyUomId)}
           </div>
         </div>
 
         <div className="ds-stat-card">
-          <div className="ds-stat-label">Vergi / KDV</div>
+          <div className="ds-stat-label">{locale === 'tr' ? 'Vergi / KDV' : 'Tax Total'}</div>
           <div className="ds-stat-value text-blue-300">
-            {totals.taxTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+            {formatCurrency(totals.taxTotal, invoice.currencyUomId)}
           </div>
         </div>
 
         <div className="ds-stat-card border border-indigo-500/40">
-          <div className="ds-stat-label text-indigo-400">Genel Toplam</div>
+          <div className="ds-stat-label text-indigo-400">{common.total}</div>
           <div className="ds-stat-value text-white">
-            {totals.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+            {formatCurrency(totals.total, invoice.currencyUomId)}
           </div>
         </div>
 
         <div className="ds-stat-card">
-          <div className="ds-stat-label">Kalan Açık Bakiye</div>
+          <div className="ds-stat-label">{inv.outstandingAmount}</div>
           <div className={`ds-stat-value ${totals.outstandingAmount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-            {totals.outstandingAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+            {formatCurrency(totals.outstandingAmount, invoice.currencyUomId)}
           </div>
         </div>
       </div>
@@ -342,8 +352,8 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       {/* Invoice Status Action Bar */}
       <div className="ds-card px-8 py-5 flex items-center justify-between flex-wrap gap-4 animate-fade-in">
         <div>
-          <span className="text-sm text-slate-400 block">Fatura Durumu İşlemleri</span>
-          <span className="font-semibold text-slate-200">Mevcut Aşama: {formatStatus(invoice.statusId)}</span>
+          <span className="text-sm text-slate-400 block">{locale === 'tr' ? 'Fatura Durumu İşlemleri' : 'Invoice Status Actions'}</span>
+          <span className="font-semibold text-slate-200">{locale === 'tr' ? 'Mevcut Aşama: ' : 'Current Stage: '} {formatStatus(invoice.statusId)}</span>
         </div>
 
         <div className="flex gap-3 flex-wrap">
@@ -354,21 +364,21 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                 onClick={() => handleStatusChange('INVOICE_APPROVED')}
                 disabled={actionLoading}
               >
-                <CheckCircle2 size={16} /> Faturayı Onayla (Approved)
+                <CheckCircle2 size={16} /> {inv.statusApproved}
               </button>
               <button
                 className="ds-btn-secondary flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_READY')}
                 disabled={actionLoading}
               >
-                Hazır Olarak İşaretle (Ready)
+                {inv.statusReady}
               </button>
               <button
                 className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
               >
-                <XCircle size={16} /> İptal Et
+                <XCircle size={16} /> {inv.statusCancelled}
               </button>
             </>
           )}
@@ -380,21 +390,21 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                 onClick={() => handleStatusChange('INVOICE_SENT')}
                 disabled={actionLoading}
               >
-                <FileText size={16} /> Gönderildi Yap (Sent)
+                <FileText size={16} /> {inv.statusSent}
               </button>
               <button
                 className="ds-btn-primary bg-gradient-to-r from-emerald-600 to-emerald-800 flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_PAID')}
                 disabled={actionLoading}
               >
-                <CheckCircle2 size={16} /> Ödendi Olarak Kapat (Paid)
+                <CheckCircle2 size={16} /> {inv.statusPaid}
               </button>
               <button
                 className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
               >
-                <XCircle size={16} /> İptal Et
+                <XCircle size={16} /> {inv.statusCancelled}
               </button>
             </>
           )}
@@ -406,27 +416,27 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                 onClick={() => handleStatusChange('INVOICE_PAID')}
                 disabled={actionLoading}
               >
-                <CheckCircle2 size={16} /> Ödendi Olarak Kapat (Paid)
+                <CheckCircle2 size={16} /> {inv.statusPaid}
               </button>
               <button
                 className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
               >
-                <XCircle size={16} /> İptal Et
+                <XCircle size={16} /> {inv.statusCancelled}
               </button>
             </>
           )}
 
           {invoice.statusId === 'INVOICE_PAID' && (
             <span className="text-emerald-400 flex items-center gap-2 font-semibold">
-              <CheckCircle2 size={18} /> Fatura tahsilatı tamamlandı ve kapandı.
+              <CheckCircle2 size={18} /> {inv.invoiceCompleted}
             </span>
           )}
 
           {invoice.statusId === 'INVOICE_CANCELLED' && (
             <span className="text-red-400 flex items-center gap-2 font-semibold">
-              <XCircle size={18} /> Bu fatura iptal edilmiştir.
+              <XCircle size={18} /> {inv.invoiceCancelledMsg}
             </span>
           )}
         </div>
@@ -436,11 +446,11 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       <div className="ds-card animate-fade-in">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-white text-xl font-semibold flex items-center gap-2">
-            <Edit3 size={20} className="text-indigo-400" /> Fatura Başlık Bilgileri
+            <Edit3 size={20} className="text-indigo-400" /> {inv.headerInfo}
           </h3>
           {!isEditingHeader && isEditable && (
             <button className="ds-btn-secondary flex items-center gap-2" onClick={() => setIsEditingHeader(true)}>
-              <Edit3 size={16} /> Başlığı Düzenle
+              <Edit3 size={16} /> {inv.editHeader}
             </button>
           )}
         </div>
@@ -451,19 +461,19 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             {/* Parties Info */}
             <div className="flex flex-col gap-5 p-6 bg-black/20 rounded-xl">
               <div>
-                <span className="text-sm text-slate-400">Gönderen Cari (Party From)</span>
+                <span className="text-sm text-slate-400">{translations.payments.fromParty}</span>
                 <div className="flex items-center gap-2 font-semibold text-lg text-slate-100 mt-1">
                   <Building2 size={18} className="text-indigo-400" /> {invoice.partyIdFrom}
                 </div>
               </div>
               <div>
-                <span className="text-sm text-slate-400">Alıcı Cari (Party To)</span>
+                <span className="text-sm text-slate-400">{translations.payments.toParty}</span>
                 <div className="flex items-center gap-2 font-semibold text-lg text-slate-100 mt-1">
                   <User size={18} className="text-indigo-400" /> {invoice.partyIdTo}
                 </div>
               </div>
               <div>
-                <span className="text-sm text-slate-400">Fatura Türü</span>
+                <span className="text-sm text-slate-400">{common.type}</span>
                 <div className="font-semibold text-slate-100 mt-1 flex items-center gap-1.5">
                   <Tag size={16} className="text-slate-400" />
                   {invoice.invoiceTypeId.replace(/_/g, ' ')}
@@ -475,7 +485,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="ds-label">Fatura Tarihi</label>
+                  <label className="ds-label">{common.date}</label>
                   <div className="relative">
                     <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
@@ -489,7 +499,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                   </div>
                 </div>
                 <div>
-                  <label className="ds-label">Vade Tarihi</label>
+                  <label className="ds-label">{common.dueDate}</label>
                   <div className="relative">
                     <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
@@ -505,20 +515,20 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
               </div>
 
               <div>
-                <label className="ds-label">Referans No (Belge No)</label>
+                <label className="ds-label">{common.reference}</label>
                 <input
                   type="text"
                   name="referenceNumber"
                   value={headerForm.referenceNumber}
                   onChange={(e) => setHeaderForm({ ...headerForm, referenceNumber: e.target.value })}
                   className="ds-input w-full"
-                  placeholder="Opsiyonel referans numarası"
+                  placeholder={locale === 'tr' ? 'Opsiyonel referans numarası' : 'Optional reference number'}
                   disabled={!isEditingHeader}
                 />
               </div>
 
               <div>
-                <label className="ds-label">Açıklama</label>
+                <label className="ds-label">{common.description}</label>
                 <div className="relative">
                   <AlignLeft size={16} className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
                   <textarea
@@ -526,7 +536,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                     value={headerForm.description}
                     onChange={(e) => setHeaderForm({ ...headerForm, description: e.target.value })}
                     className="ds-input pl-9 w-full min-h-[70px]"
-                    placeholder="Fatura açıklaması..."
+                    placeholder={inv.descriptionPlaceholder}
                     disabled={!isEditingHeader}
                   />
                 </div>
@@ -535,10 +545,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
               {isEditingHeader && (
                 <div className="flex justify-end gap-4 mt-2">
                   <button type="button" onClick={() => setIsEditingHeader(false)} className="ds-btn-secondary">
-                    İptal
+                    {common.cancel}
                   </button>
                   <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={actionLoading}>
-                    <Save size={16} /> Değişiklikleri Kaydet
+                    <Save size={16} /> {common.save}
                   </button>
                 </div>
               )}
@@ -552,15 +562,15 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       <div className="ds-card pt-6 pb-0 px-0 animate-fade-in overflow-hidden">
         <div className="px-8 mb-6 flex justify-between items-center">
           <div>
-            <h3 className="text-white text-xl font-semibold">Fatura Kalemleri ({items.length})</h3>
-            <span className="text-sm text-slate-400">Faturaya dahil edilen ürün, hizmet ve masraflar</span>
+            <h3 className="text-white text-xl font-semibold">{inv.itemsCount} ({items.length})</h3>
+            <span className="text-sm text-slate-400">{inv.itemsSubtext}</span>
           </div>
           {isEditable && !showAddItem && (
             <button
               className="ds-btn-primary flex items-center gap-2 text-sm"
               onClick={() => setShowAddItem(true)}
             >
-              <Plus size={16} /> Yeni Kalem Ekle
+              <Plus size={16} /> {inv.addItem}
             </button>
           )}
         </div>
@@ -568,11 +578,11 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         {/* Add Item Inline Form */}
         {showAddItem && (
           <div className="mx-8 mb-6 p-6 bg-black/30 rounded-xl border border-slate-700/50">
-            <h4 className="text-indigo-400 font-semibold mb-4">Yeni Kalem Ekle</h4>
+            <h4 className="text-indigo-400 font-semibold mb-4">{inv.addItem}</h4>
             <form onSubmit={handleAddItem}>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
                 <div>
-                  <label className="ds-label">Kalem Tipi</label>
+                  <label className="ds-label">{inv.itemType}</label>
                   <select
                     value={itemForm.invoiceItemTypeId}
                     onChange={(e) => setItemForm({ ...itemForm, invoiceItemTypeId: e.target.value })}
@@ -584,28 +594,28 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                       ))
                     ) : (
                       <>
-                        <option value="INV_PROD_ITEM">Ürün Satışı (INV_PROD_ITEM)</option>
-                        <option value="INV_FEE_ITEM">Hizmet / Masraf (INV_FEE_ITEM)</option>
-                        <option value="ITM_SALES_TAX">Satış Vergisi / KDV (ITM_SALES_TAX)</option>
+                        <option value="INV_PROD_ITEM">Product Item</option>
+                        <option value="INV_FEE_ITEM">Fee / Service Item</option>
+                        <option value="ITM_SALES_TAX">Sales Tax</option>
                       </>
                     )}
                   </select>
                 </div>
 
                 <div>
-                  <label className="ds-label">Açıklama / Ürün Adı</label>
+                  <label className="ds-label">{inv.itemDescOrName}</label>
                   <input
                     type="text"
                     value={itemForm.description}
                     onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                    placeholder="Örn: Danışmanlık Hizmeti"
+                    placeholder={locale === 'tr' ? 'Örn: Danışmanlık Hizmeti' : 'e.g. Consulting Services'}
                     className="ds-input w-full"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="ds-label">Miktar</label>
+                  <label className="ds-label">{inv.quantity}</label>
                   <input
                     type="number"
                     step="any"
@@ -617,7 +627,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                 </div>
 
                 <div>
-                  <label className="ds-label">Birim Fiyat ({invoice.currencyUomId})</label>
+                  <label className="ds-label">{inv.unitPrice} ({invoice.currencyUomId})</label>
                   <input
                     type="number"
                     step="any"
@@ -631,10 +641,10 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
 
               <div className="flex justify-end gap-4 mt-5">
                 <button type="button" onClick={() => setShowAddItem(false)} className="ds-btn-secondary">
-                  Vazgeç
+                  {common.cancel}
                 </button>
                 <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={actionLoading}>
-                  <Plus size={16} /> Kalemi Kaydet
+                  <Plus size={16} /> {common.save}
                 </button>
               </div>
             </form>
@@ -647,12 +657,12 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             <thead>
               <tr className="ds-thead-row">
                 <th className="ds-th">#</th>
-                <th className="ds-th">{translations.invoices.itemType}</th>
-                <th className="ds-th">{translations.common.description}</th>
-                <th className="ds-th-right">{translations.invoices.quantity}</th>
-                <th className="ds-th-right">{translations.invoices.unitPrice}</th>
-                <th className="ds-th-right">{translations.invoices.lineTotal}</th>
-                {isEditable && <th className="ds-th text-center">{translations.common.actions}</th>}
+                <th className="ds-th">{inv.itemType}</th>
+                <th className="ds-th">{common.description}</th>
+                <th className="ds-th-right">{inv.quantity}</th>
+                <th className="ds-th-right">{inv.unitPrice}</th>
+                <th className="ds-th-right">{inv.lineTotal}</th>
+                {isEditable && <th className="ds-th text-center">{common.actions}</th>}
               </tr>
             </thead>
             <tbody>
@@ -664,17 +674,17 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                     <td className="ds-td">{it.description || '-'}</td>
                     <td className="ds-td-right">{it.quantity}</td>
                     <td className="ds-td-mono text-right">
-                      {it.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+                      {formatCurrency(it.amount, invoice.currencyUomId)}
                     </td>
                     <td className="ds-td-mono text-right font-semibold text-slate-100">
-                      {it.itemTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+                      {formatCurrency(it.itemTotal, invoice.currencyUomId)}
                     </td>
                     {isEditable && (
                       <td className="ds-td text-center">
                         <button
                           onClick={() => handleDeleteItem(it.invoiceItemSeqId)}
                           disabled={actionLoading}
-                          title="Kalemi Sil"
+                          title={common.delete}
                           className="inline-flex items-center justify-center p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-40"
                         >
                           <Trash2 size={16} />
@@ -686,7 +696,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
               ) : (
                 <tr>
                   <td colSpan={isEditable ? 7 : 6} className="ds-td text-center py-10 text-slate-500">
-                    Bu faturaya henüz bir kalem eklenmemiş.
+                    {inv.noItems}
                   </td>
                 </tr>
               )}
@@ -701,7 +711,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         {/* Applied Payments */}
         <div className="ds-card animate-fade-in">
           <h3 className="text-white text-lg font-semibold flex items-center gap-2 mb-4">
-            <CreditCard size={18} className="text-indigo-400" /> Eşleşen Ödemeler ({paymentsApplied.length})
+            <CreditCard size={18} className="text-indigo-400" /> {inv.appliedPayments} ({paymentsApplied.length})
           </h3>
           {paymentsApplied.length > 0 ? (
             <div className="flex flex-col gap-3">
@@ -719,19 +729,19 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                           : 'text-slate-100 cursor-default'
                       }`}
                     >
-                      Ödeme No: #{pa.paymentId}
+                      {locale === 'tr' ? 'Ödeme No: ' : 'Payment No: '}#{pa.paymentId}
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">Uygulama ID: {pa.paymentApplicationId}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{locale === 'tr' ? 'Uygulama ID: ' : 'Application ID: '}{pa.paymentApplicationId}</div>
                   </div>
                   <div className="text-right font-semibold text-emerald-400">
-                    {pa.amountApplied.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
+                    {formatCurrency(pa.amountApplied, invoice.currencyUomId)}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-slate-500 text-sm">
-              Henüz bu fatura ile eşleştirilmiş bir ödeme kaydı bulunmuyor.
+              {inv.noPaymentsApplied}
             </div>
           )}
         </div>
@@ -739,7 +749,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         {/* Status History Timeline */}
         <div className="ds-card animate-fade-in">
           <h3 className="text-white text-lg font-semibold flex items-center gap-2 mb-4">
-            <Clock size={18} className="text-indigo-400" /> Durum Değişiklik Geçmişi
+            <Clock size={18} className="text-indigo-400" /> {inv.statusHistory}
           </h3>
           {statusHistory.length > 0 ? (
             <div className="flex flex-col gap-3">
@@ -762,7 +772,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
             </div>
           ) : (
             <div className="text-slate-500 text-sm">
-              Geçmiş durum kaydı bulunmuyor.
+              {inv.noHistory}
             </div>
           )}
         </div>

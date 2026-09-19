@@ -16,8 +16,12 @@ import { useTranslation } from '../i18n';
 
 type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'aging';
 
-const FinancialReports: React.FC = () => {
-  const { translations } = useTranslation();
+export const FinancialReports: React.FC = () => {
+  const { translations, locale } = useTranslation();
+  const r = translations.reports;
+  const common = translations.common;
+  const coa = translations.chartOfAccounts;
+
   const [activeTab, setActiveTab] = useState<ReportTab>('trial-balance');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +46,13 @@ const FinancialReports: React.FC = () => {
 
   // Trial balance search
   const [tbSearch, setTbSearch] = useState<string>('');
+
+  const formatCurrency = useCallback((val: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+      style: 'currency',
+      currency
+    }).format(val || 0);
+  }, [locale]);
 
   // Load Metadata once
   useEffect(() => {
@@ -71,7 +82,7 @@ const FinancialReports: React.FC = () => {
           setLoading(false);
         })
         .catch(err => {
-          setError(err.message || 'Mizan verileri alınamadı.');
+          setError(err.message || (locale === 'tr' ? 'Mizan verileri alınamadı.' : 'Could not load trial balance data.'));
           setLoading(false);
         });
     } else if (activeTab === 'balance-sheet') {
@@ -81,7 +92,7 @@ const FinancialReports: React.FC = () => {
           setLoading(false);
         })
         .catch(err => {
-          setError(err.message || 'Bilanço verileri alınamadı.');
+          setError(err.message || (locale === 'tr' ? 'Bilanço verileri alınamadı.' : 'Could not load balance sheet data.'));
           setLoading(false);
         });
     } else if (activeTab === 'income-statement') {
@@ -91,7 +102,7 @@ const FinancialReports: React.FC = () => {
           setLoading(false);
         })
         .catch(err => {
-          setError(err.message || 'Gelir tablosu verileri alınamadı.');
+          setError(err.message || (locale === 'tr' ? 'Gelir tablosu verileri alınamadı.' : 'Could not load income statement data.'));
           setLoading(false);
         });
     } else if (activeTab === 'aging') {
@@ -101,11 +112,11 @@ const FinancialReports: React.FC = () => {
           setLoading(false);
         })
         .catch(err => {
-          setError(err.message || 'Yaşlandırma verileri alınamadı.');
+          setError(err.message || (locale === 'tr' ? 'Yaşlandırma verileri alınamadı.' : 'Could not load aging data.'));
           setLoading(false);
         });
     }
-  }, [activeTab, organizationPartyId, selectedYear, agingType]);
+  }, [activeTab, organizationPartyId, selectedYear, agingType, locale]);
 
   useEffect(() => {
     loadReport();
@@ -117,7 +128,7 @@ const FinancialReports: React.FC = () => {
 
   const handleExportCsv = () => {
     if (activeTab === 'trial-balance' && trialBalanceData) {
-      const headers = 'Hesap Kodu,Hesap Adı,Sinif,Borc,Alacak,Bakiye,Yon\n';
+      const headers = 'Account Code,Account Name,Class,Debit,Credit,Balance,Type\n';
       const rows = trialBalanceData.accounts.map(a => 
         `"${a.accountCode}","${a.accountName}","${a.glAccountClassId}",${a.debits},${a.credits},${a.balance},"${a.debitCreditFlag}"`
       ).join('\n');
@@ -125,10 +136,10 @@ const FinancialReports: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `mizan_${organizationPartyId}_${selectedYear || 'tum'}.csv`;
+      link.download = `trial_balance_${organizationPartyId}_${selectedYear || 'all'}.csv`;
       link.click();
     } else if (activeTab === 'aging' && agingData) {
-      const headers = 'Cari ID,Cari Adi,Vadesi Gelmemis,1-30 Gun,31-60 Gun,61-90 Gun,90+ Gun,Toplam\n';
+      const headers = 'Party ID,Party Name,Current,1-30 Days,31-60 Days,61-90 Days,90+ Days,Total\n';
       const rows = agingData.rows.map(r => 
         `"${r.partyId}","${r.partyName}",${r.current},${r.days1_30},${r.days31_60},${r.days61_90},${r.daysOver90},${r.total}`
       ).join('\n');
@@ -136,17 +147,17 @@ const FinancialReports: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `yaslandirma_${agingType}.csv`;
+      link.download = `aging_${agingType}.csv`;
       link.click();
     } else {
-      alert('Bu sekme için CSV indirme hazırlandı. Yazdır butonundan PDF olarak kaydedebilirsiniz.');
+      alert(r.csvReadyNotice);
     }
   };
 
   const filteredTbAccounts = (trialBalanceData?.accounts || []).filter(a => 
     !tbSearch || 
     a.accountCode.toLowerCase().includes(tbSearch.toLowerCase()) || 
-    a.accountName.toLowerCase().includes(tbSearch.toLowerCase()) ||
+    a.accountName.toLowerCase().includes(tbSearch.toLowerCase()) || 
     a.glAccountId.toLowerCase().includes(tbSearch.toLowerCase())
   );
 
@@ -161,25 +172,25 @@ const FinancialReports: React.FC = () => {
               onClick={() => setActiveTab('trial-balance')}
               className={activeTab === 'trial-balance' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <FileText size={16} /> {translations.reports.trialBalance}
+              <FileText size={16} /> {r.trialBalance}
             </button>
             <button
               onClick={() => setActiveTab('balance-sheet')}
               className={activeTab === 'balance-sheet' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <Landmark size={16} /> {translations.reports.balanceSheet}
+              <Landmark size={16} /> {r.balanceSheet}
             </button>
             <button
               onClick={() => setActiveTab('income-statement')}
               className={activeTab === 'income-statement' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <TrendingUp size={16} /> {translations.reports.incomeStatement}
+              <TrendingUp size={16} /> {r.incomeStatement}
             </button>
             <button
               onClick={() => setActiveTab('aging')}
               className={activeTab === 'aging' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
-              <Clock size={16} /> {translations.reports.aging}
+              <Clock size={16} /> {r.aging}
             </button>
           </div>
 
@@ -203,9 +214,9 @@ const FinancialReports: React.FC = () => {
                 onChange={(e) => setSelectedYear(e.target.value)}
                 className="ds-select text-sm"
               >
-                <option value="">Tüm Zamanlar (Canlı)</option>
+                <option value="">{r.allTimesLive}</option>
                 {metadata.years.map(y => (
-                  <option key={y} value={y}>{y} Mali Yılı</option>
+                  <option key={y} value={y}>{y} {r.fiscalYear}</option>
                 ))}
               </select>
             )}
@@ -217,14 +228,14 @@ const FinancialReports: React.FC = () => {
                 onChange={(e) => setAgingType(e.target.value as 'AR' | 'AP')}
                 className="ds-select text-sm"
               >
-                <option value="AR">Müşteri Alacakları (AR)</option>
-                <option value="AP">Tedarikçi Borçları (AP)</option>
+                <option value="AR">{r.customerReceivablesAR}</option>
+                <option value="AP">{r.vendorPayablesAP}</option>
               </select>
             )}
 
             <button
               onClick={loadReport}
-              title="Yenile"
+              title={common.refresh}
               className="ds-btn-secondary p-2"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -232,7 +243,7 @@ const FinancialReports: React.FC = () => {
 
             <button
               onClick={handleExportCsv}
-              title="CSV İndir"
+              title={r.downloadCsvButton}
               className="ds-btn-secondary flex items-center gap-1 text-sm"
             >
               <Download size={14} /> CSV
@@ -240,10 +251,10 @@ const FinancialReports: React.FC = () => {
 
             <button
               onClick={handlePrint}
-              title="Yazdır / PDF"
+              title={r.printButton}
               className="ds-btn-secondary flex items-center gap-1 text-sm"
             >
-              <Printer size={14} /> Yazdır
+              <Printer size={14} /> {r.printButton}
             </button>
           </div>
         </div>
@@ -259,7 +270,7 @@ const FinancialReports: React.FC = () => {
       {loading ? (
         <div className="text-center py-20">
           <Loader2 size={36} className="ds-spinner mx-auto mb-4" />
-          <div className="text-slate-400">Mali rapor hesaplanıyor...</div>
+          <div className="text-slate-400">{r.calculatingReport}</div>
         </div>
       ) : (
         <>
@@ -269,35 +280,35 @@ const FinancialReports: React.FC = () => {
               {/* Summary Cards */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
                 <div className="ds-card p-6">
-                  <span className="text-xs text-slate-400 uppercase">Toplam Borç (Debit)</span>
+                  <span className="text-xs text-slate-400 uppercase">{coa.totalDebits}</span>
                   <div className="text-[1.75rem] font-bold my-1 text-blue-400">
-                    ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(trialBalanceData.totalDebits)}
                   </div>
-                  <div className="text-xs text-slate-400">Tüm hesapların borç toplamı</div>
+                  <div className="text-xs text-slate-400">{r.totalDebitAllAccounts}</div>
                 </div>
 
                 <div className="ds-card p-6">
-                  <span className="text-xs text-slate-400 uppercase">Toplam Alacak (Credit)</span>
+                  <span className="text-xs text-slate-400 uppercase">{coa.totalCredits}</span>
                   <div className="text-[1.75rem] font-bold my-1 text-purple-400">
-                    ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(trialBalanceData.totalCredits)}
                   </div>
-                  <div className="text-xs text-slate-400">Tüm hesapların alacak toplamı</div>
+                  <div className="text-xs text-slate-400">{r.totalCreditAllAccounts}</div>
                 </div>
 
                 <div className="ds-card p-6">
-                  <span className="text-xs text-slate-400 uppercase">Mizan Denge Durumu</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.differenceAmount}</span>
                   <div className="flex items-center gap-2 my-2">
                     {trialBalanceData.isBalanced ? (
                       <span className="ds-badge ds-badge-green inline-flex items-center gap-1">
-                        <CheckCircle2 size={16} /> Mizan Dengede (Fark: $0.00)
+                        <CheckCircle2 size={16} /> {locale === 'tr' ? 'Mizan Dengede (Fark: $0.00)' : 'Trial Balance Balanced (Diff: $0.00)'}
                       </span>
                     ) : (
                       <span className="ds-badge ds-badge-red inline-flex items-center gap-1">
-                        <AlertTriangle size={16} /> Denge Farkı: ${trialBalanceData.difference.toFixed(2)}
+                        <AlertTriangle size={16} /> {locale === 'tr' ? 'Denge Farkı: ' : 'Balance Difference: '} {formatCurrency(trialBalanceData.difference)}
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-400">Toplam {trialBalanceData.accounts.length} hesap listeleniyor</div>
+                  <div className="text-xs text-slate-400">{common.total} {trialBalanceData.accounts.length} {coa.registeredAccounts.toLowerCase()}</div>
                 </div>
               </div>
 
@@ -307,7 +318,7 @@ const FinancialReports: React.FC = () => {
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Hesap kodu veya adı ile filtrele..."
+                    placeholder={r.searchAccountPlaceholder}
                     value={tbSearch}
                     onChange={(e) => setTbSearch(e.target.value)}
                     className="ds-input pl-9 w-full text-sm"
@@ -321,13 +332,13 @@ const FinancialReports: React.FC = () => {
                   <table className="ds-table">
                     <thead>
                       <tr className="ds-thead-row">
-                        <th className="ds-th">Hesap Kodu</th>
-                        <th className="ds-th">Hesap Adı</th>
-                        <th className="ds-th">Hesap Sınıfı</th>
-                        <th className="ds-th-right">Toplam Borç</th>
-                        <th className="ds-th-right">Toplam Alacak</th>
-                        <th className="ds-th-right">Net Bakiye</th>
-                        <th className="ds-th text-center">B/A</th>
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th">{coa.accountClass}</th>
+                        <th className="ds-th-right">{coa.totalDebits}</th>
+                        <th className="ds-th-right">{coa.totalCredits}</th>
+                        <th className="ds-th-right">{r.netIncome}</th>
+                        <th className="ds-th text-center">{coa.normalSide}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -343,33 +354,33 @@ const FinancialReports: React.FC = () => {
                             <span className="ds-badge ds-badge-slate">{acc.glAccountClassId}</span>
                           </td>
                           <td className="ds-td-right text-blue-400">
-                            {acc.debits > 0 ? `$${acc.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                            {acc.debits > 0 ? formatCurrency(acc.debits) : '-'}
                           </td>
                           <td className="ds-td-right text-purple-400">
-                            {acc.credits > 0 ? `$${acc.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                            {acc.credits > 0 ? formatCurrency(acc.credits) : '-'}
                           </td>
                           <td className={`ds-td-right font-bold ${acc.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            ${Math.abs(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {formatCurrency(Math.abs(acc.balance))}
                           </td>
                           <td className="ds-td text-center">
                             <span className={`ds-badge ${acc.debitCreditFlag === 'D' ? 'ds-badge-blue' : 'ds-badge-purple'}`}>
-                              {acc.debitCreditFlag === 'D' ? 'Borç (D)' : 'Alacak (C)'}
+                              {acc.debitCreditFlag === 'D' ? coa.normalSideDebit : coa.normalSideCredit}
                             </span>
                           </td>
                         </tr>
                       ))}
                       <tr className="bg-white/[0.04] font-bold border-t-2 border-slate-700">
                         <td colSpan={3} className="ds-td text-right text-white">
-                          GENEL TOPLAMLAR:
+                          {common.total.toUpperCase()}:
                         </td>
                         <td className="ds-td-right text-blue-400">
-                          ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          {formatCurrency(trialBalanceData.totalDebits)}
                         </td>
                         <td className="ds-td-right text-purple-400">
-                          ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          {formatCurrency(trialBalanceData.totalCredits)}
                         </td>
                         <td colSpan={2} className="ds-td text-center text-green-400">
-                          Dengede (Fark: $0.00)
+                          {locale === 'tr' ? 'Dengede (Fark: $0.00)' : 'Balanced (Diff: $0.00)'}
                         </td>
                       </tr>
                     </tbody>
@@ -386,46 +397,46 @@ const FinancialReports: React.FC = () => {
               {/* Balance Badge */}
               <div className="flex justify-between items-center bg-white/[0.02] p-4 px-6 rounded-xl border border-slate-700/50">
                 <div>
-                  <h4 className="m-0 text-[1.1rem] text-white">Bilanço Raporu ({balanceSheetData.asOfDate})</h4>
-                  <div className="text-xs text-slate-400 mt-1">Şirket: {balanceSheetData.organizationPartyId}</div>
+                  <h4 className="m-0 text-[1.1rem] text-white">{r.balanceSheetTitle} ({balanceSheetData.asOfDate})</h4>
+                  <div className="text-xs text-slate-400 mt-1">{r.companyLabel}: {balanceSheetData.organizationPartyId}</div>
                 </div>
                 <div>
                   {balanceSheetData.isBalanced ? (
                     <span className="ds-badge ds-badge-green inline-flex items-center gap-1">
-                      <CheckCircle2 size={16} /> Aktif = Pasif (Dengede)
+                      <CheckCircle2 size={16} /> {locale === 'tr' ? 'Aktif = Pasif (Dengede)' : 'Assets = Liabilities + Equity (Balanced)'}
                     </span>
                   ) : (
                     <span className="ds-badge ds-badge-red inline-flex items-center gap-1">
-                      <AlertTriangle size={16} /> Denge Farkı: ${balanceSheetData.difference.toFixed(2)}
+                      <AlertTriangle size={16} /> {locale === 'tr' ? 'Denge Farkı: ' : 'Balance Difference: '} {formatCurrency(balanceSheetData.difference)}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Side by Side Grid: Aktif (Assets) vs Pasif (Liabilities & Equity) */}
+              {/* Side by Side Grid: Assets vs Liabilities & Equity */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* AKTİFLER (ASSETS) */}
                 <div className="ds-card p-6 flex flex-col gap-6">
                   <div className="border-b-2 border-indigo-500/30 pb-3 flex justify-between items-center">
                     <h3 className="m-0 text-[1.25rem] text-blue-400 flex items-center gap-2">
-                      <Landmark size={20} /> I. AKTİF (VARLIKLAR)
+                      <Landmark size={20} /> {r.assetsI}
                     </h3>
                     <span className="font-bold text-[1.1rem] text-blue-400">
-                      ${balanceSheetData.assets.totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {formatCurrency(balanceSheetData.assets.totalAssets)}
                     </span>
                   </div>
 
                   {/* Dönen Varlıklar */}
                   <div>
                     <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
-                      <span>A. Dönen Varlıklar (Current Assets)</span>
-                      <span>${balanceSheetData.assets.totalCurrentAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.currentAssetsA}</span>
+                      <span>{formatCurrency(balanceSheetData.assets.totalCurrentAssets)}</span>
                     </div>
                     <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.assets.currentAssets.map(a => (
                         <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(a.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -434,22 +445,22 @@ const FinancialReports: React.FC = () => {
                   {/* Duran Varlıklar */}
                   <div>
                     <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
-                      <span>B. Duran Varlıklar (Long-term / Fixed Assets)</span>
-                      <span>${balanceSheetData.assets.totalLongTermAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.longTermAssetsB}</span>
+                      <span>{formatCurrency(balanceSheetData.assets.totalLongTermAssets)}</span>
                     </div>
                     <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.assets.longTermAssets.map(a => (
                         <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(a.balance)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between font-bold text-[1.1rem]">
-                    <span>TOPLAM AKTİFLER</span>
-                    <span className="text-blue-400">${balanceSheetData.assets.totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span>{r.totalAssetsLabel}</span>
+                    <span className="text-blue-400">{formatCurrency(balanceSheetData.assets.totalAssets)}</span>
                   </div>
                 </div>
 
@@ -457,24 +468,24 @@ const FinancialReports: React.FC = () => {
                 <div className="ds-card p-6 flex flex-col gap-6">
                   <div className="border-b-2 border-purple-500/30 pb-3 flex justify-between items-center">
                     <h3 className="m-0 text-[1.25rem] text-purple-400 flex items-center gap-2">
-                      <Layers size={20} /> II. PASİF (KAYNAKLAR)
+                      <Layers size={20} /> {r.liabilitiesII}
                     </h3>
                     <span className="font-bold text-[1.1rem] text-purple-400">
-                      ${balanceSheetData.totalLiabilitiesAndEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {formatCurrency(balanceSheetData.totalLiabilitiesAndEquity)}
                     </span>
                   </div>
 
                   {/* Kısa Vadeli Yabancı Kaynaklar */}
                   <div>
                     <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
-                      <span>A. Kısa Vadeli Borçlar (Current Liabilities)</span>
-                      <span>${balanceSheetData.liabilities.totalCurrentLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.currentLiabilitiesA}</span>
+                      <span>{formatCurrency(balanceSheetData.liabilities.totalCurrentLiabilities)}</span>
                     </div>
                     <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.liabilities.currentLiabilities.map(a => (
                         <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(a.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -483,14 +494,14 @@ const FinancialReports: React.FC = () => {
                   {/* Uzun Vadeli Yabancı Kaynaklar */}
                   <div>
                     <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
-                      <span>B. Uzun Vadeli Borçlar (Long-term Liabilities)</span>
-                      <span>${balanceSheetData.liabilities.totalLongTermLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.longTermLiabilitiesB}</span>
+                      <span>{formatCurrency(balanceSheetData.liabilities.totalLongTermLiabilities)}</span>
                     </div>
                     <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.liabilities.longTermLiabilities.map(a => (
                         <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(a.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -499,15 +510,15 @@ const FinancialReports: React.FC = () => {
                   {/* Özkaynaklar */}
                   <div>
                     <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
-                      <span>C. Özkaynaklar (Equity)</span>
-                      <span>${balanceSheetData.equity.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.equityC}</span>
+                      <span>{formatCurrency(balanceSheetData.equity.totalEquity)}</span>
                     </div>
                     <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.equity.equityAccounts.map(a => (
                         <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName}</span>
                           <span className={`${a.balance >= 0 ? 'text-white' : 'text-red-400'} ${a.glAccountId === 'NET_INCOME' ? 'font-semibold' : ''}`}>
-                            ${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {formatCurrency(a.balance)}
                           </span>
                         </div>
                       ))}
@@ -515,8 +526,8 @@ const FinancialReports: React.FC = () => {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between font-bold text-[1.1rem]">
-                    <span>TOPLAM PASİFLER</span>
-                    <span className="text-purple-400">${balanceSheetData.totalLiabilitiesAndEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span>{r.totalLiabilitiesAndEquity}</span>
+                    <span className="text-purple-400">{formatCurrency(balanceSheetData.totalLiabilitiesAndEquity)}</span>
                   </div>
                 </div>
               </div>
@@ -529,30 +540,30 @@ const FinancialReports: React.FC = () => {
               {/* Executive Summary Cards */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">Toplam Gelir</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.revenue}</span>
                   <div className="text-[1.5rem] font-bold text-green-400 my-1">
-                    ${incomeStatementData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(incomeStatementData.totalRevenue)}
                   </div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">Satışların Maliyeti (COGS)</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.cogs}</span>
                   <div className="text-[1.5rem] font-bold text-red-400 my-1">
-                    ${incomeStatementData.totalCogs.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(incomeStatementData.totalCogs)}
                   </div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">Brüt Kâr (Gross Profit)</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.grossProfit}</span>
                   <div className="text-[1.5rem] font-bold text-blue-400 my-1">
-                    ${incomeStatementData.grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(incomeStatementData.grossProfit)}
                   </div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">Dönem Net Kâr/Zarar</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.netProfitPeriod}</span>
                   <div className={`text-[1.5rem] font-bold my-1 ${incomeStatementData.netIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${incomeStatementData.netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(incomeStatementData.netIncome)}
                   </div>
                 </div>
               </div>
@@ -560,21 +571,21 @@ const FinancialReports: React.FC = () => {
               {/* Waterfall Statement Table */}
               <div className="ds-card p-8">
                 <h3 className="m-0 mb-6 text-[1.25rem] text-white border-b border-slate-700/50 pb-3">
-                  Ayrıntılı Gelir Tablosu ({incomeStatementData.period})
+                  {r.detailedIncomeStatement} ({incomeStatementData.period})
                 </h3>
 
                 <div className="flex flex-col gap-6">
                   {/* Revenue Section */}
                   <div>
                     <div className="flex justify-between font-bold text-base text-green-400 border-b border-green-400/20 pb-2">
-                      <span>1. HASILAT VE GELİRLER (Revenues)</span>
-                      <span>${incomeStatementData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.revenuesSection}</span>
+                      <span>{formatCurrency(incomeStatementData.totalRevenue)}</span>
                     </div>
                     <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
-                      {incomeStatementData.revenues.map(r => (
-                        <div key={r.glAccountId} className="flex justify-between text-sm text-slate-400">
-                          <span>{r.accountName} (#{r.glAccountId})</span>
-                          <span className="text-white">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      {incomeStatementData.revenues.map(rItem => (
+                        <div key={rItem.glAccountId} className="flex justify-between text-sm text-slate-400">
+                          <span>{rItem.accountName} (#{rItem.glAccountId})</span>
+                          <span className="text-white">{formatCurrency(rItem.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -583,14 +594,14 @@ const FinancialReports: React.FC = () => {
                   {/* COGS Section */}
                   <div>
                     <div className="flex justify-between font-bold text-base text-red-400 border-b border-red-400/20 pb-2">
-                      <span>2. SATIŞLARIN MALİYETİ (COGS)</span>
-                      <span>-${incomeStatementData.totalCogs.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.cogsSection}</span>
+                      <span>-{formatCurrency(incomeStatementData.totalCogs)}</span>
                     </div>
                     <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
                       {incomeStatementData.cogs.map(c => (
                         <div key={c.glAccountId} className="flex justify-between text-sm text-slate-400">
                           <span>{c.accountName} (#{c.glAccountId})</span>
-                          <span className="text-white">${c.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(c.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -598,21 +609,21 @@ const FinancialReports: React.FC = () => {
 
                   {/* Gross Profit Callout */}
                   <div className="flex justify-between p-3 px-4 bg-indigo-500/10 rounded-lg border border-indigo-500/20 font-bold">
-                    <span className="text-white">BRÜT FAALİYET KÂRI</span>
-                    <span className="text-blue-400">${incomeStatementData.grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-white">{r.grossOperatingProfit}</span>
+                    <span className="text-blue-400">{formatCurrency(incomeStatementData.grossProfit)}</span>
                   </div>
 
                   {/* Expenses Section */}
                   <div>
                     <div className="flex justify-between font-bold text-base text-amber-400 border-b border-amber-400/20 pb-2">
-                      <span>3. FAALİYET GİDERLERİ (OPEX)</span>
-                      <span>-${incomeStatementData.totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span>{r.operatingExpensesOpex}</span>
+                      <span>-{formatCurrency(incomeStatementData.totalExpenses)}</span>
                     </div>
                     <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
                       {incomeStatementData.expenses.map(e => (
                         <div key={e.glAccountId} className="flex justify-between text-sm text-slate-400">
                           <span>{e.accountName} (#{e.glAccountId})</span>
-                          <span className="text-white">${e.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">{formatCurrency(e.balance)}</span>
                         </div>
                       ))}
                     </div>
@@ -624,9 +635,9 @@ const FinancialReports: React.FC = () => {
                       ? 'bg-green-500/15 border-green-500/30'
                       : 'bg-red-500/15 border-red-500/30'
                   }`}>
-                    <span className="text-white">DÖNEM NET KÂRI / (ZARARI)</span>
+                    <span className="text-white">{r.netProfitOrLoss}</span>
                     <span className={incomeStatementData.netIncome >= 0 ? 'text-green-400' : 'text-red-400'}>
-                      ${incomeStatementData.netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {formatCurrency(incomeStatementData.netIncome)}
                     </span>
                   </div>
                 </div>
@@ -640,51 +651,51 @@ const FinancialReports: React.FC = () => {
               {/* Bucket Metrics */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">Vadesi Gelmemiş</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.notDueYet}</span>
                   <div className="text-[1.4rem] font-bold text-green-400 my-1">
-                    ${agingData.bucketTotals.current.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.current)}
                   </div>
-                  <div className="text-xs text-slate-400">Vadesi henüz dolmamış</div>
+                  <div className="text-xs text-slate-400">{locale === 'tr' ? 'Vadesi henüz dolmamış' : 'Not past due date'}</div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">1 - 30 Gün</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.days1to30}</span>
                   <div className="text-[1.4rem] font-bold text-amber-400 my-1">
-                    ${agingData.bucketTotals.days1_30.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.days1_30)}
                   </div>
-                  <div className="text-xs text-slate-400">1 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">{locale === 'tr' ? '1 aya kadar gecikme' : 'Up to 30 days past due'}</div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">31 - 60 Gün</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.days31to60}</span>
                   <div className="text-[1.4rem] font-bold text-orange-400 my-1">
-                    ${agingData.bucketTotals.days31_60.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.days31_60)}
                   </div>
-                  <div className="text-xs text-slate-400">2 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">{locale === 'tr' ? '2 aya kadar gecikme' : '31 to 60 days past due'}</div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">61 - 90 Gün</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.days61to90}</span>
                   <div className="text-[1.4rem] font-bold text-red-400 my-1">
-                    ${agingData.bucketTotals.days61_90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.days61_90)}
                   </div>
-                  <div className="text-xs text-slate-400">3 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">{locale === 'tr' ? '3 aya kadar gecikme' : '61 to 90 days past due'}</div>
                 </div>
 
                 <div className="ds-card p-5">
-                  <span className="text-xs text-slate-400 uppercase">90+ Gün</span>
+                  <span className="text-xs text-slate-400 uppercase">{r.days90Plus}</span>
                   <div className="text-[1.4rem] font-bold text-red-500 my-1">
-                    ${agingData.bucketTotals.daysOver90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.daysOver90)}
                   </div>
-                  <div className="text-xs text-slate-400">3 aydan eski gecikme</div>
+                  <div className="text-xs text-slate-400">{locale === 'tr' ? '3 aydan eski gecikme' : 'Over 90 days past due'}</div>
                 </div>
 
                 <div className="ds-card p-5 border-indigo-500/40">
-                  <span className="text-xs text-slate-400 uppercase">Genel Toplam Bakiye</span>
+                  <span className="text-xs text-slate-400 uppercase">{common.total}</span>
                   <div className="text-[1.5rem] font-bold text-purple-400 my-1">
-                    ${agingData.bucketTotals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatCurrency(agingData.bucketTotals.grandTotal)}
                   </div>
-                  <div className="text-xs text-slate-400">{agingData.type === 'AR' ? 'Açık Alacaklar' : 'Açık Borçlar'}</div>
+                  <div className="text-xs text-slate-400">{agingData.type === 'AR' ? r.openReceivables : r.openPayables}</div>
                 </div>
               </div>
 
@@ -694,21 +705,21 @@ const FinancialReports: React.FC = () => {
                   <table className="ds-table">
                     <thead>
                       <tr className="ds-thead-row">
-                        <th className="ds-th">Cari ID</th>
-                        <th className="ds-th">Cari Ünvanı</th>
-                        <th className="ds-th-right text-green-400">Vadesi Gelmemiş</th>
-                        <th className="ds-th-right text-amber-400">1 - 30 Gün</th>
-                        <th className="ds-th-right text-orange-400">31 - 60 Gün</th>
-                        <th className="ds-th-right text-red-400">61 - 90 Gün</th>
-                        <th className="ds-th-right text-red-500">90+ Gün</th>
-                        <th className="ds-th-right font-bold">Toplam Bakiye</th>
+                        <th className="ds-th">{common.party} ID</th>
+                        <th className="ds-th">{r.partyTitle}</th>
+                        <th className="ds-th-right text-green-400">{r.notDueYet}</th>
+                        <th className="ds-th-right text-amber-400">{r.days1to30}</th>
+                        <th className="ds-th-right text-orange-400">{r.days31to60}</th>
+                        <th className="ds-th-right text-red-400">{r.days61to90}</th>
+                        <th className="ds-th-right text-red-500">{r.days90Plus}</th>
+                        <th className="ds-th-right font-bold">{common.total}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {agingData.rows.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="text-center py-12 text-slate-400">
-                            Açık bakiye içeren cari bulunamadı.
+                            {r.noAgingParties}
                           </td>
                         </tr>
                       ) : (
@@ -717,22 +728,22 @@ const FinancialReports: React.FC = () => {
                             <td className="ds-td font-semibold">{row.partyId}</td>
                             <td className="ds-td">{row.partyName}</td>
                             <td className="ds-td-right text-green-400 font-mono">
-                              ${row.current.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.current)}
                             </td>
                             <td className="ds-td-right text-amber-400 font-mono">
-                              ${row.days1_30.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.days1_30)}
                             </td>
                             <td className="ds-td-right text-orange-400 font-mono">
-                              ${row.days31_60.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.days31_60)}
                             </td>
                             <td className="ds-td-right text-red-400 font-mono">
-                              ${row.days61_90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.days61_90)}
                             </td>
                             <td className="ds-td-right text-red-500 font-mono font-bold">
-                              ${row.daysOver90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.daysOver90)}
                             </td>
                             <td className="ds-td-right font-bold font-mono">
-                              ${row.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              {formatCurrency(row.total)}
                             </td>
                           </tr>
                         ))

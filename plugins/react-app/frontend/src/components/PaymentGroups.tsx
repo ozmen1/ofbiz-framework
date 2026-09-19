@@ -85,14 +85,14 @@ function CreateGroupModal({
   const [error, setError]   = useState('');
 
   const save = async () => {
-    if (!form.paymentGroupName.trim()) { setError(locale === 'tr' ? 'Grup adı gerekli' : 'Group name is required'); return; }
+    if (!form.paymentGroupName.trim()) { setError(translations.paymentGroups.groupNameRequired); return; }
     setSaving(true);
     try {
       const data = await fetchApi(
         `/react-app/control/createPaymentGroup?paymentGroupName=${encodeURIComponent(form.paymentGroupName)}&paymentGroupTypeId=${form.paymentGroupTypeId}`
       );
       if (data.success) { onCreated(); onClose(); }
-      else setError(data.error || (locale === 'tr' ? 'Oluşturulamadı' : 'Failed to create'));
+      else setError(data.error || translations.paymentGroups.groupNameRequired);
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
   };
@@ -109,7 +109,7 @@ function CreateGroupModal({
               className="w-full bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
               value={form.paymentGroupName}
               onChange={e => setForm(p => ({ ...p, paymentGroupName: e.target.value }))}
-              placeholder={locale === 'tr' ? 'Örn: Kasım Havale Bordrosu' : 'e.g. November Wire Batch'}
+              placeholder={translations.paymentGroups.groupName}
             />
           </div>
           <div>
@@ -174,7 +174,7 @@ function AddPaymentModal({
   };
 
   const addSelected = async () => {
-    if (selected.size === 0) { setError(locale === 'tr' ? 'En az bir ödeme seçin' : 'Select at least one payment'); return; }
+    if (selected.size === 0) { setError(translations.paymentGroups.selectAtLeastOnePayment); return; }
     setSaving(true);
     try {
       for (const paymentId of Array.from(selected)) {
@@ -229,7 +229,7 @@ function AddPaymentModal({
         </div>
         <div className="flex gap-3 mt-4 justify-between items-center">
           <span className="text-sm text-slate-400">
-            {selected.size} {locale === 'tr' ? 'ödeme seçildi' : 'payments selected'}
+            {selected.size} {translations.paymentGroups.paymentsSelected}
           </span>
           <div className="flex gap-3">
             <button onClick={onClose} className="px-4 py-2 text-sm text-slate-300 border border-slate-600 rounded-xl hover:bg-slate-700 transition-colors">
@@ -275,13 +275,13 @@ function GroupDetailPanel({
   useEffect(() => { load(); }, [load]);
 
   const removePayment = async (paymentId: string) => {
-    if (!confirm('Bu ödemeyi gruptan çıkarmak istiyor musunuz?')) return;
+    if (!confirm(translations.paymentGroups.removeMemberConfirm)) return;
     await fetchApi(`/react-app/control/removePaymentFromGroup?paymentGroupId=${groupId}&paymentId=${paymentId}`);
     load();
   };
 
   const deleteGroup = async () => {
-    if (!confirm(`"${detail?.paymentGroupName}" grubunu ve tüm üyelerini silmek istiyor musunuz?`)) return;
+    if (!confirm(translations.paymentGroups.deleteGroupConfirm)) return;
     await fetchApi(`/react-app/control/deletePaymentGroup?paymentGroupId=${groupId}`);
     onDeleted();
     onBack();
@@ -311,7 +311,7 @@ function GroupDetailPanel({
                 {detail.paymentGroupTypeDesc}
               </span>
               <span className="text-xs sm:text-sm text-slate-400">
-                {detail.memberCount} {locale === 'tr' ? 'ödeme' : 'payments'} · {translations.common.total}: {fmt(detail.totalAmount, 'USD', locale)}
+                {detail.memberCount} {translations.paymentGroups.paymentCount} · {translations.common.total}: {fmt(detail.totalAmount, 'USD', locale)}
               </span>
             </div>
           </div>
@@ -323,7 +323,7 @@ function GroupDetailPanel({
           </button>
           <button onClick={deleteGroup}
             className="px-3.5 py-2 text-xs sm:text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors">
-            {locale === 'tr' ? 'Grubu Sil' : 'Delete Group'}
+            {translations.common.delete}
           </button>
         </div>
       </div>
@@ -368,7 +368,7 @@ function GroupDetailPanel({
                   <td className="px-4 py-3">
                     <button onClick={() => removePayment(m.paymentId)}
                       className="text-xs text-red-400 hover:text-red-300 hover:underline transition-colors">
-                      Çıkar
+                      {translations.paymentGroups.removeMember}
                     </button>
                   </td>
                 </tr>
@@ -523,14 +523,14 @@ export default function PaymentGroups() {
               </div>
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-700/40">
                 <div>
-                  <p className="text-xs text-slate-500">Ödeme</p>
+                  <p className="text-xs text-slate-500">{translations.paymentGroups.paymentCount}</p>
                   <p className="text-lg font-bold text-slate-200">{grp.memberCount}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-500">Toplam</p>
+                  <p className="text-xs text-slate-500">{translations.common.total}</p>
                   <p className="text-lg font-bold text-indigo-400">{fmt(grp.totalAmount)}</p>
                 </div>
-                <span className="text-xs text-indigo-400 hover:underline">Detaylar →</span>
+                <span className="text-xs text-indigo-400 hover:underline">{translations.common.details} →</span>
               </div>
             </div>
           ))}

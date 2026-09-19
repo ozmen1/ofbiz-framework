@@ -1,32 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, AlertCircle, Loader2, ArrowDownLeft, ArrowUpRight, DollarSign } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, DollarSign, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 import { api, PaymentMetadataResponse } from '../services/api';
 import { useTranslation } from '../i18n';
 
 interface CreatePaymentProps {
-  onCancel: () => void;
   onSave: (paymentId: string) => void;
+  onCancel: () => void;
+  initialPartyIdFrom?: string;
+  initialPartyIdTo?: string;
 }
 
-const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
-  const { translations, locale } = useTranslation();
-  const [direction, setDirection] = useState<'incoming' | 'outgoing'>('incoming');
-  const [loading, setLoading] = useState(false);
-  const [metadataLoading, setMetadataLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const CreatePayment: React.FC<CreatePaymentProps> = ({
+  onSave,
+  onCancel,
+  initialPartyIdFrom = '',
+  initialPartyIdTo = ''
+}) => {
+  const { translations } = useTranslation();
+  const t = translations.payments;
+  const common = translations.common;
 
-  const [formData, setFormData] = useState({
-    paymentTypeId: 'CUSTOMER_PAYMENT',
-    partyIdFrom: '',
-    partyIdTo: 'Company',
-    amount: '',
-    currencyUomId: 'USD',
-    paymentMethodTypeId: 'EFT_ACCOUNT',
-    effectiveDate: new Date().toISOString().substring(0, 10),
-    paymentRefNum: '',
-    comments: '',
-    statusId: 'PMNT_NOT_PAID'
-  });
+  const [loading, setLoading] = useState<boolean>(false);
+  const [metadataLoading, setMetadataLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [metadata, setMetadata] = useState<PaymentMetadataResponse['metadata']>({
     paymentTypes: [],
@@ -36,45 +32,57 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
     currencies: []
   });
 
+  // Direction: 'incoming' = receipt (customer pays us), 'outgoing' = disbursement (we pay vendor)
+  const [direction, setDirection] = useState<'incoming' | 'outgoing'>('incoming');
+
+  const [formData, setFormData] = useState({
+    paymentTypeId: 'CUSTOMER_PAYMENT',
+    partyIdFrom: initialPartyIdFrom,
+    partyIdTo: initialPartyIdTo || 'Company',
+    amount: '',
+    currencyUomId: 'USD',
+    paymentMethodTypeId: 'COMPANY_CHECK',
+    effectiveDate: new Date().toISOString().split('T')[0],
+    paymentRefNum: '',
+    comments: '',
+    statusId: 'PMNT_NOT_PAID'
+  });
+
   useEffect(() => {
-    api.getPaymentMetadata()
-      .then(res => {
-        if (res?.metadata) {
+    const fetchMetadata = async () => {
+      try {
+        setMetadataLoading(true);
+        const res = await api.getPaymentMetadata();
+        if (res.metadata) {
           setMetadata(res.metadata);
-          // Pick first party as payer if incoming
-          const nonCompany = res.metadata.parties.find(p => p.partyId !== 'Company');
-          if (nonCompany) {
-            setFormData(prev => ({
-              ...prev,
-              partyIdFrom: nonCompany.partyId
-            }));
+          if (res.metadata.paymentTypes.length > 0 && !formData.paymentTypeId) {
+            setFormData(prev => ({ ...prev, paymentTypeId: res.metadata.paymentTypes[0].paymentTypeId }));
           }
         }
+      } catch (err: any) {
+        console.error('Metadata fetch error:', err);
+      } finally {
         setMetadataLoading(false);
-      })
-      .catch(err => {
-        console.warn('Metadata error:', err);
-        setMetadataLoading(false);
-      });
+      }
+    };
+    fetchMetadata();
   }, []);
 
-  const handleDirectionChange = (newDirection: 'incoming' | 'outgoing') => {
-    setDirection(newDirection);
-    if (newDirection === 'incoming') {
+  const handleDirectionChange = (newDir: 'incoming' | 'outgoing') => {
+    setDirection(newDir);
+    if (newDir === 'incoming') {
       setFormData(prev => ({
         ...prev,
         paymentTypeId: 'CUSTOMER_PAYMENT',
-        partyIdTo: 'Company',
-        partyIdFrom: prev.partyIdFrom === 'Company' ? '' : prev.partyIdFrom,
-        statusId: 'PMNT_NOT_PAID'
+        partyIdFrom: '',
+        partyIdTo: 'Company'
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         paymentTypeId: 'VENDOR_PAYMENT',
         partyIdFrom: 'Company',
-        partyIdTo: prev.partyIdTo === 'Company' ? '' : prev.partyIdTo,
-        statusId: 'PMNT_NOT_PAID'
+        partyIdTo: ''
       }));
     }
   };
@@ -87,15 +95,15 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError('Geçerli bir ödeme tutarı giriniz.');
+      setError(t.amountRequired);
       return;
     }
     if (!formData.partyIdFrom || !formData.partyIdTo) {
-      setError('Gönderen ve Alıcı cari hesapları zorunludur.');
+      setError(t.partiesRequired);
       return;
     }
     if (formData.partyIdFrom === formData.partyIdTo) {
-      setError('Gönderen ve Alıcı cariler aynı olamaz.');
+      setError(t.partiesCannotBeSame);
       return;
     }
 
@@ -118,10 +126,10 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
       if (res.paymentId) {
         onSave(res.paymentId);
       } else {
-        setError('Ödeme oluşturulamadı.');
+        setError(t.paymentCreateError);
       }
     } catch (err: any) {
-      setError(err.message || 'Ödeme kaydedilirken bir hata oluştu.');
+      setError(err.message || t.paymentCreateError);
     } finally {
       setLoading(false);
     }
@@ -135,16 +143,16 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
         className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors text-sm bg-transparent border-none cursor-pointer"
       >
         <ArrowLeft size={16} />
-        Ödemeler Listesine Dön
+        {t.backToList}
       </button>
 
       <div className="ds-card p-6">
         {/* Header */}
         <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
           <div>
-            <h3 className="text-xl font-bold text-white m-0">Yeni Ödeme Kaydı</h3>
+            <h3 className="text-xl font-bold text-white m-0">{t.paymentDetailsTitle}</h3>
             <p className="text-slate-400 text-sm mt-1">
-              Tahsilat (Müşteri Alacağı) veya Tediye (Tedarikçi Ödemesi) girişi yapın.
+              {t.paymentDetailsSubtitle}
             </p>
           </div>
 
@@ -160,7 +168,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               }`}
             >
               <ArrowDownLeft size={16} />
-              Tahsilat (Giriş)
+              {t.receiptIn}
             </button>
             <button
               type="button"
@@ -172,7 +180,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               }`}
             >
               <ArrowUpRight size={16} />
-              Tediye (Çıkış)
+              {t.disbursementOut}
             </button>
           </div>
         </div>
@@ -189,22 +197,22 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             {/* Payment Type */}
             <div>
-              <label className="ds-label">Ödeme Türü *</label>
+              <label className="ds-label">{t.paymentType} *</label>
               <select
                 name="paymentTypeId"
                 value={formData.paymentTypeId}
                 onChange={handleChange}
                 className="ds-select w-full"
               >
-                {metadata.paymentTypes.map(t => (
-                  <option key={t.paymentTypeId} value={t.paymentTypeId}>{t.description || t.paymentTypeId}</option>
+                {metadata.paymentTypes.map(item => (
+                  <option key={item.paymentTypeId} value={item.paymentTypeId}>{item.description || item.paymentTypeId}</option>
                 ))}
               </select>
             </div>
 
             {/* Payment Method Type */}
             <div>
-              <label className="ds-label">Ödeme Yöntemi *</label>
+              <label className="ds-label">{t.paymentMethod} *</label>
               <select
                 name="paymentMethodTypeId"
                 value={formData.paymentMethodTypeId}
@@ -219,14 +227,14 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Party From */}
             <div>
-              <label className="ds-label">Gönderen (Borçlu / Ödeyen Cari) *</label>
+              <label className="ds-label">{t.senderPayer} *</label>
               <select
                 name="partyIdFrom"
                 value={formData.partyIdFrom}
                 onChange={handleChange}
                 className="ds-select w-full"
               >
-                <option value="">Seçiniz...</option>
+                <option value="">{t.selectPartyPrompt}</option>
                 {metadata.parties.map(p => (
                   <option key={p.partyId} value={p.partyId}>{p.name} ({p.partyId})</option>
                 ))}
@@ -235,14 +243,14 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Party To */}
             <div>
-              <label className="ds-label">Alıcı (Alacaklı / Tahsil Eden Cari) *</label>
+              <label className="ds-label">{t.receiverPayee} *</label>
               <select
                 name="partyIdTo"
                 value={formData.partyIdTo}
                 onChange={handleChange}
                 className="ds-select w-full"
               >
-                <option value="">Seçiniz...</option>
+                <option value="">{t.selectPartyPrompt}</option>
                 {metadata.parties.map(p => (
                   <option key={p.partyId} value={p.partyId}>{p.name} ({p.partyId})</option>
                 ))}
@@ -251,7 +259,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Amount */}
             <div>
-              <label className="ds-label">Ödeme Tutarı *</label>
+              <label className="ds-label">{t.paymentAmount} *</label>
               <div className="relative">
                 <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
@@ -270,7 +278,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Currency */}
             <div>
-              <label className="ds-label">Para Birimi</label>
+              <label className="ds-label">{common.currency}</label>
               <select
                 name="currencyUomId"
                 value={formData.currencyUomId}
@@ -285,7 +293,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Effective Date */}
             <div>
-              <label className="ds-label">İşlem Tarihi *</label>
+              <label className="ds-label">{t.effectiveDate} *</label>
               <input
                 type="date"
                 name="effectiveDate"
@@ -297,11 +305,11 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Reference Number */}
             <div>
-              <label className="ds-label">Dekont / Belge Referans No</label>
+              <label className="ds-label">{t.paymentRef}</label>
               <input
                 type="text"
                 name="paymentRefNum"
-                placeholder="Örn: DEK-2026-001, Çek No..."
+                placeholder="REF-..."
                 value={formData.paymentRefNum}
                 onChange={handleChange}
                 className="ds-input w-full"
@@ -311,11 +319,11 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
           {/* Comments */}
           <div className="mb-6">
-            <label className="ds-label">Açıklama / Notlar</label>
+            <label className="ds-label">{t.notesDesc}</label>
             <textarea
               name="comments"
               rows={3}
-              placeholder="Ödemeye dair detaylar..."
+              placeholder="..."
               value={formData.comments}
               onChange={handleChange}
               className="ds-input w-full resize-none"
@@ -329,7 +337,7 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               onClick={onCancel}
               className="ds-btn-secondary"
             >
-              {translations.common.cancel}
+              {common.cancel}
             </button>
             <button
               type="submit"
@@ -339,12 +347,12 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
               {loading ? (
                 <>
                   <Loader2 size={16} className="ds-spinner-sm" />
-                  {locale === 'tr' ? 'Kaydediliyor...' : 'Saving...'}
+                  {common.loading}
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  {translations.common.save}
+                  {common.save}
                 </>
               )}
             </button>

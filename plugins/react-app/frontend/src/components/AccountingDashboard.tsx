@@ -61,25 +61,25 @@ const AccountingDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           icon={<FileText size={22} className="text-indigo-400" />}
-          title={locale === 'tr' ? 'Toplam Fatura' : 'Total Invoices'}
+          title={translations.invoices.newInvoice.replace(/Yeni |New /i, '')}
           value={data?.invoiceCount?.toString() || '0'}
           accentColor="border-l-indigo-500"
         />
         <StatCard
           icon={<DollarSign size={22} className="text-purple-400" />}
-          title={locale === 'tr' ? 'Toplam Ödeme' : 'Total Payments'}
+          title={translations.dashboard.totalPayments}
           value={data?.paymentCount?.toString() || '0'}
           accentColor="border-l-purple-500"
         />
         <StatCard
           icon={<Users size={22} className="text-pink-400" />}
-          title={locale === 'tr' ? 'Aktif Müşteriler' : 'Active Customers'}
+          title={translations.dashboard.activeCustomers}
           value={data?.customerCount?.toString() || '0'}
           accentColor="border-l-pink-500"
         />
         <StatCard
           icon={<Clock size={22} className="text-amber-400" />}
-          title={locale === 'tr' ? 'Bekleyen Onaylar' : 'Pending Approvals'}
+          title={translations.dashboard.pendingInvoices}
           value={data?.pendingApprovals?.toString() || '0'}
           accentColor="border-l-amber-500"
         />
@@ -156,7 +156,10 @@ const StatCard = ({
   </div>
 );
 
-const StatusBadge = ({ status, locale }: { status: string; locale: string }) => {
+const StatusBadge = ({ status }: { status: string; locale?: string }) => {
+  const { translations } = useTranslation();
+  const inv = translations.invoices;
+
   const getBadgeClass = (): string => {
     switch (status) {
       case 'INVOICE_PAID':         return 'ds-badge ds-badge-green';
@@ -169,24 +172,13 @@ const StatusBadge = ({ status, locale }: { status: string; locale: string }) => 
   };
 
   const getLabel = (): string => {
-    if (locale === 'tr') {
-      switch (status) {
-        case 'INVOICE_PAID':         return 'Ödendi';
-        case 'INVOICE_IN_PROCESS':   return 'Hazırlanıyor';
-        case 'INVOICE_READY':        return 'Hazır';
-        case 'INVOICE_APPROVED':     return 'Onaylandı';
-        case 'INVOICE_CANCELLED':    return 'İptal';
-        default:                     return status.replace('INVOICE_', '');
-      }
-    } else {
-      switch (status) {
-        case 'INVOICE_PAID':         return 'Paid';
-        case 'INVOICE_IN_PROCESS':   return 'In Process';
-        case 'INVOICE_READY':        return 'Ready';
-        case 'INVOICE_APPROVED':     return 'Approved';
-        case 'INVOICE_CANCELLED':    return 'Cancelled';
-        default:                     return status.replace('INVOICE_', '');
-      }
+    switch (status) {
+      case 'INVOICE_PAID':         return inv.statusPaid;
+      case 'INVOICE_IN_PROCESS':   return inv.statusInProcess;
+      case 'INVOICE_READY':        return inv.statusReady;
+      case 'INVOICE_APPROVED':     return inv.statusApproved;
+      case 'INVOICE_CANCELLED':    return inv.statusCancelled;
+      default:                     return status.replace('INVOICE_', '');
     }
   };
 

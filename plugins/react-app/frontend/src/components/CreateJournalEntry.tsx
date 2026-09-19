@@ -22,6 +22,10 @@ interface EditableLine extends JournalEntryLinePayload {
 
 export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, onSuccess }) => {
   const { translations, locale } = useTranslation();
+  const j = translations.journalEntries;
+  const common = translations.common;
+  const coa = translations.chartOfAccounts;
+
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,7 +69,6 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
       .then(res => {
         if (res?.metadata) {
           setMetadata(res.metadata);
-          // Set sensible defaults if available
           if (res.metadata.accounts && res.metadata.accounts.length >= 2) {
             setLines(prev => [
               { ...prev[0], glAccountId: prev[0].glAccountId || res.metadata.accounts[0].glAccountId },
@@ -74,7 +77,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           }
         }
       })
-      .catch(err => setError('Muhasebe meta verileri yüklenemedi: ' + err.message))
+      .catch(err => setError(err.message || common.error))
       .finally(() => setMetaLoading(false));
   }, []);
 
@@ -94,7 +97,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
   // Remove Line
   const handleRemoveLine = (id: string) => {
     if (lines.length <= 2) {
-      alert('Bir yevmiye kaydı en az 2 satırdan oluşmalıdır.');
+      alert(locale === 'tr' ? 'Bir yevmiye kaydı en az 2 satırdan oluşmalıdır.' : 'A journal entry must have at least 2 lines.');
       return;
     }
     setLines(lines.filter(l => l.id !== id));
@@ -144,18 +147,22 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
     setError(null);
 
     if (!isBalanced) {
-      setError(`Fiş dengeli değil! Toplam Borç ($${totalDebit.toFixed(2)}) ile Toplam Alacak ($${totalCredit.toFixed(2)}) eşit olmalıdır. Fark: $${difference.toFixed(2)}`);
+      setError(
+        locale === 'tr'
+          ? `Fiş dengeli değil! Toplam Borç ($${totalDebit.toFixed(2)}) ile Toplam Alacak ($${totalCredit.toFixed(2)}) eşit olmalıdır. Fark: $${difference.toFixed(2)}`
+          : `Entry is not balanced! Total Debit ($${totalDebit.toFixed(2)}) must equal Total Credit ($${totalCredit.toFixed(2)}). Difference: $${difference.toFixed(2)}`
+      );
       return;
     }
 
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i];
       if (!l.glAccountId) {
-        setError(`${i + 1}. satırda GL hesabı seçilmelidir.`);
+        setError(locale === 'tr' ? `${i + 1}. satırda GL hesabı seçilmelidir.` : `Select GL account on line ${i + 1}.`);
         return;
       }
       if (Number(l.amount) <= 0) {
-        setError(`${i + 1}. satırda tutar 0'dan büyük olmalıdır.`);
+        setError(locale === 'tr' ? `${i + 1}. satırda tutar 0'dan büyük olmalıdır.` : `Amount must be greater than 0 on line ${i + 1}.`);
         return;
       }
     }
@@ -183,7 +190,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
       const res = await api.createJournalEntry(payload);
       onSuccess(res.acctgTransId);
     } catch (err: any) {
-      setError(err.message || 'Yevmiye kaydı oluşturulurken bir hata meydana geldi.');
+      setError(err.message || common.error);
     } finally {
       setLoading(false);
     }
@@ -193,7 +200,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
     return (
       <div className="ds-card p-16 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-indigo-400" size={32} />
-        <p className="text-slate-400 text-sm">Hesap planı ve meta veriler yükleniyor...</p>
+        <p className="text-slate-400 text-sm">{common.loading}</p>
       </div>
     );
   }
@@ -207,17 +214,17 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           <button
             onClick={onBack}
             className="ds-btn-secondary p-2.5"
-            aria-label="Geri dön"
+            aria-label={common.back}
           >
             <ArrowLeft size={18} />
           </button>
           <div>
             <h1 className="ds-page-title flex items-center gap-3">
               <FileText size={24} className="text-indigo-400" />
-              Yeni Yevmiye Fişi Oluştur
+              {j.newEntry}
             </h1>
             <p className="ds-page-subtitle mt-0.5">
-              Çift taraflı kayıt esasına göre dengeli (Borç = Alacak) yevmiye veya mahsup fişi girişi
+              {translations.pages.createJournalEntry.subtitle}
             </p>
           </div>
         </div>
@@ -228,7 +235,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
             onClick={onBack}
             className="ds-btn-secondary"
           >
-            İptal
+            {common.cancel}
           </button>
           <button
             type="button"
@@ -237,7 +244,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
             className="ds-btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : shouldPost ? <Send size={16} /> : <CheckCircle2 size={16} />}
-            {shouldPost ? 'Kaydet ve Defter-i Kebir\'e İşle' : 'Taslak Olarak Kaydet'}
+            {shouldPost ? (locale === 'tr' ? "Kaydet ve Defter-i Kebir'e İşle" : 'Save & Post to GL') : (locale === 'tr' ? 'Taslak Olarak Kaydet' : 'Save as Draft')}
           </button>
         </div>
       </div>
@@ -253,13 +260,13 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
       {/* Header Info Form */}
       <div className="ds-card p-6 flex flex-col gap-5">
         <h2 className="text-lg font-bold text-white border-b border-slate-700/50 pb-3">
-          Fiş Genel Bilgileri
+          {locale === 'tr' ? 'Fiş Genel Bilgileri' : 'General Voucher Information'}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Transaction Date */}
           <div>
-            <label className="ds-label">Fiş / Yevmiye Tarihi *</label>
+            <label className="ds-label">{j.transDate} *</label>
             <input
               type="date"
               required
@@ -271,22 +278,22 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
           {/* Acctg Trans Type */}
           <div>
-            <label className="ds-label">İşlem / Fiş Türü *</label>
+            <label className="ds-label">{j.transType} *</label>
             <select
               value={acctgTransTypeId}
               onChange={e => setAcctgTransTypeId(e.target.value)}
               className="ds-select w-full"
             >
-              {metadata?.acctgTransTypes?.map(t => (
-                <option key={t.acctgTransTypeId} value={t.acctgTransTypeId}>
-                  {t.description || t.acctgTransTypeId}
+              {metadata?.acctgTransTypes?.map(item => (
+                <option key={item.acctgTransTypeId} value={item.acctgTransTypeId}>
+                  {item.description || item.acctgTransTypeId}
                 </option>
               )) || (
                 <>
-                  <option value="INTERNAL_ACCTG_TRANS">İç Muhasebe / Mahsup</option>
-                  <option value="CAPITALIZATION">Sermaye / Açılış</option>
-                  <option value="PERIOD_CLOSING">Dönem Sonu Kapanış</option>
-                  <option value="OTHER_INTERNAL">Diğer İç İşlemler</option>
+                  <option value="INTERNAL_ACCTG_TRANS">INTERNAL_ACCTG_TRANS</option>
+                  <option value="CAPITALIZATION">CAPITALIZATION</option>
+                  <option value="PERIOD_CLOSING">PERIOD_CLOSING</option>
+                  <option value="OTHER_INTERNAL">OTHER_INTERNAL</option>
                 </>
               )}
             </select>
@@ -294,7 +301,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
           {/* Fiscal Type */}
           <div>
-            <label className="ds-label">Mali Tür (Fiscal Type) *</label>
+            <label className="ds-label">{j.fiscalType} *</label>
             <select
               value={glFiscalTypeId}
               onChange={e => setGlFiscalTypeId(e.target.value)}
@@ -305,17 +312,17 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                   {f.description || f.glFiscalTypeId}
                 </option>
               )) || (
-                <option value="ACTUAL">Actual (Fiili)</option>
+                <option value="ACTUAL">Actual</option>
               )}
             </select>
           </div>
 
           {/* Voucher Ref */}
           <div>
-            <label className="ds-label">Belge / Fiş Ref No</label>
+            <label className="ds-label">{j.documentRef}</label>
             <input
               type="text"
-              placeholder="Örn: MHS-2026-001"
+              placeholder="REF-..."
               value={voucherRef}
               onChange={e => setVoucherRef(e.target.value)}
               className="ds-input w-full"
@@ -325,10 +332,10 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
         {/* Description */}
         <div>
-          <label className="ds-label">Genel Fiş Açıklaması</label>
+          <label className="ds-label">{common.description}</label>
           <input
             type="text"
-            placeholder="Yevmiye kaydının genel açıklamasını giriniz..."
+            placeholder="..."
             value={description}
             onChange={e => setDescription(e.target.value)}
             className="ds-input w-full"
@@ -340,9 +347,11 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           <div className="flex items-center gap-3">
             <Info size={18} className="text-indigo-400 shrink-0" />
             <div>
-              <span className="text-sm font-semibold text-slate-200">Kayıt Sonrası Defter-i Kebir Onayı:</span>
+              <span className="text-sm font-semibold text-slate-200">
+                {locale === 'tr' ? "Kayıt Sonrası Defter-i Kebir Onayı:" : 'Post to General Ledger:'}
+              </span>
               <span className="text-xs text-slate-400 ml-2">
-                {shouldPost ? 'Kaydedildikten hemen sonra Defter-i Kebir\'e işlenecek (Posted)' : 'Taslak (Draft) olarak kaydedilecek, daha sonra onaylanabilir'}
+                {shouldPost ? j.postedNotice : j.draftNotice}
               </span>
             </div>
           </div>
@@ -354,7 +363,9 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
               onChange={e => setShouldPost(e.target.checked)}
               className="cursor-pointer w-4 h-4 accent-indigo-500"
             />
-            <span className={shouldPost ? 'text-emerald-400' : 'text-slate-400'}>Doğrudan Onayla</span>
+            <span className={shouldPost ? 'text-emerald-400' : 'text-slate-400'}>
+              {locale === 'tr' ? 'Doğrudan Onayla' : 'Post Immediately'}
+            </span>
           </label>
         </div>
       </div>
@@ -364,10 +375,12 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
         <div className="flex justify-between items-center flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-bold text-white">
-              Yevmiye Maddeleri ({lines.length} Satır)
+              {j.entryRows} ({lines.length} {locale === 'tr' ? 'Satır' : 'Lines'})
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Her satır için GL hesabı, Borç (D) veya Alacak (C) yönünü ve tutarı belirleyiniz.
+              {locale === 'tr'
+                ? 'Her satır için GL hesabı, Borç (D) veya Alacak (C) yönünü ve tutarı belirleyiniz.'
+                : 'Select GL account, Debit (D) or Credit (C) side and enter line amount.'}
             </p>
           </div>
 
@@ -377,36 +390,36 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
               onClick={handleAutoBalance}
               className="ds-btn-secondary text-xs flex items-center gap-1.5"
             >
-              Otomatik Dengele
+              {locale === 'tr' ? 'Otomatik Dengele' : 'Auto Balance'}
             </button>
             <button
               type="button"
               onClick={() => handleAddLine('D')}
               className="ds-btn-secondary text-xs flex items-center gap-1.5 text-blue-400 border-blue-500/30 hover:border-blue-400/50"
             >
-              <Plus size={13} /> Borç Satırı Ekle
+              <Plus size={13} /> {locale === 'tr' ? 'Borç Satırı Ekle' : 'Add Debit Line'}
             </button>
             <button
               type="button"
               onClick={() => handleAddLine('C')}
               className="ds-btn-secondary text-xs flex items-center gap-1.5 text-orange-400 border-orange-500/30 hover:border-orange-400/50"
             >
-              <Plus size={13} /> Alacak Satırı Ekle
+              <Plus size={13} /> {locale === 'tr' ? 'Alacak Satırı Ekle' : 'Add Credit Line'}
             </button>
           </div>
         </div>
 
         {/* Lines Grid / Table */}
         <div className="overflow-x-auto">
-          <table className="ds-table w-full text-sm">
+          <table className="ds-table w-full text-sm min-w-[700px]">
             <thead>
               <tr className="ds-thead-row">
                 <th className="ds-th w-10 text-center">#</th>
-                <th className="ds-th min-w-[240px]">GL Hesabı *</th>
-                <th className="ds-th w-[130px] text-center">Yön *</th>
-                <th className="ds-th-right w-[160px]">Tutar ($) *</th>
-                <th className="ds-th min-w-[180px]">Satır Açıklaması</th>
-                <th className="ds-th w-[140px]">Cari / İlgili</th>
+                <th className="ds-th min-w-[240px]">{coa.accountCode} / {coa.accountName} *</th>
+                <th className="ds-th w-[130px] text-center">{coa.normalSide} *</th>
+                <th className="ds-th-right w-[160px]">{common.amount} ($) *</th>
+                <th className="ds-th min-w-[180px]">{common.description}</th>
+                <th className="ds-th w-[140px]">{common.party}</th>
                 <th className="ds-th w-11 text-center"></th>
               </tr>
             </thead>
@@ -422,7 +435,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                       onChange={e => handleLineChange(line.id, 'glAccountId', e.target.value)}
                       className="ds-select w-full text-xs py-1.5"
                     >
-                      <option value="">-- Hesap Seçiniz --</option>
+                      <option value="">-- {common.search} --</option>
                       {metadata?.accounts?.map(a => (
                         <option key={a.glAccountId} value={a.glAccountId}>
                           {a.accountCode} - {a.accountName}
@@ -443,7 +456,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                             : 'bg-transparent text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        Borç (D)
+                        {coa.normalSideDebit}
                       </button>
                       <button
                         type="button"
@@ -454,7 +467,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                             : 'bg-transparent text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        Alacak (C)
+                        {coa.normalSideCredit}
                       </button>
                     </div>
                   </td>
@@ -476,7 +489,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                   <td className="ds-td">
                     <input
                       type="text"
-                      placeholder="Satır açıklaması (opsiyonel)"
+                      placeholder={common.description}
                       value={line.description || ''}
                       onChange={e => handleLineChange(line.id, 'description', e.target.value)}
                       className="ds-input w-full text-xs py-1.5"
@@ -487,7 +500,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                   <td className="ds-td">
                     <input
                       type="text"
-                      placeholder="Cari ID"
+                      placeholder="Party ID"
                       value={line.partyId || ''}
                       onChange={e => handleLineChange(line.id, 'partyId', e.target.value)}
                       className="ds-input w-full text-xs py-1.5"
@@ -549,12 +562,12 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           {/* Quick numbers */}
           <div className="flex gap-8 items-center flex-wrap">
             <div>
-              <div className="text-xs text-slate-400">{translations.journalEntries.totalDebit}</div>
+              <div className="text-xs text-slate-400">{j.totalDebit}</div>
               <div className="text-2xl font-extrabold text-blue-400">${totalDebit.toFixed(2)}</div>
             </div>
 
             <div>
-              <div className="text-xs text-slate-400">{translations.journalEntries.totalCredit}</div>
+              <div className="text-xs text-slate-400">{j.totalCredit}</div>
               <div className="text-2xl font-extrabold text-orange-400">${totalCredit.toFixed(2)}</div>
             </div>
 

@@ -5,6 +5,7 @@ import {
   Briefcase, Landmark, Building2, FileText, Check,
   BarChart3, TrendingUp
 } from 'lucide-react';
+import { useTranslation } from '../i18n';
 import {
   api,
   AdvancedAccountingMetadata,
@@ -28,6 +29,11 @@ import {
 type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements';
 
 export const AdvancedAccounting: React.FC = () => {
+  const { translations, locale } = useTranslation();
+  const t = translations.advancedAccounting;
+  const tc = translations.common;
+  const isTr = locale === 'tr';
+
   const [activeTab, setActiveTab] = useState<AdvancedTab>('billing-accounts');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,11 +170,11 @@ export const AdvancedAccounting: React.FC = () => {
       setTotalBaBilled(res.totalBilled || 0);
       setError(null);
     } catch (e: any) {
-      setError(e.message || 'Cari hesaplar yüklenirken hata oluştu.');
+      setError(e.message || t.messages.loadBaError);
     } finally {
       setLoading(false);
     }
-  }, [baSearch, baPartyFilter]);
+  }, [baSearch, baPartyFilter, t.messages.loadBaError]);
 
   // Fetch Fixed Assets
   const fetchFixedAssets = useCallback(async () => {
@@ -185,11 +191,11 @@ export const AdvancedAccounting: React.FC = () => {
       setTotalFaNbv(res.totalNetBookValue || 0);
       setError(null);
     } catch (e: any) {
-      setError(e.message || 'Duran varlıklar yüklenirken hata oluştu.');
+      setError(e.message || t.messages.loadFaError);
     } finally {
       setLoading(false);
     }
-  }, [faSearch, faTypeFilter]);
+  }, [faSearch, faTypeFilter, t.messages.loadFaError]);
 
   // Fetch Budgets
   const fetchBudgets = useCallback(async () => {
@@ -205,11 +211,11 @@ export const AdvancedAccounting: React.FC = () => {
       setTotalBgtAmount(res.totalBudgetedAmount || 0);
       setError(null);
     } catch (e: any) {
-      setError(e.message || 'Bütçeler yüklenirken hata oluştu.');
+      setError(e.message || t.messages.loadBgError);
     } finally {
       setLoading(false);
     }
-  }, [bgtSearch, bgtTypeFilter, bgtStatusFilter]);
+  }, [bgtSearch, bgtTypeFilter, bgtStatusFilter, t.messages.loadBgError]);
 
   // Fetch Agreements
   const fetchAgreements = useCallback(async () => {
@@ -223,11 +229,11 @@ export const AdvancedAccounting: React.FC = () => {
       setTotalAgrCount(res.totalCount || 0);
       setError(null);
     } catch (e: any) {
-      setError(e.message || 'Sözleşmeler yüklenirken hata oluştu.');
+      setError(e.message || t.messages.loadAgError);
     } finally {
       setLoading(false);
     }
-  }, [agrSearch, agrTypeFilter]);
+  }, [agrSearch, agrTypeFilter, t.messages.loadAgError]);
 
   // Load initial data
   useEffect(() => {
@@ -274,7 +280,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.createBillingAccount(createBaForm);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Cari hesap limiti başarıyla kaydedildi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.baSaved);
       setShowCreateBaModal(false);
       setCreateBaForm({
         accountLimit: 10000,
@@ -303,7 +309,7 @@ export const AdvancedAccounting: React.FC = () => {
         thruDate: editingBa.thruDate
       };
       const res = await api.updateBillingAccount(payload);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Cari hesap limiti güncellendi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.baUpdated);
       setShowEditBaModal(false);
       setEditingBa(null);
       fetchBillingAccounts();
@@ -335,7 +341,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.createFixedAsset(createFaForm);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Duran varlık kaydedildi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.faSaved);
       setShowCreateFaModal(false);
       setCreateFaForm({
         fixedAssetName: '',
@@ -368,7 +374,7 @@ export const AdvancedAccounting: React.FC = () => {
         serialNumber: editingFa.serialNumber
       };
       const res = await api.updateFixedAsset(payload);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Duran varlık güncellendi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.faUpdated);
       setShowEditFaModal(false);
       setEditingFa(null);
       fetchFixedAssets();
@@ -386,7 +392,7 @@ export const AdvancedAccounting: React.FC = () => {
       setLoading(true);
       const amt = depAmountInput ? parseFloat(depAmountInput) : undefined;
       const res = await api.calculateDepreciation(depAssetId, amt);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Amortisman kaydedildi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.fixedAssets.depreciationSuccess);
       setShowDepModal(false);
       setDepAssetId('');
       setDepAmountInput('');
@@ -419,7 +425,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.createBudget(createBgtForm);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Bütçe oluşturuldu.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.bgSaved);
       setShowCreateBgtModal(false);
       setCreateBgtForm({ budgetTypeId: 'OPERATING_BUDGET', comments: '' });
       fetchBudgets();
@@ -435,7 +441,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.createBudgetItem(createBgtItemForm);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Bütçe kalemi eklendi.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.bgItemAdded);
       setShowAddBgtItemModal(false);
       if (selectedBgtDetail) {
         handleOpenBgtDetail(selectedBgtDetail.budget.budgetId);
@@ -452,7 +458,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.setBudgetStatus(budgetId, statusId);
-      triggerSuccess(res._EVENT_MESSAGE_ || `Bütçe durumu güncellendi: ${statusId}`);
+      triggerSuccess(res._EVENT_MESSAGE_ || `${t.messages.bgStatusUpdated}: ${statusId}`);
       if (selectedBgtDetail && selectedBgtDetail.budget.budgetId === budgetId) {
         handleOpenBgtDetail(budgetId);
       }
@@ -485,7 +491,7 @@ export const AdvancedAccounting: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.createAgreement(createAgrForm);
-      triggerSuccess(res._EVENT_MESSAGE_ || 'Sözleşme oluşturuldu.');
+      triggerSuccess(res._EVENT_MESSAGE_ || t.messages.agSaved);
       setShowCreateAgrModal(false);
       setCreateAgrForm({
         agreementTypeId: 'SALES_AGREEMENT',
@@ -504,22 +510,28 @@ export const AdvancedAccounting: React.FC = () => {
 
   // Format Helpers
   const fmt = (val: number | undefined, curr = 'USD') => {
-    if (val === undefined || isNaN(val)) return '0.00';
-    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ' + curr;
+    if (val === undefined || isNaN(val)) return '0.00 ' + curr;
+    return (
+      new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(val) +
+      ' ' +
+      curr
+    );
   };
 
   return (
     <div className="space-y-6 w-full max-w-[1400px] mx-auto">
-      
       {/* HEADER */}
       <div className="ds-page-header">
         <div>
           <h1 className="ds-page-title">
             <Layers className="text-indigo-400" size={26} />
-            İleri Düzey Muhasebe (Advanced Accounting)
+            {t.title}
           </h1>
           <p className="ds-page-subtitle">
-            Cari Limitler (Billing Accounts), Duran Varlıklar (Fixed Assets), Bütçeler (Budgets) ve Sözleşmeler (Agreements)
+            {t.subtitle}
           </p>
         </div>
 
@@ -534,7 +546,7 @@ export const AdvancedAccounting: React.FC = () => {
             className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Yenile
+            {tc.refresh}
           </button>
 
           {activeTab === 'billing-accounts' && (
@@ -543,7 +555,7 @@ export const AdvancedAccounting: React.FC = () => {
               className="ds-btn-primary"
             >
               <Plus size={16} />
-              Yeni Cari Limit Tanımla
+              {t.billingAccounts.newAccount}
             </button>
           )}
 
@@ -553,7 +565,7 @@ export const AdvancedAccounting: React.FC = () => {
               className="ds-btn-primary"
             >
               <Plus size={16} />
-              Yeni Duran Varlık Ekle
+              {t.fixedAssets.newAsset}
             </button>
           )}
 
@@ -563,7 +575,7 @@ export const AdvancedAccounting: React.FC = () => {
               className="ds-btn-primary"
             >
               <Plus size={16} />
-              Yeni Bütçe Oluştur
+              {t.budgets.newBudget}
             </button>
           )}
 
@@ -573,7 +585,7 @@ export const AdvancedAccounting: React.FC = () => {
               className="ds-btn-primary"
             >
               <Plus size={16} />
-              Yeni Sözleşme Ekle
+              {t.agreements.newAgreement}
             </button>
           )}
         </div>
@@ -602,7 +614,7 @@ export const AdvancedAccounting: React.FC = () => {
           className={`ds-tab flex items-center gap-2 ${activeTab === 'billing-accounts' ? 'ds-tab-active' : ''}`}
         >
           <Landmark size={18} />
-          Cari Kredi Limitleri (Billing Accounts)
+          {t.tabs.billingAccounts}
           <span className="ds-badge ds-badge-slate ml-1">
             {totalBaCount}
           </span>
@@ -613,7 +625,7 @@ export const AdvancedAccounting: React.FC = () => {
           className={`ds-tab flex items-center gap-2 ${activeTab === 'fixed-assets' ? 'ds-tab-active' : ''}`}
         >
           <Building2 size={18} />
-          Duran Varlıklar & Amortisman (Fixed Assets)
+          {t.tabs.fixedAssets}
           <span className="ds-badge ds-badge-slate ml-1">
             {totalFaCount}
           </span>
@@ -624,7 +636,7 @@ export const AdvancedAccounting: React.FC = () => {
           className={`ds-tab flex items-center gap-2 ${activeTab === 'budgets' ? 'ds-tab-active' : ''}`}
         >
           <BarChart3 size={18} />
-          Bütçeler (Budgets)
+          {t.tabs.budgets}
           <span className="ds-badge ds-badge-slate ml-1">
             {totalBgtCount}
           </span>
@@ -635,7 +647,7 @@ export const AdvancedAccounting: React.FC = () => {
           className={`ds-tab flex items-center gap-2 ${activeTab === 'agreements' ? 'ds-tab-active' : ''}`}
         >
           <Briefcase size={18} />
-          Sözleşmeler (Agreements)
+          {t.tabs.agreements}
           <span className="ds-badge ds-badge-slate ml-1">
             {totalAgrCount}
           </span>
@@ -645,76 +657,55 @@ export const AdvancedAccounting: React.FC = () => {
       {/* ========================================== */}
       {/* TAB 1: BILLING ACCOUNTS CONTENT            */}
       {/* ========================================== */}
-
-
-      {/* ========================================== */}
-      {/* TAB 1: BILLING ACCOUNTS CONTENT            */}
-      {/* ========================================== */}
       {activeTab === 'billing-accounts' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+        <div className="space-y-6">
           {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Kredi Limiti</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#818cf8' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="ds-stat-card border-l-4 border-l-indigo-500">
+              <div className="ds-stat-label">{t.billingAccounts.totalLimit}</div>
+              <div className="ds-stat-value text-indigo-400">
                 {fmt(totalBaLimit)}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Kullanılan / Faturalanan</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#fb7185' }}>
+            <div className="ds-stat-card border-l-4 border-l-rose-500">
+              <div className="ds-stat-label">{t.billingAccounts.billed}</div>
+              <div className="ds-stat-value text-rose-400">
                 {fmt(totalBaBilled)}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Kullanılabilir Kalan Bakiye</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#4ade80' }}>
+            <div className="ds-stat-card border-l-4 border-l-emerald-500">
+              <div className="ds-stat-label">{t.billingAccounts.totalAvailable}</div>
+              <div className="ds-stat-value text-emerald-400">
                 {fmt(totalBaAvailable)}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Tanımlı Hesap Sayısı</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem' }}>
+            <div className="ds-stat-card border-l-4 border-l-slate-500">
+              <div className="ds-stat-label">{t.billingAccounts.accountCount}</div>
+              <div className="ds-stat-value text-white">
                 {totalBaCount}
               </div>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Hesap No veya açıklama ara..."
+                placeholder={t.billingAccounts.searchPlaceholder}
                 value={baSearch}
                 onChange={e => setBaSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.5rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={baPartyFilter}
               onChange={e => setBaPartyFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select min-w-[240px]"
             >
-              <option value="">Tüm Müşteriler / Cariler</option>
+              <option value="">{t.billingAccounts.allParties}</option>
               {metadata?.parties.map(p => (
                 <option key={p.partyId} value={p.partyId}>{p.partyName} ({p.partyId})</option>
               ))}
@@ -722,70 +713,68 @@ export const AdvancedAccounting: React.FC = () => {
           </div>
 
           {/* Accounts Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap No</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Müşteri / Cari</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Açıklama</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Kredi Limiti</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Kullanılan</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Kalan Limit</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Faturalar</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlem</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{t.billingAccounts.accountId}</th>
+                    <th className="ds-th">{t.billingAccounts.customer}</th>
+                    <th className="ds-th">{tc.description}</th>
+                    <th className="ds-th-right">{t.billingAccounts.limit}</th>
+                    <th className="ds-th-right">{t.billingAccounts.billed}</th>
+                    <th className="ds-th-right">{t.billingAccounts.available}</th>
+                    <th className="ds-th text-center">{t.billingAccounts.invoicesCharged}</th>
+                    <th className="ds-th-right">{tc.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {billingAccounts.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Cari hesap kredi limiti kaydı bulunamadı.
+                      <td colSpan={8} className="ds-empty py-12 text-center text-slate-400">
+                        {t.billingAccounts.noAccounts}
                       </td>
                     </tr>
                   ) : (
                     billingAccounts.map(ba => (
-                      <tr key={ba.billingAccountId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      <tr key={ba.billingAccountId} className="ds-tbody-row">
+                        <td className="ds-td font-bold text-indigo-400">
                           #{ba.billingAccountId}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ fontWeight: 600 }}>{ba.customerName || ba.partyId || '-'}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ba.roleTypeId}</div>
+                        <td className="ds-td">
+                          <div className="font-semibold text-white">{ba.customerName || ba.partyId || '-'}</div>
+                          <div className="text-xs text-slate-400">{ba.roleTypeId}</div>
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                        <td className="ds-td-muted">
                           {ba.description || '-'}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: '#818cf8' }}>
+                        <td className="ds-td-right font-bold text-indigo-400">
                           {fmt(ba.accountLimit, ba.accountCurrencyUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#fb7185' }}>
+                        <td className="ds-td-right text-rose-400">
                           {fmt(ba.accountBalance, ba.accountCurrencyUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>
+                        <td className="ds-td-right font-bold text-emerald-400">
                           {fmt(ba.availableBalance, ba.accountCurrencyUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                          <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem' }}>
-                            {ba.invoiceCount} fatura
+                        <td className="ds-td text-center">
+                          <span className="ds-badge ds-badge-slate">
+                            {ba.invoiceCount} {isTr ? 'fatura' : 'invoices'}
                           </span>
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                        <td className="ds-td-right">
+                          <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => handleOpenBaDetail(ba.billingAccountId)}
-                              className="glass-card"
-                              title="Detay Görüntüle"
-                              style={{ padding: '0.4rem', cursor: 'pointer', color: '#818cf8' }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
+                              title={t.billingAccounts.detail}
                             >
                               <Eye size={15} />
                             </button>
                             <button
                               onClick={() => { setEditingBa(ba); setShowEditBaModal(true); }}
-                              className="glass-card"
-                              title="Limiti Düzenle"
-                              style={{ padding: '0.4rem', cursor: 'pointer', color: '#38bdf8' }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700/50 transition-colors"
+                              title={t.billingAccounts.editAccount}
                             >
                               <Edit3 size={15} />
                             </button>
@@ -805,133 +794,116 @@ export const AdvancedAccounting: React.FC = () => {
       {/* TAB 2: FIXED ASSETS CONTENT                */}
       {/* ========================================== */}
       {activeTab === 'fixed-assets' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+        <div className="space-y-6">
           {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Varlık Sayısı</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="ds-stat-card border-l-4 border-l-slate-500">
+              <div className="ds-stat-label">{t.fixedAssets.totalAssets}</div>
+              <div className="ds-stat-value text-white">
                 {totalFaCount}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Alış Maliyeti</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#818cf8' }}>
+            <div className="ds-stat-card border-l-4 border-l-indigo-500">
+              <div className="ds-stat-label">{t.fixedAssets.totalCost}</div>
+              <div className="ds-stat-value text-indigo-400">
                 {fmt(totalFaCost)}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Birikmiş Amortisman</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#fb7185' }}>
+            <div className="ds-stat-card border-l-4 border-l-rose-500">
+              <div className="ds-stat-label">{t.fixedAssets.accumDepreciation}</div>
+              <div className="ds-stat-value text-rose-400">
                 {fmt(totalFaDep)}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Net Defter Değeri (NBV)</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#4ade80' }}>
+            <div className="ds-stat-card border-l-4 border-l-emerald-500">
+              <div className="ds-stat-label">{t.fixedAssets.totalNbv}</div>
+              <div className="ds-stat-value text-emerald-400">
                 {fmt(totalFaNbv)}
               </div>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Varlık No, Adı veya Seri No ara..."
+                placeholder={t.fixedAssets.searchPlaceholder}
                 value={faSearch}
                 onChange={e => setFaSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.5rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={faTypeFilter}
               onChange={e => setFaTypeFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select min-w-[240px]"
             >
-              <option value="">Tüm Varlık Türleri</option>
-              {metadata?.fixedAssetTypes.map(t => (
-                <option key={t.fixedAssetTypeId} value={t.fixedAssetTypeId}>{t.description}</option>
+              <option value="">{t.fixedAssets.allTypes}</option>
+              {metadata?.fixedAssetTypes.map(tItem => (
+                <option key={tItem.fixedAssetTypeId} value={tItem.fixedAssetTypeId}>{tItem.description}</option>
               ))}
             </select>
           </div>
 
           {/* Assets Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Varlık No</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Varlık Adı</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tür</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Maliyet</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Amortisman</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Net Defter Değeri</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Alış Tarihi</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlem</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{t.fixedAssets.assetId}</th>
+                    <th className="ds-th">{t.fixedAssets.name}</th>
+                    <th className="ds-th">{t.fixedAssets.type}</th>
+                    <th className="ds-th-right">{t.fixedAssets.cost}</th>
+                    <th className="ds-th-right">{t.fixedAssets.depreciation}</th>
+                    <th className="ds-th-right">{t.fixedAssets.nbv}</th>
+                    <th className="ds-th">{t.fixedAssets.purchaseDate}</th>
+                    <th className="ds-th-right">{tc.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {fixedAssets.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Kayıtlı duran varlık bulunamadı.
+                      <td colSpan={8} className="ds-empty py-12 text-center text-slate-400">
+                        {t.fixedAssets.noAssets}
                       </td>
                     </tr>
                   ) : (
                     fixedAssets.map(fa => (
-                      <tr key={fa.fixedAssetId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      <tr key={fa.fixedAssetId} className="ds-tbody-row">
+                        <td className="ds-td font-bold text-indigo-400">
                           {fa.fixedAssetId}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ fontWeight: 600 }}>{fa.fixedAssetName}</div>
-                          {fa.serialNumber && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SN: {fa.serialNumber}</div>}
+                        <td className="ds-td">
+                          <div className="font-semibold text-white">{fa.fixedAssetName}</div>
+                          {fa.serialNumber && <div className="text-xs text-slate-400">SN: {fa.serialNumber}</div>}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+                        <td className="ds-td">
+                          <span className="ds-badge ds-badge-slate">
                             {fa.fixedAssetTypeDesc}
                           </span>
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700 }}>
+                        <td className="ds-td-right font-bold text-white">
                           {fmt(fa.purchaseCost, fa.purchaseCostUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#fb7185' }}>
+                        <td className="ds-td-right text-rose-400">
                           {fmt(fa.depreciation, fa.purchaseCostUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>
+                        <td className="ds-td-right font-bold text-emerald-400">
                           {fmt(fa.netBookValue, fa.purchaseCostUomId)}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                        <td className="ds-td-muted">
                           {fa.dateAcquired ? fa.dateAcquired.substring(0, 10) : '-'}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                        <td className="ds-td-right">
+                          <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => handleOpenFaDetail(fa.fixedAssetId)}
-                              className="glass-card"
-                              title="Detay & Amortisman Tablosu"
-                              style={{ padding: '0.4rem', cursor: 'pointer', color: '#818cf8' }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
+                              title={t.fixedAssets.detail}
                             >
                               <Eye size={15} />
                             </button>
@@ -941,17 +913,15 @@ export const AdvancedAccounting: React.FC = () => {
                                 setDepAmountInput('');
                                 setShowDepModal(true);
                               }}
-                              className="glass-card"
-                              title="Amortisman Ayır / Hesapla"
-                              style={{ padding: '0.4rem', cursor: 'pointer', color: '#fb7185' }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-rose-400 hover:text-rose-300 border border-slate-700/50 transition-colors"
+                              title={t.fixedAssets.calculateDepreciation}
                             >
                               <TrendingUp size={15} />
                             </button>
                             <button
                               onClick={() => { setEditingFa(fa); setShowEditFaModal(true); }}
-                              className="glass-card"
-                              title="Düzenle"
-                              style={{ padding: '0.4rem', cursor: 'pointer', color: '#38bdf8' }}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700/50 transition-colors"
+                              title={t.fixedAssets.editAsset}
                             >
                               <Edit3 size={15} />
                             </button>
@@ -971,104 +941,81 @@ export const AdvancedAccounting: React.FC = () => {
       {/* TAB 3: BUDGETS CONTENT                     */}
       {/* ========================================== */}
       {activeTab === 'budgets' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+        <div className="space-y-6">
           {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Bütçe Sayısı</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="ds-stat-card border-l-4 border-l-slate-500">
+              <div className="ds-stat-label">{t.budgets.totalBudgets}</div>
+              <div className="ds-stat-value text-white">
                 {totalBgtCount}
               </div>
             </div>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Bütçelenen Tutar</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#4ade80' }}>
+            <div className="ds-stat-card border-l-4 border-l-emerald-500">
+              <div className="ds-stat-label">{t.budgets.totalAmount}</div>
+              <div className="ds-stat-value text-emerald-400">
                 {fmt(totalBgtAmount)}
               </div>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Bütçe No veya yorum ara..."
+                placeholder={t.budgets.searchPlaceholder}
                 value={bgtSearch}
                 onChange={e => setBgtSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.5rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={bgtTypeFilter}
               onChange={e => setBgtTypeFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select min-w-[200px]"
             >
-              <option value="">Tüm Bütçe Türleri</option>
-              {metadata?.budgetTypes.map(t => (
-                <option key={t.budgetTypeId} value={t.budgetTypeId}>{t.description}</option>
+              <option value="">{t.budgets.allTypes}</option>
+              {metadata?.budgetTypes.map(bType => (
+                <option key={bType.budgetTypeId} value={bType.budgetTypeId}>{bType.description}</option>
               ))}
             </select>
 
             <select
               value={bgtStatusFilter}
               onChange={e => setBgtStatusFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select min-w-[200px]"
             >
-              <option value="">Tüm Durumlar</option>
-              <option value="BG_CREATED">Oluşturuldu (Created)</option>
-              <option value="BG_REVIEWED">İncelendi (Reviewed)</option>
-              <option value="BG_APPROVED">Onaylandı (Approved)</option>
-              <option value="BG_REJECTED">Reddedildi (Rejected)</option>
+              <option value="">{t.budgets.allStatuses}</option>
+              <option value="BG_CREATED">{isTr ? 'Oluşturuldu (Created)' : 'Created'}</option>
+              <option value="BG_REVIEWED">{isTr ? 'İncelendi (Reviewed)' : 'Reviewed'}</option>
+              <option value="BG_APPROVED">{isTr ? 'Onaylandı (Approved)' : 'Approved'}</option>
+              <option value="BG_REJECTED">{isTr ? 'Reddedildi (Rejected)' : 'Rejected'}</option>
             </select>
           </div>
 
           {/* Budgets Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Bütçe No</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tür</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mali Dönem</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Açıklama</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Kalem Sayısı</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>Toplam Tutar</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Durum</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlem</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{t.budgets.budgetId}</th>
+                    <th className="ds-th">{t.budgets.budgetType}</th>
+                    <th className="ds-th">{t.budgets.period}</th>
+                    <th className="ds-th">{tc.description}</th>
+                    <th className="ds-th text-center">{t.budgets.itemsCount}</th>
+                    <th className="ds-th-right">{t.budgets.amount}</th>
+                    <th className="ds-th text-center">{t.budgets.status}</th>
+                    <th className="ds-th-right">{tc.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {budgets.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Kayıtlı bütçe bulunamadı.
+                      <td colSpan={8} className="ds-empty py-12 text-center text-slate-400">
+                        {t.budgets.noBudgets}
                       </td>
                     </tr>
                   ) : (
@@ -1076,51 +1023,46 @@ export const AdvancedAccounting: React.FC = () => {
                       const isApproved = b.statusId === 'BG_APPROVED';
                       const isReviewed = b.statusId === 'BG_REVIEWED';
                       return (
-                        <tr key={b.budgetId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
+                        <tr key={b.budgetId} className="ds-tbody-row">
+                          <td className="ds-td font-bold text-indigo-400">
                             {b.budgetId}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', fontWeight: 600 }}>
+                          <td className="ds-td font-semibold text-white">
                             {b.budgetTypeDesc}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                          <td className="ds-td-muted">
                             {b.periodDesc || '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                          <td className="ds-td-muted">
                             {b.comments || '-'}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem' }}>
-                              {b.itemCount} kalem
+                          <td className="ds-td text-center">
+                            <span className="ds-badge ds-badge-slate">
+                              {b.itemCount} {isTr ? 'kalem' : 'items'}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>
+                          <td className="ds-td-right font-bold text-emerald-400">
                             {fmt(b.totalAmount)}
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '20px',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              background: isApproved ? 'rgba(34, 197, 94, 0.15)' : isReviewed ? 'rgba(56, 189, 248, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                              color: isApproved ? '#4ade80' : isReviewed ? '#38bdf8' : '#facc15'
-                            }}>
+                          <td className="ds-td text-center">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              isApproved
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                                : isReviewed
+                                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
+                                : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                            }`}>
                               {isApproved ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                               {b.statusDesc}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                          <td className="ds-td-right">
                             <button
                               onClick={() => handleOpenBgtDetail(b.budgetId)}
-                              className="btn-primary"
-                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                              className="ds-btn-primary py-1 px-2.5 text-xs inline-flex items-center gap-1.5"
                             >
-                              <Eye size={14} />
-                              Kalemler & Detay
+                              <Eye size={13} />
+                              {t.budgets.detail}
                             </button>
                           </td>
                         </tr>
@@ -1138,110 +1080,93 @@ export const AdvancedAccounting: React.FC = () => {
       {/* TAB 4: AGREEMENTS CONTENT                  */}
       {/* ========================================== */}
       {activeTab === 'agreements' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+        <div className="space-y-6">
           {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Toplam Sözleşme Sayısı</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="ds-stat-card border-l-4 border-l-slate-500">
+              <div className="ds-stat-label">{t.agreements.totalAgreements}</div>
+              <div className="ds-stat-value text-white">
                 {totalAgrCount}
               </div>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="ds-card p-4 flex gap-4 flex-wrap items-center">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Sözleşme No veya açıklama ara..."
+                placeholder={t.agreements.searchPlaceholder}
                 value={agrSearch}
                 onChange={e => setAgrSearch(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 1rem 0.625rem 2.5rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '0.875rem'
-                }}
+                className="ds-input pl-10"
               />
             </div>
 
             <select
               value={agrTypeFilter}
               onChange={e => setAgrTypeFilter(e.target.value)}
-              style={{
-                padding: '0.625rem 1rem',
-                background: '#1e293b',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.875rem'
-              }}
+              className="ds-select min-w-[240px]"
             >
-              <option value="">Tüm Sözleşme Türleri</option>
-              {metadata?.agreementTypes.map(t => (
-                <option key={t.agreementTypeId} value={t.agreementTypeId}>{t.description}</option>
+              <option value="">{t.agreements.allTypes}</option>
+              {metadata?.agreementTypes.map(aType => (
+                <option key={aType.agreementTypeId} value={aType.agreementTypeId}>{aType.description}</option>
               ))}
             </select>
           </div>
 
           {/* Agreements Table */}
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="ds-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Sözleşme No</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tür</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Veren Taraf</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Alan Taraf</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Açıklama</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Geçerlilik Tarihleri</th>
-                    <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlem</th>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{t.agreements.agreementId}</th>
+                    <th className="ds-th">{t.agreements.type}</th>
+                    <th className="ds-th">{t.agreements.partyFrom}</th>
+                    <th className="ds-th">{t.agreements.partyTo}</th>
+                    <th className="ds-th">{tc.description}</th>
+                    <th className="ds-th">{isTr ? 'Geçerlilik Tarihleri' : 'Validity Dates'}</th>
+                    <th className="ds-th-right">{tc.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {agreements.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Kayıtlı sözleşme bulunamadı.
+                      <td colSpan={7} className="ds-empty py-12 text-center text-slate-400">
+                        {t.agreements.noAgreements}
                       </td>
                     </tr>
                   ) : (
                     agreements.map(ag => (
-                      <tr key={ag.agreementId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      <tr key={ag.agreementId} className="ds-tbody-row">
+                        <td className="ds-td font-bold text-indigo-400">
                           {ag.agreementId}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+                        <td className="ds-td">
+                          <span className="ds-badge ds-badge-slate">
                             {ag.agreementTypeDesc}
                           </span>
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ fontWeight: 600 }}>{ag.partyFromDesc || ag.partyIdFrom}</div>
+                        <td className="ds-td font-semibold text-white">
+                          {ag.partyFromDesc || ag.partyIdFrom}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ fontWeight: 600 }}>{ag.partyToDesc || ag.partyIdTo}</div>
+                        <td className="ds-td font-semibold text-white">
+                          {ag.partyToDesc || ag.partyIdTo}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)' }}>
+                        <td className="ds-td-muted">
                           {ag.description || '-'}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                          {ag.fromDate ? ag.fromDate.substring(0, 10) : 'Başlangıç yok'}
-                          {ag.thruDate ? ` - ${ag.thruDate.substring(0, 10)}` : ' (Süresiz)'}
+                        <td className="ds-td-muted text-xs">
+                          {ag.fromDate ? ag.fromDate.substring(0, 10) : (isTr ? 'Başlangıç yok' : 'No start')}
+                          {ag.thruDate ? ` - ${ag.thruDate.substring(0, 10)}` : (isTr ? ' (Süresiz)' : ' (Indefinite)')}
                         </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                        <td className="ds-td-right">
                           <button
                             onClick={() => handleOpenAgrDetail(ag.agreementId)}
-                            className="glass-card"
-                            title="Detay Görüntüle"
-                            style={{ padding: '0.4rem', cursor: 'pointer', color: '#818cf8' }}
+                            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
+                            title={t.agreements.detail}
                           >
                             <Eye size={15} />
                           </button>
@@ -1260,37 +1185,42 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 1: CREATE BILLING ACCOUNT            */}
       {/* ========================================== */}
       {showCreateBaModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '540px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Landmark size={20} color="var(--primary)" />
-                Yeni Cari Kredi Limiti Tanımla
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Landmark size={20} className="text-indigo-400" />
+                {t.billingAccounts.newAccount}
               </h2>
-              <button onClick={() => setShowCreateBaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowCreateBaModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateBillingAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateBillingAccount} className="space-y-4">
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Müşteri / Cari Seçimi
+                <label className="ds-label">
+                  {t.billingAccounts.customer}
                 </label>
                 <select
                   value={createBaForm.partyId}
                   onChange={e => setCreateBaForm({ ...createBaForm, partyId: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-select"
                 >
-                  <option value="">Seçiniz (İsteğe Bağlı)</option>
+                  <option value="">{isTr ? 'Seçiniz (İsteğe Bağlı)' : 'Select (Optional)'}</option>
                   {metadata?.parties.map(p => (
                     <option key={p.partyId} value={p.partyId}>{p.partyName} ({p.partyId})</option>
                   ))}
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Kredi Limiti *
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="ds-label">
+                    {t.billingAccounts.limit} *
                   </label>
                   <input
                     type="number"
@@ -1298,17 +1228,17 @@ export const AdvancedAccounting: React.FC = () => {
                     required
                     value={createBaForm.accountLimit}
                     onChange={e => setCreateBaForm({ ...createBaForm, accountLimit: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input font-mono"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Para Birimi
+                  <label className="ds-label">
+                    {t.billingAccounts.currency}
                   </label>
                   <select
                     value={createBaForm.accountCurrencyUomId}
                     onChange={e => setCreateBaForm({ ...createBaForm, accountCurrencyUomId: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-select"
                   >
                     {metadata?.currencies.map(c => (
                       <option key={c.uomId} value={c.uomId}>{c.uomId}</option>
@@ -1318,23 +1248,33 @@ export const AdvancedAccounting: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Açıklama
+                <label className="ds-label">
+                  {tc.description}
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: 2026 Yıllık Ticari Kredi Limiti"
+                  placeholder={isTr ? 'Örn: 2026 Yıllık Ticari Kredi Limiti' : 'e.g. 2026 Annual Credit Limit'}
                   value={createBaForm.description || ''}
                   onChange={e => setCreateBaForm({ ...createBaForm, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowCreateBaModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBaModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Kaydet
+                  {tc.save}
                 </button>
               </div>
             </form>
@@ -1346,77 +1286,93 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 2: BILLING ACCOUNT DETAIL DRAWER     */}
       {/* ========================================== */}
       {showBaDetailModal && selectedBaDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '780px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Landmark size={20} color="var(--primary)" />
-                  Cari Hesap Kredi Detayı: #{selectedBaDetail.account.billingAccountId}
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Landmark size={20} className="text-indigo-400" />
+                  {t.billingAccounts.detail}: #{selectedBaDetail.account.billingAccountId}
                 </h2>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{selectedBaDetail.account.description || 'Açıklama belirtilmemiş'}</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  {selectedBaDetail.account.description || (isTr ? 'Açıklama belirtilmemiş' : 'No description provided')}
+                </div>
               </div>
-              <button onClick={() => setShowBaDetailModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowBaDetailModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* Financial Summary */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div className="glass-card" style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.05)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kredi Limiti</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#818cf8', marginTop: '0.2rem' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="ds-stat-card border-l-4 border-l-indigo-500">
+                <div className="ds-stat-label">{t.billingAccounts.limit}</div>
+                <div className="ds-stat-value text-indigo-400">
                   {fmt(selectedBaDetail.account.accountLimit, selectedBaDetail.account.accountCurrencyUomId)}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kullanılan / Bakiye</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fb7185', marginTop: '0.2rem' }}>
+              <div className="ds-stat-card border-l-4 border-l-rose-500">
+                <div className="ds-stat-label">{t.billingAccounts.billed}</div>
+                <div className="ds-stat-value text-rose-400">
                   {fmt(selectedBaDetail.account.accountBalance, selectedBaDetail.account.accountCurrencyUomId)}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.05)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kalan Kullanılabilir</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ade80', marginTop: '0.2rem' }}>
+              <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                <div className="ds-stat-label">{t.billingAccounts.available}</div>
+                <div className="ds-stat-value text-emerald-400">
                   {fmt(selectedBaDetail.account.availableBalance, selectedBaDetail.account.accountCurrencyUomId)}
                 </div>
               </div>
             </div>
 
             {/* Linked Invoices */}
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FileText size={16} color="var(--primary)" />
-              İlişkili Faturalar ({selectedBaDetail.invoices.length})
-            </h3>
-            {selectedBaDetail.invoices.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Bu kredi hesabına bağlı kesilmiş fatura bulunmamaktadır.
-              </div>
-            ) : (
-              <div className="glass-card" style={{ overflow: 'hidden', marginBottom: '1.5rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Fatura No</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Tarih</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'center' }}>Durum</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Toplam Tutar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedBaDetail.invoices.map(inv => (
-                      <tr key={inv.invoiceId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '0.6rem 1rem', fontWeight: 600, color: 'var(--primary)' }}>#{inv.invoiceId}</td>
-                        <td style={{ padding: '0.6rem 1rem' }}>{inv.invoiceDate?.substring(0, 10)}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'center' }}>{inv.statusId}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'right', fontWeight: 700 }}>{fmt(inv.total, inv.currencyUomId)}</td>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <FileText size={16} className="text-indigo-400" />
+                {isTr ? 'İlişkili Faturalar' : 'Linked Invoices'} ({selectedBaDetail.invoices.length})
+              </h3>
+              {selectedBaDetail.invoices.length === 0 ? (
+                <div className="ds-empty py-6 text-center text-slate-400 text-sm">
+                  {isTr ? 'Bu kredi hesabına bağlı kesilmiş fatura bulunmamaktadır.' : 'No invoices linked to this billing account.'}
+                </div>
+              ) : (
+                <div className="ds-card overflow-hidden">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{isTr ? 'Fatura No' : 'Invoice #'}</th>
+                        <th className="ds-th">{tc.date}</th>
+                        <th className="ds-th text-center">{tc.status}</th>
+                        <th className="ds-th-right">{tc.amount}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {selectedBaDetail.invoices.map(inv => (
+                        <tr key={inv.invoiceId} className="ds-tbody-row">
+                          <td className="ds-td font-semibold text-indigo-400">#{inv.invoiceId}</td>
+                          <td className="ds-td-muted">{inv.invoiceDate?.substring(0, 10)}</td>
+                          <td className="ds-td text-center">
+                            <span className="ds-badge ds-badge-slate">{inv.statusId}</span>
+                          </td>
+                          <td className="ds-td-right font-bold text-white">{fmt(inv.total, inv.currencyUomId)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button onClick={() => setShowBaDetailModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Kapat</button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowBaDetailModal(false)}
+                className="ds-btn-secondary"
+              >
+                {tc.close}
+              </button>
             </div>
           </div>
         </div>
@@ -1426,118 +1382,133 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 3: CREATE FIXED ASSET                */}
       {/* ========================================== */}
       {showCreateFaModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '580px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building2 size={20} color="var(--primary)" />
-                Yeni Duran Varlık Kartı Ekle
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Building2 size={20} className="text-indigo-400" />
+                {t.fixedAssets.newAsset}
               </h2>
-              <button onClick={() => setShowCreateFaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowCreateFaModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateFixedAsset} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <form onSubmit={handleCreateFixedAsset} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Varlık No (İsteğe Bağlı)
+                  <label className="ds-label">
+                    {t.fixedAssets.assetId} ({isTr ? 'İsteğe Bağlı' : 'Optional'})
                   </label>
                   <input
                     type="text"
-                    placeholder="Otomatik veya örn: DEMO_PC_01"
+                    placeholder={isTr ? 'Otomatik veya örn: DEMO_PC_01' : 'Auto or e.g. DEMO_PC_01'}
                     value={createFaForm.fixedAssetId || ''}
                     onChange={e => setCreateFaForm({ ...createFaForm, fixedAssetId: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Varlık Türü *
+                  <label className="ds-label">
+                    {t.fixedAssets.type} *
                   </label>
                   <select
                     value={createFaForm.fixedAssetTypeId}
                     onChange={e => setCreateFaForm({ ...createFaForm, fixedAssetTypeId: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-select"
                   >
-                    {metadata?.fixedAssetTypes.map(t => (
-                      <option key={t.fixedAssetTypeId} value={t.fixedAssetTypeId}>{t.description}</option>
+                    {metadata?.fixedAssetTypes.map(fType => (
+                      <option key={fType.fixedAssetTypeId} value={fType.fixedAssetTypeId}>{fType.description}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Varlık Adı *
+                <label className="ds-label">
+                  {t.fixedAssets.name} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Dell PowerEdge Sunucu"
+                  placeholder={isTr ? 'Örn: Dell PowerEdge Sunucu' : 'e.g. Dell PowerEdge Server'}
                   value={createFaForm.fixedAssetName}
                   onChange={e => setCreateFaForm({ ...createFaForm, fixedAssetName: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Alış Maliyeti
+                  <label className="ds-label">
+                    {t.fixedAssets.cost}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={createFaForm.purchaseCost || 0}
                     onChange={e => setCreateFaForm({ ...createFaForm, purchaseCost: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input font-mono"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Hurda Değeri (Salvage)
+                  <label className="ds-label">
+                    {t.fixedAssets.salvageValue}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={createFaForm.salvageValue || 0}
                     onChange={e => setCreateFaForm({ ...createFaForm, salvageValue: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input font-mono"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Seri Numarası
+                  <label className="ds-label">
+                    {t.fixedAssets.serialNumber}
                   </label>
                   <input
                     type="text"
-                    placeholder="Örn: SN-987654321"
+                    placeholder={isTr ? 'Örn: SN-987654321' : 'e.g. SN-987654321'}
                     value={createFaForm.serialNumber || ''}
                     onChange={e => setCreateFaForm({ ...createFaForm, serialNumber: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Tahmini Faydalı Ömür Sonu
+                  <label className="ds-label">
+                    {isTr ? 'Tahmini Faydalı Ömür Sonu' : 'Expected End of Life'}
                   </label>
                   <input
                     type="date"
                     value={createFaForm.expectedEndOfLife || ''}
                     onChange={e => setCreateFaForm({ ...createFaForm, expectedEndOfLife: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowCreateFaModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateFaModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Kaydet
+                  {tc.save}
                 </button>
               </div>
             </form>
@@ -1549,40 +1520,57 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 4: RECORD DEPRECIATION               */}
       {/* ========================================== */}
       {showDepModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <TrendingUp size={20} color="#fb7185" />
-                Amortisman Payı Kaydet: {depAssetId}
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <TrendingUp size={20} className="text-rose-400" />
+                {t.fixedAssets.calculateDepreciation}: {depAssetId}
               </h2>
-              <button onClick={() => setShowDepModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowDepModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleRecordDepreciation} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                Aşağıya doğrudan amortisman tutarı girebilir veya boş bırakırsanız doğrusal (straight-line) 5 yıllık periyotta hesaplanan 1 yıllık tutarın otomatik işlenmesini sağlayabilirsiniz.
+            <form onSubmit={handleRecordDepreciation} className="space-y-4">
+              <p className="text-sm text-slate-400">
+                {isTr
+                  ? 'Aşağıya doğrudan amortisman tutarı girebilir veya boş bırakırsanız doğrusal (straight-line) 5 yıllık periyotta hesaplanan 1 yıllık tutarın otomatik işlenmesini sağlayabilirsiniz.'
+                  : 'Enter the depreciation amount directly below, or leave it blank to automatically apply the 1-year straight-line depreciation calculated over a 5-year period.'}
               </p>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Amortisman Tutarı (Boş ise otomatik hesaplanır)
+                <label className="ds-label">
+                  {isTr ? 'Amortisman Tutarı (Boş ise otomatik hesaplanır)' : 'Depreciation Amount (Calculated automatically if blank)'}
                 </label>
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="Örn: 5000.00"
+                  placeholder={isTr ? 'Örn: 5000.00' : 'e.g. 5000.00'}
                   value={depAmountInput}
                   onChange={e => setDepAmountInput(e.target.value)}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input font-mono"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowDepModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDepModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Amortismanı İşle
+                  {isTr ? 'Amortismanı İşle' : 'Apply Depreciation'}
                 </button>
               </div>
             </form>
@@ -1594,79 +1582,91 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 5: FIXED ASSET DETAIL & SCHEDULE     */}
       {/* ========================================== */}
       {showFaDetailModal && selectedFaDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Building2 size={20} color="var(--primary)" />
-                  Duran Varlık Kartı: {selectedFaDetail.asset.fixedAssetName} ({selectedFaDetail.asset.fixedAssetId})
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Building2 size={20} className="text-indigo-400" />
+                  {t.fixedAssets.detail}: {selectedFaDetail.asset.fixedAssetName} ({selectedFaDetail.asset.fixedAssetId})
                 </h2>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{selectedFaDetail.asset.fixedAssetTypeDesc}</div>
+                <div className="text-xs text-slate-400 mt-1">{selectedFaDetail.asset.fixedAssetTypeDesc}</div>
               </div>
-              <button onClick={() => setShowFaDetailModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowFaDetailModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* Asset Numbers Summary */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div className="glass-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Alış Maliyeti</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#818cf8', marginTop: '0.2rem' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="ds-stat-card border-l-4 border-l-indigo-500">
+                <div className="ds-stat-label">{t.fixedAssets.cost}</div>
+                <div className="ds-stat-value text-indigo-400">
                   {fmt(selectedFaDetail.asset.purchaseCost, selectedFaDetail.asset.purchaseCostUomId)}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Birikmiş Amortisman</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fb7185', marginTop: '0.2rem' }}>
+              <div className="ds-stat-card border-l-4 border-l-rose-500">
+                <div className="ds-stat-label">{t.fixedAssets.depreciation}</div>
+                <div className="ds-stat-value text-rose-400">
                   {fmt(selectedFaDetail.asset.depreciation, selectedFaDetail.asset.purchaseCostUomId)}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Net Defter Değeri</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ade80', marginTop: '0.2rem' }}>
+              <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                <div className="ds-stat-label">{t.fixedAssets.nbv}</div>
+                <div className="ds-stat-value text-emerald-400">
                   {fmt(selectedFaDetail.asset.netBookValue, selectedFaDetail.asset.purchaseCostUomId)}
                 </div>
               </div>
             </div>
 
             {/* Depreciation Schedule */}
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <TrendingUp size={16} color="var(--primary)" />
-              Doğrusal Amortisman İtfa Projeksiyonu
-            </h3>
-            {selectedFaDetail.depreciationSchedule.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Maliyet girilmediği için itfa tablosu hesaplanamadı.
-              </div>
-            ) : (
-              <div className="glass-card" style={{ overflow: 'hidden', marginBottom: '1.5rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Yıl</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Takvim Yılı</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Yıllık Amortisman</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Kümülatif Amortisman</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Kalan Defter Değeri</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedFaDetail.depreciationSchedule.map(s => (
-                      <tr key={s.yearNum} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '0.6rem 1rem', fontWeight: 600 }}>{s.yearNum}. Yıl</td>
-                        <td style={{ padding: '0.6rem 1rem', color: 'var(--text-muted)' }}>{s.calendarYear}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'right', color: '#fb7185' }}>{fmt(s.depreciationAmount)}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>{fmt(s.accumulatedDepreciation)}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>{fmt(s.endingBookValue)}</td>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <TrendingUp size={16} className="text-indigo-400" />
+                {isTr ? 'Doğrusal Amortisman İtfa Projeksiyonu' : 'Straight-Line Depreciation Schedule'}
+              </h3>
+              {selectedFaDetail.depreciationSchedule.length === 0 ? (
+                <div className="ds-empty py-6 text-center text-slate-400 text-sm">
+                  {isTr ? 'Maliyet girilmediği için itfa tablosu hesaplanamadı.' : 'Depreciation schedule could not be calculated because purchase cost is zero.'}
+                </div>
+              ) : (
+                <div className="ds-card overflow-hidden">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{isTr ? 'Yıl' : 'Year'}</th>
+                        <th className="ds-th">{isTr ? 'Takvim Yılı' : 'Calendar Year'}</th>
+                        <th className="ds-th-right">{isTr ? 'Yıllık Amortisman' : 'Annual Depreciation'}</th>
+                        <th className="ds-th-right">{isTr ? 'Kümülatif Amortisman' : 'Accumulated Depreciation'}</th>
+                        <th className="ds-th-right">{isTr ? 'Kalan Defter Değeri' : 'Ending Book Value'}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {selectedFaDetail.depreciationSchedule.map(s => (
+                        <tr key={s.yearNum} className="ds-tbody-row">
+                          <td className="ds-td font-semibold text-white">{s.yearNum}. {isTr ? 'Yıl' : 'Year'}</td>
+                          <td className="ds-td-muted">{s.calendarYear}</td>
+                          <td className="ds-td-right text-rose-400">{fmt(s.depreciationAmount)}</td>
+                          <td className="ds-td-right text-slate-300">{fmt(s.accumulatedDepreciation)}</td>
+                          <td className="ds-td-right font-bold text-emerald-400">{fmt(s.endingBookValue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button onClick={() => setShowFaDetailModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Kapat</button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowFaDetailModal(false)}
+                className="ds-btn-secondary"
+              >
+                {tc.close}
+              </button>
             </div>
           </div>
         </div>
@@ -1676,42 +1676,47 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 6: CREATE BUDGET                     */}
       {/* ========================================== */}
       {showCreateBgtModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '520px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BarChart3 size={20} color="var(--primary)" />
-                Yeni Bütçe Oluştur
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <BarChart3 size={20} className="text-indigo-400" />
+                {t.budgets.newBudget}
               </h2>
-              <button onClick={() => setShowCreateBgtModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowCreateBgtModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateBudget} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateBudget} className="space-y-4">
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Bütçe Türü *
+                <label className="ds-label">
+                  {t.budgets.budgetType} *
                 </label>
                 <select
                   value={createBgtForm.budgetTypeId}
                   onChange={e => setCreateBgtForm({ ...createBgtForm, budgetTypeId: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-select"
                 >
-                  {metadata?.budgetTypes.map(t => (
-                    <option key={t.budgetTypeId} value={t.budgetTypeId}>{t.description}</option>
+                  {metadata?.budgetTypes.map(bType => (
+                    <option key={bType.budgetTypeId} value={bType.budgetTypeId}>{bType.description}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Mali Dönem (Zaman Periyodu)
+                <label className="ds-label">
+                  {t.budgets.period}
                 </label>
                 <select
                   value={createBgtForm.customTimePeriodId || ''}
                   onChange={e => setCreateBgtForm({ ...createBgtForm, customTimePeriodId: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-select"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="">{tc.select}</option>
                   {metadata?.customTimePeriods.map(p => (
                     <option key={p.customTimePeriodId} value={p.customTimePeriodId}>{p.periodName}</option>
                   ))}
@@ -1719,23 +1724,33 @@ export const AdvancedAccounting: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Açıklama / Başlık
+                <label className="ds-label">
+                  {tc.description}
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: 2026 1. Çeyrek Operasyonel Bütçe"
+                  placeholder={isTr ? 'Örn: 2026 1. Çeyrek Operasyonel Bütçe' : 'e.g. 2026 Q1 Operating Budget'}
                   value={createBgtForm.comments || ''}
                   onChange={e => setCreateBgtForm({ ...createBgtForm, comments: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowCreateBgtModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBgtModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Bütçeyi Oluştur
+                  {isTr ? 'Bütçeyi Oluştur' : 'Create Budget'}
                 </button>
               </div>
             </form>
@@ -1747,52 +1762,54 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 7: BUDGET DETAIL & ITEMS             */}
       {/* ========================================== */}
       {showBgtDetailModal && selectedBgtDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '820px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <BarChart3 size={20} color="var(--primary)" />
-                  Bütçe Detayı: {selectedBgtDetail.budget.budgetId} ({selectedBgtDetail.budget.budgetTypeDesc})
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <BarChart3 size={20} className="text-indigo-400" />
+                  {t.budgets.detail}: {selectedBgtDetail.budget.budgetId} ({selectedBgtDetail.budget.budgetTypeDesc})
                 </h2>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                  {selectedBgtDetail.budget.periodDesc} | Durum: {selectedBgtDetail.budget.statusDesc}
+                <div className="text-xs text-slate-400 mt-1">
+                  {selectedBgtDetail.budget.periodDesc} | {t.budgets.status}: {selectedBgtDetail.budget.statusDesc}
                 </div>
               </div>
-              <button onClick={() => setShowBgtDetailModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowBgtDetailModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* Status Flow Buttons */}
-            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>Durumu İlerlet:</span>
+            <div className="flex gap-2 items-center flex-wrap p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
+              <span className="text-xs font-semibold text-slate-300">{t.budgets.updateStatus}:</span>
               <button
                 onClick={() => handleSetBudgetStatus(selectedBgtDetail.budget.budgetId, 'BG_REVIEWED')}
-                className="glass-card"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', color: '#38bdf8' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 transition-colors cursor-pointer"
               >
-                İncelemeye Al (Reviewed)
+                {isTr ? 'İncelemeye Al (Reviewed)' : 'Mark Reviewed'}
               </button>
               <button
                 onClick={() => handleSetBudgetStatus(selectedBgtDetail.budget.budgetId, 'BG_APPROVED')}
-                className="btn-primary"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
               >
-                Onayla (Approved)
+                {isTr ? 'Onayla (Approved)' : 'Approve'}
               </button>
               <button
                 onClick={() => handleSetBudgetStatus(selectedBgtDetail.budget.budgetId, 'BG_REJECTED')}
-                className="glass-card"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', color: '#fb7185' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
               >
-                Reddet (Rejected)
+                {isTr ? 'Reddet (Rejected)' : 'Reject'}
               </button>
             </div>
 
             {/* Budget Items Header with Add Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Layers size={16} color="var(--primary)" />
-                Bütçe Kalemleri ({selectedBgtDetail.items.length}) | Toplam: {fmt(selectedBgtDetail.budget.totalAmount)}
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <Layers size={16} className="text-indigo-400" />
+                {isTr ? 'Bütçe Kalemleri' : 'Budget Items'} ({selectedBgtDetail.items.length}) | {tc.total}: {fmt(selectedBgtDetail.budget.totalAmount)}
               </h3>
               <button
                 onClick={() => {
@@ -1805,37 +1822,36 @@ export const AdvancedAccounting: React.FC = () => {
                   });
                   setShowAddBgtItemModal(true);
                 }}
-                className="btn-primary"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                className="ds-btn-primary py-1 px-2.5 text-xs flex items-center gap-1.5"
               >
                 <Plus size={14} />
-                Kalem Ekle
+                {t.budgets.addItem}
               </button>
             </div>
 
             {/* Items Table */}
             {selectedBgtDetail.items.length === 0 ? (
-              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Bu bütçeye henüz kalem eklenmemiştir.
+              <div className="ds-empty py-6 text-center text-slate-400 text-sm">
+                {isTr ? 'Bu bütçeye henüz kalem eklenmemiştir.' : 'No items have been added to this budget yet.'}
               </div>
             ) : (
-              <div className="glass-card" style={{ overflow: 'hidden', marginBottom: '1.5rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+              <div className="ds-card overflow-hidden">
+                <table className="ds-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Sıra</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Kalem Türü</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'left' }}>Gerekçe / Amaç</th>
-                      <th style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>Tutar</th>
+                    <tr className="ds-thead-row">
+                      <th className="ds-th">#{isTr ? 'Sıra' : 'Seq'}</th>
+                      <th className="ds-th">{isTr ? 'Kalem Türü' : 'Item Type'}</th>
+                      <th className="ds-th">{t.budgets.purpose}</th>
+                      <th className="ds-th-right">{tc.amount}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedBgtDetail.items.map(item => (
-                      <tr key={item.budgetItemSeqId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '0.6rem 1rem', fontWeight: 600 }}>#{item.budgetItemSeqId}</td>
-                        <td style={{ padding: '0.6rem 1rem' }}>{item.budgetItemTypeDesc}</td>
-                        <td style={{ padding: '0.6rem 1rem', color: 'var(--text-muted)' }}>{item.purpose || item.justification || '-'}</td>
-                        <td style={{ padding: '0.6rem 1rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>
+                      <tr key={item.budgetItemSeqId} className="ds-tbody-row">
+                        <td className="ds-td font-semibold text-indigo-400">#{item.budgetItemSeqId}</td>
+                        <td className="ds-td font-medium text-white">{item.budgetItemTypeDesc}</td>
+                        <td className="ds-td-muted">{item.purpose || item.justification || '-'}</td>
+                        <td className="ds-td-right font-bold text-emerald-400">
                           {fmt(item.amount)}
                         </td>
                       </tr>
@@ -1845,8 +1861,13 @@ export const AdvancedAccounting: React.FC = () => {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button onClick={() => setShowBgtDetailModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Kapat</button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowBgtDetailModal(false)}
+                className="ds-btn-secondary"
+              >
+                {tc.close}
+              </button>
             </div>
           </div>
         </div>
@@ -1856,35 +1877,40 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 8: ADD BUDGET ITEM                   */}
       {/* ========================================== */}
       {showAddBgtItemModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Plus size={20} color="var(--primary)" />
-                Bütçe Kalemi Ekle
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plus size={20} className="text-indigo-400" />
+                {t.budgets.addItem}
               </h2>
-              <button onClick={() => setShowAddBgtItemModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowAddBgtItemModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateBudgetItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateBudgetItem} className="space-y-4">
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Kalem Türü
+                <label className="ds-label">
+                  {isTr ? 'Kalem Türü' : 'Item Type'}
                 </label>
                 <select
                   value={createBgtItemForm.budgetItemTypeId}
                   onChange={e => setCreateBgtItemForm({ ...createBgtItemForm, budgetItemTypeId: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-select"
                 >
-                  {metadata?.budgetItemTypes.map(t => (
-                    <option key={t.budgetItemTypeId} value={t.budgetItemTypeId}>{t.description}</option>
+                  {metadata?.budgetItemTypes.map(bItemType => (
+                    <option key={bItemType.budgetItemTypeId} value={bItemType.budgetItemTypeId}>{bItemType.description}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Tutar *
+                <label className="ds-label">
+                  {tc.amount} *
                 </label>
                 <input
                   type="number"
@@ -1892,28 +1918,38 @@ export const AdvancedAccounting: React.FC = () => {
                   required
                   value={createBgtItemForm.amount}
                   onChange={e => setCreateBgtItemForm({ ...createBgtItemForm, amount: parseFloat(e.target.value) || 0 })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input font-mono"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Amaç (Purpose)
+                <label className="ds-label">
+                  {t.budgets.purpose}
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Donanım Alımı"
+                  placeholder={isTr ? 'Örn: Donanım Alımı' : 'e.g. Hardware Acquisition'}
                   value={createBgtItemForm.purpose || ''}
                   onChange={e => setCreateBgtItemForm({ ...createBgtItemForm, purpose: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowAddBgtItemModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBgtItemModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Kalemi Ekle
+                  {isTr ? 'Kalemi Ekle' : 'Add Item'}
                 </button>
               </div>
             </form>
@@ -1925,57 +1961,62 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 9: CREATE AGREEMENT                  */}
       {/* ========================================== */}
       {showCreateAgrModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '580px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Briefcase size={20} color="var(--primary)" />
-                Yeni Sözleşme Tanımla
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Briefcase size={20} className="text-indigo-400" />
+                {t.agreements.newAgreement}
               </h2>
-              <button onClick={() => setShowCreateAgrModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowCreateAgrModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateAgreement} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <form onSubmit={handleCreateAgreement} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Sözleşme No (İsteğe Bağlı)
+                  <label className="ds-label">
+                    {t.agreements.agreementId} ({isTr ? 'İsteğe Bağlı' : 'Optional'})
                   </label>
                   <input
                     type="text"
-                    placeholder="Otomatik veya örn: AGR-2026-01"
+                    placeholder={isTr ? 'Otomatik veya örn: AGR-2026-01' : 'Auto or e.g. AGR-2026-01'}
                     value={createAgrForm.agreementId || ''}
                     onChange={e => setCreateAgrForm({ ...createAgrForm, agreementId: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Sözleşme Türü *
+                  <label className="ds-label">
+                    {t.agreements.type} *
                   </label>
                   <select
                     value={createAgrForm.agreementTypeId}
                     onChange={e => setCreateAgrForm({ ...createAgrForm, agreementTypeId: e.target.value })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-select"
                   >
-                    {metadata?.agreementTypes.map(t => (
-                      <option key={t.agreementTypeId} value={t.agreementTypeId}>{t.description}</option>
+                    {metadata?.agreementTypes.map(aType => (
+                      <option key={aType.agreementTypeId} value={aType.agreementTypeId}>{aType.description}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Karşı Taraf (Müşteri / Tedarikçi) *
+                <label className="ds-label">
+                  {t.agreements.partyTo} *
                 </label>
                 <select
                   required
                   value={createAgrForm.partyIdTo}
                   onChange={e => setCreateAgrForm({ ...createAgrForm, partyIdTo: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-select"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="">{tc.select}</option>
                   {metadata?.parties.map(p => (
                     <option key={p.partyId} value={p.partyId}>{p.partyName} ({p.partyId})</option>
                   ))}
@@ -1983,23 +2024,33 @@ export const AdvancedAccounting: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Açıklama / Konu
+                <label className="ds-label">
+                  {tc.description}
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Yıllık Ürün Tedarik ve Dağıtım Anlaşması"
+                  placeholder={isTr ? 'Örn: Yıllık Ürün Tedarik ve Dağıtım Anlaşması' : 'e.g. Annual Supply Agreement'}
                   value={createAgrForm.description || ''}
                   onChange={e => setCreateAgrForm({ ...createAgrForm, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowCreateAgrModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateAgrModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Sözleşmeyi Kaydet
+                  {tc.save}
                 </button>
               </div>
             </form>
@@ -2011,68 +2062,83 @@ export const AdvancedAccounting: React.FC = () => {
       {/* MODAL 10: AGREEMENT DETAIL                */}
       {/* ========================================== */}
       {showAgrDetailModal && selectedAgrDetail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '720px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Briefcase size={20} color="var(--primary)" />
-                  Sözleşme #{selectedAgrDetail.agreement.agreementId}: {selectedAgrDetail.agreement.agreementTypeDesc}
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Briefcase size={20} className="text-indigo-400" />
+                  {t.agreements.detail} #{selectedAgrDetail.agreement.agreementId}: {selectedAgrDetail.agreement.agreementTypeDesc}
                 </h2>
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{selectedAgrDetail.agreement.description}</div>
+                <div className="text-xs text-slate-400 mt-1">{selectedAgrDetail.agreement.description}</div>
               </div>
-              <button onClick={() => setShowAgrDetailModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowAgrDetailModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div className="glass-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sözleşmeyi Veren Taraf</div>
-                <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.2rem' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="ds-stat-card">
+                <div className="ds-stat-label">{t.agreements.partyFrom}</div>
+                <div className="text-base font-bold text-white mt-1">
                   {selectedAgrDetail.agreement.partyFromDesc || selectedAgrDetail.agreement.partyIdFrom}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '1rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sözleşmeyi Alan Taraf</div>
-                <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.2rem' }}>
+              <div className="ds-stat-card">
+                <div className="ds-stat-label">{t.agreements.partyTo}</div>
+                <div className="text-base font-bold text-white mt-1">
                   {selectedAgrDetail.agreement.partyToDesc || selectedAgrDetail.agreement.partyIdTo}
                 </div>
               </div>
             </div>
 
             {selectedAgrDetail.agreement.textData && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem' }}>Sözleşme Metni / Notlar:</div>
-                <div className="glass-card" style={{ padding: '1rem', whiteSpace: 'pre-wrap', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-300">{t.agreements.textData}:</div>
+                <div className="ds-card p-4 whitespace-pre-wrap text-sm text-slate-300">
                   {selectedAgrDetail.agreement.textData}
                 </div>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button onClick={() => setShowAgrDetailModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Kapat</button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowAgrDetailModal(false)}
+                className="ds-btn-secondary"
+              >
+                {tc.close}
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* ========================================== */}
-      {/* MODAL: EDIT BILLING ACCOUNT                */}
+      {/* MODAL 11: EDIT BILLING ACCOUNT             */}
       {/* ========================================== */}
       {showEditBaModal && editingBa && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '480px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Edit3 size={20} color="#38bdf8" />
-                Cari Limiti Düzenle: #{editingBa.billingAccountId}
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 size={20} className="text-sky-400" />
+                {t.billingAccounts.editAccount}: #{editingBa.billingAccountId}
               </h2>
-              <button onClick={() => setShowEditBaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowEditBaModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleUpdateBillingAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleUpdateBillingAccount} className="space-y-4">
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Kredi Limiti *
+                <label className="ds-label">
+                  {t.billingAccounts.limit} *
                 </label>
                 <input
                   type="number"
@@ -2080,27 +2146,37 @@ export const AdvancedAccounting: React.FC = () => {
                   required
                   value={editingBa.accountLimit}
                   onChange={e => setEditingBa({ ...editingBa, accountLimit: parseFloat(e.target.value) || 0 })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input font-mono"
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Açıklama
+                <label className="ds-label">
+                  {tc.description}
                 </label>
                 <input
                   type="text"
                   value={editingBa.description || ''}
                   onChange={e => setEditingBa({ ...editingBa, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowEditBaModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditBaModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Güncelle
+                  {tc.save}
                 </button>
               </div>
             </form>
@@ -2109,84 +2185,98 @@ export const AdvancedAccounting: React.FC = () => {
       )}
 
       {/* ========================================== */}
-      {/* MODAL: EDIT FIXED ASSET                    */}
+      {/* MODAL 12: EDIT FIXED ASSET                 */}
       {/* ========================================== */}
       {showEditFaModal && editingFa && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '520px', padding: '1.75rem', background: '#0f172a', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Edit3 size={20} color="#38bdf8" />
-                Varlık Kartını Düzenle: #{editingFa.fixedAssetId}
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 size={20} className="text-sky-400" />
+                {t.fixedAssets.editAsset}: #{editingFa.fixedAssetId}
               </h2>
-              <button onClick={() => setShowEditFaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              <button
+                onClick={() => setShowEditFaModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleUpdateFixedAsset} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleUpdateFixedAsset} className="space-y-4">
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Varlık Adı *
+                <label className="ds-label">
+                  {t.fixedAssets.name} *
                 </label>
                 <input
                   type="text"
                   required
                   value={editingFa.fixedAssetName}
                   onChange={e => setEditingFa({ ...editingFa, fixedAssetName: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Alış Maliyeti
+                  <label className="ds-label">
+                    {t.fixedAssets.cost}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={editingFa.purchaseCost}
                     onChange={e => setEditingFa({ ...editingFa, purchaseCost: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input font-mono"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                    Hurda Değeri
+                  <label className="ds-label">
+                    {t.fixedAssets.salvageValue}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={editingFa.salvageValue}
                     onChange={e => setEditingFa({ ...editingFa, salvageValue: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                    className="ds-input font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
-                  Seri Numarası
+                <label className="ds-label">
+                  {t.fixedAssets.serialNumber}
                 </label>
                 <input
                   type="text"
                   value={editingFa.serialNumber || ''}
                   onChange={e => setEditingFa({ ...editingFa, serialNumber: e.target.value })}
-                  style={{ width: '100%', padding: '0.625rem', background: '#1e293b', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowEditFaModal(false)} className="glass-card" style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}>Vazgeç</button>
-                <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditFaModal(false)}
+                  className="ds-btn-secondary"
+                >
+                  {tc.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="ds-btn-primary flex items-center gap-2"
+                >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                  Güncelle
+                  {tc.save}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };

@@ -125,9 +125,9 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         setAccounts(res.accounts || []);
         setTotalCount(res.totalCount || 0);
       })
-      .catch(err => setError(err.message || 'Hesap planı yüklenemedi.'))
+      .catch(err => setError(err.message || (locale === 'tr' ? 'Hesap planı yüklenemedi.' : 'Could not load chart of accounts.')))
       .finally(() => setLoading(false));
-  }, [viewIndex, viewSize, searchTerm, classFilter, assignedOnly]);
+  }, [viewIndex, viewSize, searchTerm, classFilter, assignedOnly, locale]);
 
   useEffect(() => {
     loadAccounts();
@@ -145,7 +145,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
       setSelectedAccountDetail(res.account);
       setAccountEntries(res.recentEntries || []);
     } catch (err: any) {
-      setError(err.message || 'Hesap detayı yüklenemedi.');
+      setError(err.message || (locale === 'tr' ? 'Hesap detayı yüklenemedi.' : 'Could not load account details.'));
     } finally {
       setDetailLoading(false);
     }
@@ -170,7 +170,10 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
     try {
       const targetAssign = currentAssigned ? 'N' : 'Y';
       await api.assignGlAccountToOrg(glAccountId, targetAssign, 'Company');
-      setSuccessMsg(targetAssign === 'Y' ? 'Hesap şirkete atandı.' : 'Hesap şirket ataması kaldırıldı.');
+      setSuccessMsg(targetAssign === 'Y' 
+        ? (locale === 'tr' ? 'Hesap şirkete atandı.' : 'Account assigned to organization.') 
+        : (locale === 'tr' ? 'Hesap şirket ataması kaldırıldı.' : 'Account organization assignment removed.')
+      );
       setTimeout(() => setSuccessMsg(null), 3000);
       
       // Update local state
@@ -179,7 +182,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         setSelectedAccountDetail(prev => prev ? { ...prev, isAssigned: targetAssign === 'Y' } : null);
       }
     } catch (err: any) {
-      alert('Atama durumu değiştirilemedi: ' + err.message);
+      alert((locale === 'tr' ? 'Atama durumu değiştirilemedi: ' : 'Failed to toggle assignment: ') + err.message);
     }
   };
 
@@ -189,7 +192,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
     setCreateLoading(true);
     try {
       const res = await api.createGlAccount(createForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Yeni hesap başarıyla oluşturuldu.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || (locale === 'tr' ? 'Yeni hesap başarıyla oluşturuldu.' : 'Account created successfully.'));
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowCreateModal(false);
       setCreateForm({
@@ -204,7 +207,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
       });
       loadAccounts();
     } catch (err: any) {
-      alert('Hesap oluşturulurken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Hesap oluşturulurken hata: ' : 'Error creating account: ') + err.message);
     } finally {
       setCreateLoading(false);
     }
@@ -216,12 +219,12 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
     setEditLoading(true);
     try {
       const res = await api.updateGlAccount(editForm);
-      setSuccessMsg(res._EVENT_MESSAGE_ || 'Hesap güncellendi.');
+      setSuccessMsg(res._EVENT_MESSAGE_ || (locale === 'tr' ? 'Hesap güncellendi.' : 'Account updated successfully.'));
       setTimeout(() => setSuccessMsg(null), 3500);
       setShowEditModal(false);
       loadAccounts();
     } catch (err: any) {
-      alert('Hesap güncellenirken hata: ' + err.message);
+      alert((locale === 'tr' ? 'Hesap güncellenirken hata: ' : 'Error updating account: ') + err.message);
     } finally {
       setEditLoading(false);
     }
@@ -240,10 +243,10 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         <div>
           <h1 className="ds-page-title">
             <BookOpen size={26} className="text-indigo-400" />
-            Hesap Planı (Chart of Accounts)
+            {translations.chartOfAccounts.title}
           </h1>
           <p className="ds-page-subtitle">
-            Tekdüzen hesap planı, muhasebe sınıfları ve şirket defter-i kebir hesap tanımları
+            {translations.chartOfAccounts.subtitle}
           </p>
         </div>
 
@@ -253,14 +256,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Yenile
+            {translations.common.refresh}
           </button>
           <button 
             onClick={() => setShowCreateModal(true)} 
             className="ds-btn-primary"
           >
             <Plus size={18} />
-            Yeni Hesap Ekle
+            {translations.chartOfAccounts.newAccount}
           </button>
         </div>
       </div>
@@ -285,34 +288,34 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="ds-stat-card border-l-4 border-l-indigo-500">
           <div className="ds-stat-label flex items-center gap-2">
-            <Layers size={16} /> Toplam Hesap
+            <Layers size={16} /> {translations.chartOfAccounts.registeredAccounts}
           </div>
           <div className="ds-stat-value">{totalCount}</div>
-          <div className="ds-stat-sub">Sistemde kayıtlı hesaplar</div>
+          <div className="ds-stat-sub">{translations.common.all}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-blue-500">
           <div className="ds-stat-label flex items-center gap-2 text-blue-400">
-            <Building size={16} /> Şirkete Atanan
+            <Building size={16} /> {translations.chartOfAccounts.assignedToCompany}
           </div>
           <div className="ds-stat-value text-blue-400">{totalAssignedCount}</div>
-          <div className="ds-stat-sub">Aktif kullanılan hesaplar</div>
+          <div className="ds-stat-sub">{translations.chartOfAccounts.activeUsedAccounts}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-emerald-500">
           <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
-            <ArrowUpRight size={16} /> Varlık Hesapları
+            <ArrowUpRight size={16} /> {translations.chartOfAccounts.assetAccounts}
           </div>
           <div className="ds-stat-value text-emerald-400">{assetCount}</div>
-          <div className="ds-stat-sub">Kasa, banka, alacaklar vb.</div>
+          <div className="ds-stat-sub">{translations.common.details}</div>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-red-500">
           <div className="ds-stat-label flex items-center gap-2 text-red-400">
-            <ArrowDownLeft size={16} /> Gider Hesapları
+            <ArrowDownLeft size={16} /> {translations.chartOfAccounts.expenseAccounts}
           </div>
           <div className="ds-stat-value text-red-400">{expenseCount}</div>
-          <div className="ds-stat-sub">Maliyet ve faaliyet giderleri</div>
+          <div className="ds-stat-sub">{translations.common.details}</div>
         </div>
       </div>
 
@@ -321,12 +324,12 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         {/* Class Pills */}
         <div className="flex gap-2 flex-wrap">
           {[
-            { id: 'ALL', label: 'Tüm Hesaplar' },
-            { id: 'ASSET', label: '1 - Varlıklar (Asset)' },
-            { id: 'LIABILITY', label: '2 - Yabancı Kaynaklar (Liability)' },
-            { id: 'EQUITY', label: '3 - Özkaynaklar (Equity)' },
-            { id: 'REVENUE', label: '4 - Gelirler (Revenue)' },
-            { id: 'EXPENSE', label: '5 - Giderler (Expense)' }
+            { id: 'ALL', label: translations.chartOfAccounts.allAccounts },
+            { id: 'ASSET', label: translations.chartOfAccounts.assetAccounts },
+            { id: 'LIABILITY', label: translations.chartOfAccounts.liabilityAccounts },
+            { id: 'EQUITY', label: translations.chartOfAccounts.equityAccounts },
+            { id: 'REVENUE', label: translations.chartOfAccounts.revenueAccounts },
+            { id: 'EXPENSE', label: translations.chartOfAccounts.expenseAccounts }
           ].map(tab => (
             <button
               key={tab.id}
@@ -362,7 +365,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               onChange={e => { setAssignedOnly(e.target.checked); setViewIndex(0); }}
               className="accent-indigo-500 rounded"
             />
-            <span>{locale === 'tr' ? 'Yalnızca Şirkete Atananlar' : 'Only Assigned to Company'}</span>
+            <span>{translations.chartOfAccounts.onlyAssignedToCompany}</span>
           </label>
         </div>
       </div>
@@ -428,7 +431,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                       <td className="ds-td text-center">
                         <button
                           onClick={() => handleToggleAssign(acc.glAccountId, acc.isAssigned)}
-                          title="Şirket atamasını aç/kapat"
+                          title={translations.chartOfAccounts.assignToggleTitle}
                           className={`inline-flex items-center gap-1.5 ds-badge cursor-pointer ${
                             acc.isAssigned ? 'ds-badge-green' : 'ds-badge-slate'
                           }`}
@@ -436,10 +439,10 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                           {acc.isAssigned ? (
                             <>
                               <CheckCircle2 size={12} />
-                              Atandı
+                              {translations.chartOfAccounts.assignedActive}
                             </>
                           ) : (
-                            <span>Boşta</span>
+                            <span>{translations.chartOfAccounts.unassignedIdle}</span>
                           )}
                         </button>
                       </td>
@@ -448,15 +451,15 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                           <button
                             onClick={() => handleOpenDetail(acc.glAccountId)}
                             className="ds-btn-secondary px-2.5 py-1 text-xs"
-                            title="Hesap Detayı ve Hareketleri"
+                            title={translations.chartOfAccounts.inspect}
                           >
                             <Eye size={14} />
-                            İncele
+                            {translations.chartOfAccounts.inspect}
                           </button>
                           <button
                             onClick={() => handleOpenEdit(acc)}
                             className="ds-btn-secondary px-2.5 py-1 text-xs"
-                            title="Hesabı Düzenle"
+                            title={translations.common.edit}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -473,7 +476,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         {/* Pagination Footer */}
         <div className="flex justify-between items-center px-5 py-4 border-t border-slate-700/50 bg-slate-800/30">
           <span className="text-xs text-slate-400">
-            Toplam <strong>{totalCount}</strong> hesap (Sayfa {viewIndex + 1} / {Math.max(1, Math.ceil(totalCount / viewSize))})
+            {translations.common.total} <strong>{totalCount}</strong> {translations.chartOfAccounts.registeredAccounts.toLowerCase()} ({translations.common.page} {viewIndex + 1} / {Math.max(1, Math.ceil(totalCount / viewSize))})
           </span>
           <div className="flex gap-2">
             <button
@@ -481,14 +484,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               onClick={() => setViewIndex(prev => Math.max(0, prev - 1))}
               className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Önceki
+              {translations.common.previous}
             </button>
             <button
               disabled={(viewIndex + 1) * viewSize >= totalCount}
               onClick={() => setViewIndex(prev => prev + 1)}
               className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Sonraki
+              {translations.common.next}
             </button>
           </div>
         </div>
@@ -501,7 +504,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Plus size={20} className="text-indigo-400" />
-                Yeni Hesap Tanımla
+                {translations.chartOfAccounts.newAccount}
               </h2>
               <button 
                 onClick={() => setShowCreateModal(false)} 
@@ -515,7 +518,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="ds-label">
-                    Hesap Kodu *
+                    {translations.chartOfAccounts.accountCode} *
                   </label>
                   <input
                     type="text"
@@ -529,12 +532,12 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
                 <div className="sm:col-span-2">
                   <label className="ds-label">
-                    Hesap Adı *
+                    {translations.chartOfAccounts.accountName} *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Örn: Garanti Bankası Vadesiz TL"
+                    placeholder={locale === 'tr' ? 'Örn: Garanti Bankası Vadesiz TL' : 'e.g. Operating Checking Account'}
                     value={createForm.accountName}
                     onChange={e => setCreateForm({ ...createForm, accountName: e.target.value })}
                     className="ds-input"
@@ -545,7 +548,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="ds-label">
-                    Hesap Sınıfı (Class) *
+                    {translations.chartOfAccounts.accountClass} *
                   </label>
                   <select
                     value={createForm.glAccountClassId}
@@ -558,14 +561,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                       </option>
                     )) || (
                       <>
-                        <option value="CURRENT_ASSET">Current Asset (Dönen Varlık)</option>
-                        <option value="CASH_EQUIVALENT">Cash and Equivalent (Nakit ve Benzerleri)</option>
-                        <option value="LONGTERM_ASSET">Long Term Asset (Duran Varlık)</option>
-                        <option value="CURRENT_LIABILITY">Current Liability (Kısa Vadeli Yükümlülük)</option>
-                        <option value="LONGTERM_LIABILITY">Long Term Liability (Uzun Vadeli Yükümlülük)</option>
-                        <option value="EQUITY">Equity (Özkaynak)</option>
-                        <option value="REVENUE">Revenue (Gelir)</option>
-                        <option value="EXPENSE">Expense (Gider)</option>
+                        <option value="CURRENT_ASSET">Current Asset</option>
+                        <option value="CASH_EQUIVALENT">Cash and Equivalent</option>
+                        <option value="LONGTERM_ASSET">Long Term Asset</option>
+                        <option value="CURRENT_LIABILITY">Current Liability</option>
+                        <option value="LONGTERM_LIABILITY">Long Term Liability</option>
+                        <option value="EQUITY">Equity</option>
+                        <option value="REVENUE">Revenue</option>
+                        <option value="EXPENSE">Expense</option>
                       </>
                     )}
                   </select>
@@ -573,14 +576,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
                 <div>
                   <label className="ds-label">
-                    Hesap Türü (Type)
+                    {translations.chartOfAccounts.accountType}
                   </label>
                   <select
                     value={createForm.glAccountTypeId}
                     onChange={e => setCreateForm({ ...createForm, glAccountTypeId: e.target.value })}
                     className="ds-select"
                   >
-                    <option value="_NA_">-- Seçiniz / _NA_ --</option>
+                    <option value="_NA_">-- {translations.common.select} / _NA_ --</option>
                     {metadata?.glAccountTypes?.map(t => (
                       <option key={t.glAccountTypeId} value={t.glAccountTypeId}>
                         {t.description || t.glAccountTypeId}
@@ -592,14 +595,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
               <div>
                 <label className="ds-label">
-                  Üst Hesap (Bağlı Olduğu Ana Hesap)
+                  {translations.chartOfAccounts.parentAccount}
                 </label>
                 <select
                   value={createForm.parentGlAccountId}
                   onChange={e => setCreateForm({ ...createForm, parentGlAccountId: e.target.value })}
                   className="ds-select"
                 >
-                  <option value="">-- Yok (Ana Hesap) --</option>
+                  <option value="">-- {translations.common.none} --</option>
                   {metadata?.accounts?.map(a => (
                     <option key={a.glAccountId} value={a.glAccountId}>
                       {a.accountCode} - {a.accountName}
@@ -610,11 +613,11 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
               <div>
                 <label className="ds-label">
-                  Açıklama
+                  {translations.common.description}
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Hesabın muhasebe tanımı ve kullanım amacı..."
+                  placeholder={locale === 'tr' ? 'Hesabın muhasebe tanımı ve kullanım amacı...' : 'Account accounting definition and purpose...'}
                   value={createForm.description}
                   onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
                   className="ds-input resize-none"
@@ -627,7 +630,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   onClick={() => setShowCreateModal(false)}
                   className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
@@ -635,7 +638,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   className="ds-btn-primary"
                 >
                   {createLoading ? <div className="ds-spinner-sm" /> : <CheckCircle2 size={16} />}
-                  Hesabı Kaydet
+                  {translations.common.save}
                 </button>
               </div>
             </form>
@@ -650,7 +653,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Edit3 size={20} className="text-indigo-400" />
-                Hesabı Düzenle: {editForm.glAccountId}
+                {translations.chartOfAccounts.editAccountTitle}: {editForm.glAccountId}
               </h2>
               <button 
                 onClick={() => setShowEditModal(false)} 
@@ -663,7 +666,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
                 <label className="ds-label">
-                  Hesap Adı *
+                  {translations.chartOfAccounts.accountName} *
                 </label>
                 <input
                   type="text"
@@ -677,7 +680,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="ds-label">
-                    Hesap Sınıfı (Class)
+                    {translations.chartOfAccounts.accountClass}
                   </label>
                   <select
                     value={editForm.glAccountClassId}
@@ -694,7 +697,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
                 <div>
                   <label className="ds-label">
-                    Hesap Türü (Type)
+                    {translations.chartOfAccounts.accountType}
                   </label>
                   <select
                     value={editForm.glAccountTypeId}
@@ -713,14 +716,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
               <div>
                 <label className="ds-label">
-                  Üst Hesap
+                  {translations.chartOfAccounts.parentAccount}
                 </label>
                 <select
                   value={editForm.parentGlAccountId}
                   onChange={e => setEditForm({ ...editForm, parentGlAccountId: e.target.value })}
                   className="ds-select"
                 >
-                  <option value="">-- Yok (Ana Hesap) --</option>
+                  <option value="">-- {translations.common.none} --</option>
                   {metadata?.accounts?.filter(a => a.glAccountId !== editForm.glAccountId).map(a => (
                     <option key={a.glAccountId} value={a.glAccountId}>
                       {a.accountCode} - {a.accountName}
@@ -731,7 +734,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
               <div>
                 <label className="ds-label">
-                  Açıklama
+                  {translations.common.description}
                 </label>
                 <textarea
                   rows={3}
@@ -749,7 +752,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                     onChange={e => setEditForm({ ...editForm, isAssigned: e.target.checked ? 'Y' : 'N' })}
                     className="accent-indigo-500 rounded"
                   />
-                  <span>Şirket (Company) defterinde aktif hesap olarak kullan</span>
+                  <span>{translations.chartOfAccounts.useAsActiveInCompany}</span>
                 </label>
               </div>
 
@@ -759,7 +762,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   onClick={() => setShowEditModal(false)}
                   className="ds-btn-secondary"
                 >
-                  İptal
+                  {translations.common.cancel}
                 </button>
                 <button
                   type="submit"
@@ -767,7 +770,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   className="ds-btn-primary"
                 >
                   {editLoading ? <div className="ds-spinner-sm" /> : <CheckCircle2 size={16} />}
-                  Güncelle
+                  {translations.common.save}
                 </button>
               </div>
             </form>
@@ -783,7 +786,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <BookOpen size={20} className="text-indigo-400" />
-                  Hesap Özeti & Defter-i Kebir Hareketleri
+                  {translations.chartOfAccounts.summaryAndEntries}
                 </h2>
                 {selectedAccountDetail && (
                   <div className="text-xs text-slate-400 mt-1">
@@ -802,7 +805,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             {detailLoading ? (
               <div className="py-16 text-center">
                 <div className="ds-spinner mx-auto mb-3" />
-                <p className="text-slate-400 text-sm">Hesap hareketleri getiriliyor...</p>
+                <p className="text-slate-400 text-sm">{translations.common.loading}</p>
               </div>
             ) : selectedAccountDetail ? (
               <div className="space-y-5">
@@ -810,30 +813,30 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 {/* Balance Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="ds-stat-card border-l-4 border-l-slate-500">
-                    <div className="ds-stat-label">Normal Bakiye Yönü</div>
+                    <div className="ds-stat-label">{translations.chartOfAccounts.normalSideDirection}</div>
                     <div className="ds-stat-value text-base mt-1">
-                      {selectedAccountDetail.normalSide === 'D' ? 'Borç Bakiyeli (Debit)' : 'Alacak Bakiyeli (Credit)'}
+                      {selectedAccountDetail.normalSide === 'D' ? translations.chartOfAccounts.normalSideDebit : translations.chartOfAccounts.normalSideCredit}
                     </div>
                   </div>
 
                   <div className="ds-stat-card border-l-4 border-l-blue-500">
-                    <div className="ds-stat-label text-blue-400">Toplam Borç (Debit)</div>
+                    <div className="ds-stat-label text-blue-400">{translations.chartOfAccounts.totalDebits}</div>
                     <div className="ds-stat-value text-blue-400 text-xl mt-1">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalDebits || 0)}
+                      {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalDebits || 0)}
                     </div>
                   </div>
 
                   <div className="ds-stat-card border-l-4 border-l-amber-500">
-                    <div className="ds-stat-label text-amber-400">Toplam Alacak (Credit)</div>
+                    <div className="ds-stat-label text-amber-400">{translations.chartOfAccounts.totalCredits}</div>
                     <div className="ds-stat-value text-amber-400 text-xl mt-1">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalCredits || 0)}
+                      {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalCredits || 0)}
                     </div>
                   </div>
 
                   <div className="ds-stat-card border-l-4 border-l-emerald-500">
-                    <div className="ds-stat-label text-emerald-400">Net Bakiye</div>
+                    <div className="ds-stat-label text-emerald-400">{translations.reports.netIncome}</div>
                     <div className="ds-stat-value text-emerald-400 text-xl mt-1">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.balance || 0)}
+                      {new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.balance || 0)}
                     </div>
                   </div>
                 </div>
@@ -841,21 +844,21 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 {/* Account Properties */}
                 <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Sınıf: </span>
+                    <span className="text-slate-400 block mb-0.5">{translations.chartOfAccounts.accountClass}: </span>
                     <strong className="text-slate-200">{selectedAccountDetail.glAccountClassDesc || selectedAccountDetail.glAccountClassId}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Tür: </span>
+                    <span className="text-slate-400 block mb-0.5">{translations.chartOfAccounts.accountType}: </span>
                     <strong className="text-slate-200">{selectedAccountDetail.glAccountTypeDesc || '-'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Üst Hesap: </span>
-                    <strong className="text-slate-200">{selectedAccountDetail.parentAccountName || selectedAccountDetail.parentGlAccountId || 'Yok'}</strong>
+                    <span className="text-slate-400 block mb-0.5">{translations.chartOfAccounts.parentAccount}: </span>
+                    <strong className="text-slate-200">{selectedAccountDetail.parentAccountName || selectedAccountDetail.parentGlAccountId || translations.common.none}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Şirket Durumu: </span>
+                    <span className="text-slate-400 block mb-0.5">{translations.chartOfAccounts.companyStatus}: </span>
                     <strong className={selectedAccountDetail.isAssigned ? 'text-emerald-400' : 'text-slate-400'}>
-                      {selectedAccountDetail.isAssigned ? 'Atandı (Aktif)' : 'Boşta'}
+                      {selectedAccountDetail.isAssigned ? translations.chartOfAccounts.assignedActive : translations.chartOfAccounts.unassignedIdle}
                     </strong>
                   </div>
                 </div>
@@ -863,12 +866,12 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 {/* Recent Entries Table */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-white">
-                    Son Yevmiye Hareketleri ({accountEntries.length})
+                    {translations.chartOfAccounts.ledgerEntries} ({accountEntries.length})
                   </h3>
 
                   {accountEntries.length === 0 ? (
                     <div className="ds-card ds-empty py-12">
-                      Bu hesaba ait henüz onaylı bir yevmiye kaydı bulunmuyor.
+                      {translations.chartOfAccounts.noJournalEntriesForAccount}
                     </div>
                   ) : (
                     <div className="ds-card overflow-hidden">
@@ -876,13 +879,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                         <table className="ds-table text-xs">
                           <thead>
                             <tr className="ds-thead-row">
-                              <th className="ds-th">Tarih</th>
-                              <th className="ds-th">Fiş No</th>
-                              <th className="ds-th">İşlem Türü</th>
-                              <th className="ds-th">Açıklama</th>
-                              <th className="ds-th-right">Borç (Debit)</th>
-                              <th className="ds-th-right">Alacak (Credit)</th>
-                              <th className="ds-th">Cari / İlgili</th>
+                              <th className="ds-th">{translations.journalEntries.transDate}</th>
+                              <th className="ds-th">{translations.journalEntries.transId}</th>
+                              <th className="ds-th">{translations.journalEntries.transType}</th>
+                              <th className="ds-th">{translations.common.description}</th>
+                              <th className="ds-th-right">{translations.journalEntries.totalDebit}</th>
+                              <th className="ds-th-right">{translations.journalEntries.totalCredit}</th>
+                              <th className="ds-th">{translations.common.party}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -909,10 +912,10 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                                 <td className="ds-td">{e.transTypeDescription || e.acctgTransTypeId}</td>
                                 <td className="ds-td-muted">{e.description || '-'}</td>
                                 <td className="ds-td-right text-blue-400">
-                                  {e.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
+                                  {e.debitCreditFlag === 'D' ? new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
                                 </td>
                                 <td className="ds-td-right text-amber-400">
-                                  {e.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
+                                  {e.debitCreditFlag === 'C' ? new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
                                 </td>
                                 <td className="ds-td-muted">{e.partyName || e.partyId || '-'}</td>
                               </tr>
@@ -932,7 +935,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 onClick={() => setShowDetailModal(false)}
                 className="ds-btn-secondary"
               >
-                Kapat
+                {translations.common.close}
               </button>
             </div>
           </div>
