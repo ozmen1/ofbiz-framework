@@ -1,0 +1,181 @@
+/**
+ * OFBiz React App — Unified Design System
+ * Tüm sayfalar bu Tailwind utility class'larını ve CSS variables'larını kullanır.
+ *
+ * Palette: slate-950 (bg) → slate-800 (card) → slate-700 (elevated) → slate-600 (border)
+ * Accent:  indigo-500/600 (primary) | emerald-500 (success) | red-500 (danger) | amber-500 (warning)
+ */
+
+/* ─── Kart & Panel ─── */
+.ds-card {
+  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl backdrop-blur-sm;
+}
+.ds-card-elevated {
+  @apply bg-slate-800/70 border border-slate-700/60 rounded-2xl shadow-xl backdrop-blur-sm;
+}
+
+/* ─── Butonlar ─── */
+.ds-btn-primary {
+  @apply flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.ds-btn-secondary {
+  @apply flex items-center gap-2 px-4 py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium border border-slate-600/50 transition-all cursor-pointer;
+}
+.ds-btn-danger {
+  @apply flex items-center gap-2 px-3 py-1.5 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors text-sm;
+}
+.ds-btn-ghost {
+  @apply px-3 py-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors text-sm;
+}
+
+/* ─── Form Elemanları ─── */
+.ds-input {
+  @apply bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all w-full;
+}
+.ds-select {
+  @apply bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full;
+}
+.ds-label {
+  @apply block text-xs font-medium text-slate-400 mb-1;
+}
+
+/* ─── Tablo ─── */
+.ds-table {
+  @apply w-full text-sm;
+}
+.ds-thead-row {
+  @apply bg-slate-700/40 text-slate-400 text-xs uppercase;
+}
+.ds-th {
+  @apply px-4 py-3 text-left font-medium tracking-wide;
+}
+.ds-th-right {
+  @apply px-4 py-3 text-right font-medium tracking-wide;
+}
+.ds-tbody-row {
+  @apply border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors;
+}
+.ds-td {
+  @apply px-4 py-3 text-slate-300;
+}
+.ds-td-primary {
+  @apply px-4 py-3 text-white font-medium;
+}
+.ds-td-muted {
+  @apply px-4 py-3 text-slate-500 text-sm;
+}
+.ds-td-mono {
+  @apply px-4 py-3 font-mono text-indigo-400 text-sm;
+}
+.ds-td-right {
+  @apply px-4 py-3 text-right font-semibold text-white;
+}
+
+/* ─── Badge'ler ─── */
+.ds-badge {
+  @apply text-xs px-2 py-0.5 rounded-full font-semibold;
+}
+.ds-badge-blue   { @apply bg-blue-500/20 text-blue-300; }
+.ds-badge-green  { @apply bg-emerald-500/20 text-emerald-300; }
+.ds-badge-red    { @apply bg-red-500/20 text-red-300; }
+.ds-badge-yellow { @apply bg-yellow-500/20 text-yellow-300; }
+.ds-badge-purple { @apply bg-purple-500/20 text-purple-300; }
+.ds-badge-slate  { @apply bg-slate-600/40 text-slate-300; }
+.ds-badge-indigo { @apply bg-indigo-500/20 text-indigo-300; }
+
+/* ─── Modal ─── */
+.ds-overlay {
+  @apply fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4;
+}
+.ds-modal {
+  @apply bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full;
+}
+
+/* ─── Sayfa Başlığı ─── */
+.ds-page-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-800/40 border border-slate-700/50 p-5 rounded-2xl mb-5;
+}
+.ds-page-title {
+  @apply text-2xl font-bold text-white flex items-center gap-2;
+}
+.ds-page-subtitle {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+/* ─── Sekme Navigasyon ─── */
+.ds-tab-bar {
+  @apply flex border-b border-slate-700/50 mb-5;
+}
+.ds-tab {
+  @apply px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-colors cursor-pointer;
+}
+.ds-tab-active {
+  @apply border-indigo-500 text-indigo-400;
+}
+
+/* ─── İstatistik Kartı ─── */
+.ds-stat-card {
+  @apply bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4;
+}
+.ds-stat-label {
+  @apply text-xs text-slate-400 uppercase tracking-wide mb-1;
+}
+.ds-stat-value {
+  @apply text-2xl font-bold text-white;
+}
+.ds-stat-sub {
+  @apply text-xs text-slate-500 mt-1;
+}
+
+/* ─── Yükleniyor Spinner ─── */
+.ds-spinner {
+  @apply animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full;
+}
+.ds-spinner-sm {
+  @apply animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full;
+}
+
+/* ─── Bildirim Bantları ─── */
+.ds-alert-error {
+  @apply p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm;
+}
+.ds-alert-success {
+  @apply p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-sm;
+}
+.ds-alert-info {
+  @apply p-3 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-xl text-sm;
+}
+
+/* ─── Boş Durum ─── */
+.ds-empty {
+  @apply text-center py-12 text-slate-500;
+}
+
+/* ─── Eski glass-card ile backward compat & global UI uyumu ─── */
+.glass-card {
+  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl backdrop-blur-sm text-slate-200;
+}
+
+.btn-primary {
+  @apply flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none;
+}
+
+.btn-secondary {
+  @apply flex items-center justify-center gap-2 px-4 py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium border border-slate-600/50 transition-all cursor-pointer;
+}
+
+.table-row-hover:hover {
+  @apply bg-slate-700/20;
+}
+
+.glass-card input[type="text"],
+.glass-card input[type="number"],
+.glass-card input[type="date"],
+.glass-card textarea {
+  @apply bg-slate-700/60 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none;
+}
+
+.glass-card select {
+  @apply bg-slate-700/60 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none;
+}
+

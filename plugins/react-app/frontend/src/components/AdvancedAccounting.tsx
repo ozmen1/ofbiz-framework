@@ -509,21 +509,21 @@ export const AdvancedAccounting: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
       
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-page-header">
         <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', letterSpacing: '-0.5px' }}>
-            <Layers color="var(--primary)" size={32} />
+          <h1 className="ds-page-title">
+            <Layers className="text-indigo-400" size={26} />
             İleri Düzey Muhasebe (Advanced Accounting)
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+          <p className="ds-page-subtitle">
             Cari Limitler (Billing Accounts), Duran Varlıklar (Fixed Assets), Bütçeler (Budgets) ve Sözleşmeler (Agreements)
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => {
               if (activeTab === 'billing-accounts') fetchBillingAccounts();
@@ -531,8 +531,7 @@ export const AdvancedAccounting: React.FC = () => {
               else if (activeTab === 'budgets') fetchBudgets();
               else if (activeTab === 'agreements') fetchAgreements();
             }}
-            className="glass-card"
-            style={{ padding: '0.625rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white' }}
+            className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Yenile
@@ -541,8 +540,7 @@ export const AdvancedAccounting: React.FC = () => {
           {activeTab === 'billing-accounts' && (
             <button
               onClick={() => setShowCreateBaModal(true)}
-              className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
               Yeni Cari Limit Tanımla
@@ -552,8 +550,7 @@ export const AdvancedAccounting: React.FC = () => {
           {activeTab === 'fixed-assets' && (
             <button
               onClick={() => setShowCreateFaModal(true)}
-              className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
               Yeni Duran Varlık Ekle
@@ -563,8 +560,7 @@ export const AdvancedAccounting: React.FC = () => {
           {activeTab === 'budgets' && (
             <button
               onClick={() => setShowCreateBgtModal(true)}
-              className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
               Yeni Bütçe Oluştur
@@ -574,8 +570,7 @@ export const AdvancedAccounting: React.FC = () => {
           {activeTab === 'agreements' && (
             <button
               onClick={() => setShowCreateAgrModal(true)}
-              className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
               Yeni Sözleşme Ekle
@@ -586,114 +581,71 @@ export const AdvancedAccounting: React.FC = () => {
 
       {/* NOTIFICATIONS */}
       {error && (
-        <div className="glass-card" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={20} />
-          <span style={{ flex: 1 }}>{error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'transparent', border: 'none', color: '#fca5a5', cursor: 'pointer' }}><X size={16} /></button>
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><X size={16} /></button>
         </div>
       )}
       {successMsg && (
-        <div className="glass-card" style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#86efac', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="ds-alert-success flex items-center gap-3">
           <CheckCircle2 size={20} />
-          <span style={{ flex: 1 }}>{successMsg}</span>
-          <button onClick={() => setSuccessMsg(null)} style={{ background: 'transparent', border: 'none', color: '#86efac', cursor: 'pointer' }}><X size={16} /></button>
+          <span className="flex-1">{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-white"><X size={16} /></button>
         </div>
       )}
 
       {/* TABS NAVIGATION */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+      <div className="ds-tab-bar">
         <button
           onClick={() => setActiveTab('billing-accounts')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: activeTab === 'billing-accounts' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-            border: activeTab === 'billing-accounts' ? '1px solid var(--primary)' : '1px solid transparent',
-            borderRadius: '8px',
-            color: activeTab === 'billing-accounts' ? 'white' : 'var(--text-muted)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
+          className={`ds-tab flex items-center gap-2 ${activeTab === 'billing-accounts' ? 'ds-tab-active' : ''}`}
         >
           <Landmark size={18} />
           Cari Kredi Limitleri (Billing Accounts)
-          <span style={{ background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span className="ds-badge ds-badge-slate ml-1">
             {totalBaCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('fixed-assets')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: activeTab === 'fixed-assets' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-            border: activeTab === 'fixed-assets' ? '1px solid var(--primary)' : '1px solid transparent',
-            borderRadius: '8px',
-            color: activeTab === 'fixed-assets' ? 'white' : 'var(--text-muted)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
+          className={`ds-tab flex items-center gap-2 ${activeTab === 'fixed-assets' ? 'ds-tab-active' : ''}`}
         >
           <Building2 size={18} />
           Duran Varlıklar & Amortisman (Fixed Assets)
-          <span style={{ background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span className="ds-badge ds-badge-slate ml-1">
             {totalFaCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('budgets')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: activeTab === 'budgets' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-            border: activeTab === 'budgets' ? '1px solid var(--primary)' : '1px solid transparent',
-            borderRadius: '8px',
-            color: activeTab === 'budgets' ? 'white' : 'var(--text-muted)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
+          className={`ds-tab flex items-center gap-2 ${activeTab === 'budgets' ? 'ds-tab-active' : ''}`}
         >
           <BarChart3 size={18} />
           Bütçeler (Budgets)
-          <span style={{ background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span className="ds-badge ds-badge-slate ml-1">
             {totalBgtCount}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('agreements')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: activeTab === 'agreements' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-            border: activeTab === 'agreements' ? '1px solid var(--primary)' : '1px solid transparent',
-            borderRadius: '8px',
-            color: activeTab === 'agreements' ? 'white' : 'var(--text-muted)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
+          className={`ds-tab flex items-center gap-2 ${activeTab === 'agreements' ? 'ds-tab-active' : ''}`}
         >
           <Briefcase size={18} />
           Sözleşmeler (Agreements)
-          <span style={{ background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span className="ds-badge ds-badge-slate ml-1">
             {totalAgrCount}
           </span>
         </button>
       </div>
+
+      {/* ========================================== */}
+      {/* TAB 1: BILLING ACCOUNTS CONTENT            */}
+      {/* ========================================== */}
+
 
       {/* ========================================== */}
       {/* TAB 1: BILLING ACCOUNTS CONTENT            */}

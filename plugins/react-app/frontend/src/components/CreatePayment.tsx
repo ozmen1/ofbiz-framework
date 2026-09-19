@@ -126,58 +126,36 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <button 
+    <div className="max-w-4xl mx-auto space-y-5">
+      {/* Back button */}
+      <button
         onClick={onCancel}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          background: 'none',
-          border: 'none',
-          color: 'var(--text-muted)',
-          cursor: 'pointer',
-          marginBottom: '1.5rem',
-          fontSize: '0.9rem'
-        }}
+        className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors text-sm bg-transparent border-none cursor-pointer"
       >
         <ArrowLeft size={16} />
         Ödemeler Listesine Dön
       </button>
 
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-card p-6">
+        {/* Header */}
+        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Yeni Ödeme Kaydı</h3>
-            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <h3 className="text-xl font-bold text-white m-0">Yeni Ödeme Kaydı</h3>
+            <p className="text-slate-400 text-sm mt-1">
               Tahsilat (Müşteri Alacağı) veya Tediye (Tedarikçi Ödemesi) girişi yapın.
             </p>
           </div>
 
           {/* Direction Toggle */}
-          <div style={{
-            display: 'flex',
-            background: 'rgba(15, 23, 42, 0.8)',
-            padding: '0.25rem',
-            borderRadius: '10px',
-            border: '1px solid var(--glass-border)'
-          }}>
+          <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700/50">
             <button
               type="button"
               onClick={() => handleDirectionChange('incoming')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: direction === 'incoming' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
-                color: direction === 'incoming' ? '#4ade80' : 'var(--text-muted)',
-                fontWeight: direction === 'incoming' ? 600 : 400,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-none text-sm font-medium transition-all cursor-pointer ${
+                direction === 'incoming'
+                  ? 'bg-emerald-600/20 text-emerald-400 font-semibold'
+                  : 'bg-transparent text-slate-400 hover:text-slate-200'
+              }`}
             >
               <ArrowDownLeft size={16} />
               Tahsilat (Giriş)
@@ -185,19 +163,11 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
             <button
               type="button"
               onClick={() => handleDirectionChange('outgoing')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: direction === 'outgoing' ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-                color: direction === 'outgoing' ? '#60a5fa' : 'var(--text-muted)',
-                fontWeight: direction === 'outgoing' ? 600 : 400,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-none text-sm font-medium transition-all cursor-pointer ${
+                direction === 'outgoing'
+                  ? 'bg-blue-600/20 text-blue-400 font-semibold'
+                  : 'bg-transparent text-slate-400 hover:text-slate-200'
+              }`}
             >
               <ArrowUpRight size={16} />
               Tediye (Çıkış)
@@ -205,43 +175,24 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
           </div>
         </div>
 
+        {/* Error banner */}
         {error && (
-          <div style={{
-            padding: '1rem',
-            borderRadius: '8px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            color: '#f87171',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="ds-alert-error flex items-center gap-3 mb-5">
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             {/* Payment Type */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Ödeme Türü *
-              </label>
+              <label className="ds-label">Ödeme Türü *</label>
               <select
                 name="paymentTypeId"
                 value={formData.paymentTypeId}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-select w-full"
               >
                 {metadata.paymentTypes.map(t => (
                   <option key={t.paymentTypeId} value={t.paymentTypeId}>{t.description || t.paymentTypeId}</option>
@@ -251,22 +202,12 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Payment Method Type */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Ödeme Yöntemi *
-              </label>
+              <label className="ds-label">Ödeme Yöntemi *</label>
               <select
                 name="paymentMethodTypeId"
                 value={formData.paymentMethodTypeId}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-select w-full"
               >
                 {metadata.paymentMethodTypes.map(pm => (
                   <option key={pm.paymentMethodTypeId} value={pm.paymentMethodTypeId}>{pm.description || pm.paymentMethodTypeId}</option>
@@ -276,22 +217,12 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Party From */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Gönderen (Borçlu / Ödeyen Cari) *
-              </label>
+              <label className="ds-label">Gönderen (Borçlu / Ödeyen Cari) *</label>
               <select
                 name="partyIdFrom"
                 value={formData.partyIdFrom}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-select w-full"
               >
                 <option value="">Seçiniz...</option>
                 {metadata.parties.map(p => (
@@ -302,22 +233,12 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Party To */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Alıcı (Alacaklı / Tahsil Eden Cari) *
-              </label>
+              <label className="ds-label">Alıcı (Alacaklı / Tahsil Eden Cari) *</label>
               <select
                 name="partyIdTo"
                 value={formData.partyIdTo}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-select w-full"
               >
                 <option value="">Seçiniz...</option>
                 {metadata.parties.map(p => (
@@ -328,11 +249,9 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Amount */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Ödeme Tutarı *
-              </label>
-              <div style={{ position: 'relative' }}>
-                <DollarSign size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <label className="ds-label">Ödeme Tutarı *</label>
+              <div className="relative">
+                <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="number"
                   step="0.01"
@@ -342,37 +261,19 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
                   value={formData.amount}
                   onChange={handleChange}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 0.75rem 0.75rem 2.25rem',
-                    borderRadius: '8px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    color: 'white',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ds-input pl-9 w-full"
                 />
               </div>
             </div>
 
             {/* Currency */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Para Birimi
-              </label>
+              <label className="ds-label">Para Birimi</label>
               <select
                 name="currencyUomId"
                 value={formData.currencyUomId}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-select w-full"
               >
                 {metadata.currencies.map(c => (
                   <option key={c.uomId} value={c.uomId}>{c.description}</option>
@@ -382,104 +283,60 @@ const CreatePayment: React.FC<CreatePaymentProps> = ({ onCancel, onSave }) => {
 
             {/* Effective Date */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                İşlem Tarihi *
-              </label>
+              <label className="ds-label">İşlem Tarihi *</label>
               <input
                 type="date"
                 name="effectiveDate"
                 value={formData.effectiveDate}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-input w-full"
               />
             </div>
 
             {/* Reference Number */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Dekont / Belge Referans No
-              </label>
+              <label className="ds-label">Dekont / Belge Referans No</label>
               <input
                 type="text"
                 name="paymentRefNum"
                 placeholder="Örn: DEK-2026-001, Çek No..."
                 value={formData.paymentRefNum}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="ds-input w-full"
               />
             </div>
           </div>
 
           {/* Comments */}
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-              Açıklama / Notlar
-            </label>
+          <div className="mb-6">
+            <label className="ds-label">Açıklama / Notlar</label>
             <textarea
               name="comments"
               rows={3}
               placeholder="Ödemeye dair detaylar..."
               value={formData.comments}
               onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(15, 23, 42, 0.6)',
-                color: 'white',
-                fontSize: '0.9rem'
-              }}
+              className="ds-input w-full resize-none"
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
+              className="ds-btn-secondary"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={loading || metadataLoading}
-              className="btn-primary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 2rem',
-                fontSize: '0.9rem'
-              }}
+              className="ds-btn-primary flex items-center gap-2"
             >
               {loading ? (
                 <>
-                  <Loader2 size={16} className="spin" />
+                  <Loader2 size={16} className="ds-spinner-sm" />
                   Kaydediliyor...
                 </>
               ) : (

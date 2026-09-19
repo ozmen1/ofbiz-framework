@@ -1,37 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, RefreshCw, ChevronRight, FileText, CheckCircle2, Clock, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, Filter, RefreshCw, ChevronRight, FileText, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { api, InvoiceListItem } from '../services/api';
 
-const getStatusColor = (statusId: string) => {
+const getStatusBadgeClass = (statusId: string): string => {
   switch (statusId) {
-    case 'INVOICE_PAID': return 'rgba(34, 197, 94, 0.15)'; // Green
+    case 'INVOICE_PAID':         return 'ds-badge ds-badge-green';
     case 'INVOICE_APPROVED':
-    case 'INVOICE_SENT': return 'rgba(59, 130, 246, 0.15)'; // Blue
-    case 'INVOICE_READY': return 'rgba(168, 85, 247, 0.15)'; // Purple
-    case 'INVOICE_IN_PROCESS': return 'rgba(234, 179, 8, 0.15)'; // Yellow
-    case 'INVOICE_CANCELLED': return 'rgba(239, 68, 68, 0.15)'; // Red
-    default: return 'var(--glass-border)';
-  }
-};
-
-const getStatusTextColor = (statusId: string) => {
-  switch (statusId) {
-    case 'INVOICE_PAID': return '#4ade80';
-    case 'INVOICE_APPROVED':
-    case 'INVOICE_SENT': return '#60a5fa';
-    case 'INVOICE_READY': return '#c084fc';
-    case 'INVOICE_IN_PROCESS': return '#facc15';
-    case 'INVOICE_CANCELLED': return '#f87171';
-    default: return 'white';
+    case 'INVOICE_SENT':         return 'ds-badge ds-badge-blue';
+    case 'INVOICE_READY':        return 'ds-badge ds-badge-purple';
+    case 'INVOICE_IN_PROCESS':   return 'ds-badge ds-badge-yellow';
+    case 'INVOICE_CANCELLED':    return 'ds-badge ds-badge-red';
+    default:                     return 'ds-badge ds-badge-slate';
   }
 };
 
 const getStatusIcon = (statusId: string) => {
   switch (statusId) {
-    case 'INVOICE_PAID': return <CheckCircle2 size={14} />;
-    case 'INVOICE_IN_PROCESS': return <Clock size={14} />;
-    case 'INVOICE_CANCELLED': return <XCircle size={14} />;
-    default: return <FileText size={14} />;
+    case 'INVOICE_PAID':         return <CheckCircle2 size={14} />;
+    case 'INVOICE_IN_PROCESS':   return <Clock size={14} />;
+    case 'INVOICE_CANCELLED':    return <XCircle size={14} />;
+    default:                     return <FileText size={14} />;
   }
 };
 
@@ -110,20 +98,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      
+    <div className="space-y-5">
+
       {/* Error Alert */}
       {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          padding: '1rem 1.5rem',
-          borderRadius: '12px',
-          color: '#fca5a5',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={20} />
           <div>
             <strong>Hata:</strong> {error}
@@ -132,32 +111,32 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
       )}
 
       {/* Filters Section */}
-      <div className="glass-card animate-fade-in" style={{ padding: '1.5rem 2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <Filter size={20} color="var(--primary)" />
-          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Faturaları Ara & Filtrele</h3>
+      <div className="ds-card p-6 animate-fade-in">
+        <div className="flex items-center gap-2 mb-5">
+          <Filter size={20} className="text-indigo-400" />
+          <h3 className="text-white text-lg font-semibold m-0">Faturaları Ara &amp; Filtrele</h3>
         </div>
-        
-        <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Fatura No (ID)</label>
-              <input 
-                type="text" 
-                name="invoiceId" 
-                value={filters.invoiceId} 
-                onChange={handleFilterChange} 
-                placeholder="Örn: 8010 veya CI1" 
-                className="glass-input" 
+
+        <form onSubmit={handleSearch} className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="ds-label">Fatura No (ID)</label>
+              <input
+                type="text"
+                name="invoiceId"
+                value={filters.invoiceId}
+                onChange={handleFilterChange}
+                placeholder="Örn: 8010 veya CI1"
+                className="ds-input"
               />
             </div>
-            <div className="form-group">
-              <label>Fatura Türü</label>
-              <select 
-                name="invoiceTypeId" 
-                value={filters.invoiceTypeId} 
-                onChange={handleFilterChange} 
-                className="glass-input"
+            <div className="flex flex-col gap-1">
+              <label className="ds-label">Fatura Türü</label>
+              <select
+                name="invoiceTypeId"
+                value={filters.invoiceTypeId}
+                onChange={handleFilterChange}
+                className="ds-select"
               >
                 <option value="">Tüm Türler</option>
                 {invoiceTypes.length > 0 ? (
@@ -172,35 +151,35 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                 )}
               </select>
             </div>
-            <div className="form-group">
-              <label>Gönderen Cari (From Party)</label>
-              <input 
-                type="text" 
-                name="partyIdFrom" 
-                value={filters.partyIdFrom} 
-                onChange={handleFilterChange} 
-                placeholder="Örn: Company" 
-                className="glass-input" 
+            <div className="flex flex-col gap-1">
+              <label className="ds-label">Gönderen Cari (From Party)</label>
+              <input
+                type="text"
+                name="partyIdFrom"
+                value={filters.partyIdFrom}
+                onChange={handleFilterChange}
+                placeholder="Örn: Company"
+                className="ds-input"
               />
             </div>
-            <div className="form-group">
-              <label>Alıcı Cari (To Party)</label>
-              <input 
-                type="text" 
-                name="partyIdTo" 
-                value={filters.partyIdTo} 
-                onChange={handleFilterChange} 
-                placeholder="Örn: DemoCustomer" 
-                className="glass-input" 
+            <div className="flex flex-col gap-1">
+              <label className="ds-label">Alıcı Cari (To Party)</label>
+              <input
+                type="text"
+                name="partyIdTo"
+                value={filters.partyIdTo}
+                onChange={handleFilterChange}
+                placeholder="Örn: DemoCustomer"
+                className="ds-input"
               />
             </div>
-            <div className="form-group">
-              <label>Fatura Durumu</label>
-              <select 
-                name="statusId" 
-                value={filters.statusId} 
-                onChange={handleFilterChange} 
-                className="glass-input"
+            <div className="flex flex-col gap-1">
+              <label className="ds-label">Fatura Durumu</label>
+              <select
+                name="statusId"
+                value={filters.statusId}
+                onChange={handleFilterChange}
+                className="ds-select"
               >
                 <option value="">Tüm Durumlar</option>
                 {statusList.length > 0 ? (
@@ -220,12 +199,12 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
               </select>
             </div>
           </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '0.5rem' }}>
-            <button type="button" onClick={handleReset} className="btn-secondary" disabled={loading}>
+
+          <div className="flex justify-end gap-3 mt-1">
+            <button type="button" onClick={handleReset} className="ds-btn-secondary" disabled={loading}>
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> Sıfırla
             </button>
-            <button type="submit" className="btn-primary" disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={loading}>
               <Search size={18} /> Filtrele
             </button>
           </div>
@@ -233,73 +212,67 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
       </div>
 
       {/* Results Section */}
-      <div className="glass-card animate-fade-in" style={{ padding: '1.5rem 0', animationDelay: '0.1s' }}>
-        <div style={{ padding: '0 2rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+      <div className="ds-card overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-700/50">
+          <h3 className="text-white text-lg font-semibold m-0">
             Kayıtlar ({invoices.length} / Toplam: {totalCount})
           </h3>
-          <button 
-            className="btn-secondary" 
-            onClick={() => loadInvoices(filters)} 
+          <button
+            className="ds-btn-secondary text-sm py-1.5 px-3"
+            onClick={() => loadInvoices(filters)}
             disabled={loading}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Yenile
           </button>
         </div>
-        
-        <div style={{ overflowX: 'auto' }}>
-          <table className="glass-table">
+
+        <div className="overflow-x-auto">
+          <table className="ds-table">
             <thead>
-              <tr>
-                <th>Fatura No</th>
-                <th>Tür</th>
-                <th>Tarih</th>
-                <th>Gönderen</th>
-                <th>Alıcı</th>
-                <th>Durum</th>
-                <th style={{ textAlign: 'right' }}>Toplam Tutar</th>
-                <th style={{ textAlign: 'right' }}>Kalan Bakiye</th>
-                <th></th>
+              <tr className="ds-thead-row">
+                <th className="ds-th">Fatura No</th>
+                <th className="ds-th">Tür</th>
+                <th className="ds-th">Tarih</th>
+                <th className="ds-th">Gönderen</th>
+                <th className="ds-th">Alıcı</th>
+                <th className="ds-th">Durum</th>
+                <th className="ds-th-right">Toplam Tutar</th>
+                <th className="ds-th-right">Kalan Bakiye</th>
+                <th className="ds-th"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                      <Loader2 size={24} className="animate-spin" color="var(--primary)" />
-                      <span>OFBiz'den faturalar yükleniyor...</span>
+                  <td colSpan={9}>
+                    <div className="flex items-center justify-center py-20">
+                      <div className="ds-spinner"></div>
                     </div>
                   </td>
                 </tr>
               ) : invoices.length > 0 ? (
                 invoices.map((inv) => (
-                  <tr key={inv.invoiceId}>
-                    <td style={{ fontWeight: 600 }}>{inv.invoiceId}</td>
-                    <td>{(inv.invoiceTypeId || '').replace(/_/g, ' ')}</td>
-                    <td>{inv.invoiceDate || '-'}</td>
-                    <td>{inv.partyIdFrom || '-'}</td>
-                    <td>{inv.partyIdTo || '-'}</td>
-                    <td>
-                      <span className="status-badge" style={{ 
-                        background: getStatusColor(inv.statusId),
-                        color: getStatusTextColor(inv.statusId),
-                        border: `1px solid ${getStatusTextColor(inv.statusId)}40`
-                      }}>
+                  <tr key={inv.invoiceId} className="ds-tbody-row">
+                    <td className="ds-td-primary">{inv.invoiceId}</td>
+                    <td className="ds-td">{(inv.invoiceTypeId || '').replace(/_/g, ' ')}</td>
+                    <td className="ds-td-muted">{inv.invoiceDate || '-'}</td>
+                    <td className="ds-td">{inv.partyIdFrom || '-'}</td>
+                    <td className="ds-td">{inv.partyIdTo || '-'}</td>
+                    <td className="ds-td">
+                      <span className={getStatusBadgeClass(inv.statusId)}>
                         {getStatusIcon(inv.statusId)}
                         {formatStatus(inv.statusId)}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                    <td className="ds-td-mono ds-td-right">
                       {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {inv.currencyUomId}
                     </td>
-                    <td style={{ textAlign: 'right', color: inv.outstandingAmount > 0 ? '#facc15' : 'var(--text-muted)' }}>
+                    <td className={`ds-td-mono ds-td-right ${inv.outstandingAmount > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
                       {inv.outstandingAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {inv.currencyUomId}
                     </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <button 
-                        className="btn-icon" 
+                    <td className="ds-td text-center">
+                      <button
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors"
                         onClick={() => onViewInvoice && onViewInvoice(inv.invoiceId)}
                         title="Fatura Detayını Gör"
                       >
@@ -310,8 +283,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                    Kriterlere uygun fatura bulunamadı.
+                  <td colSpan={9}>
+                    <div className="ds-empty">
+                      <FileText size={40} className="mx-auto mb-3 text-slate-600" />
+                      <p className="text-slate-400">Kriterlere uygun fatura bulunamadı.</p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -319,7 +295,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
           </table>
         </div>
       </div>
-      
+
     </div>
   );
 };

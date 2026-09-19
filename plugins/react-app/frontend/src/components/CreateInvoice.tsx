@@ -69,219 +69,202 @@ const CreateInvoice: React.FC<CreateInvoiceProps> = ({ onCancel, onSave }) => {
   };
 
   return (
-    <div className="glass-card animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <FileText size={24} color="var(--primary)" /> Yeni Fatura Oluştur
-        </h2>
-        <button type="button" onClick={onCancel} className="btn-icon" title="İptal">
-          <X size={20} />
+    <div className="w-full max-w-3xl mx-auto animate-fade-in">
+
+      {/* Page Header */}
+      <div className="ds-page-header mb-6">
+        <div className="flex items-center gap-3">
+          <FileText size={24} className="text-indigo-400" />
+          <h1 className="ds-page-title">Yeni Fatura Oluştur</h1>
+        </div>
+        <button type="button" onClick={onCancel} className="ds-btn-secondary flex items-center gap-2">
+          <X size={16} /> İptal
         </button>
       </div>
 
+      {/* Error Banner */}
       {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          padding: '1rem 1.5rem',
-          borderRadius: '12px',
-          color: '#fca5a5',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <AlertCircle size={20} />
-          <div>
-            <strong>Hata:</strong> {error}
-          </div>
+        <div className="ds-alert-error mb-5 flex items-center gap-3">
+          <AlertCircle size={20} className="shrink-0" />
+          <div><strong>Hata:</strong> {error}</div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gap: '2rem' }}>
-          
-          {/* Parties Section */}
-          <div>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-              <Building2 size={18} color="var(--primary)" /> Cari Bilgileri
-            </h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Gönderen Cari (Party From)</label>
-                <div style={{ position: 'relative' }}>
-                  <Building2 size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    name="partyIdFrom" 
-                    list="partyList"
-                    value={formData.partyIdFrom} 
-                    onChange={handleChange} 
-                    placeholder="Örn: Company" 
-                    className="glass-input" 
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-                    required 
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Alıcı Cari (Party To)</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    name="partyIdTo" 
-                    list="partyList"
-                    value={formData.partyIdTo} 
-                    onChange={handleChange} 
-                    placeholder="Örn: DemoCustomer" 
-                    className="glass-input" 
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-                    required 
-                  />
-                </div>
-              </div>
-            </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
-            {/* Datalist for autocomplete */}
-            <datalist id="partyList">
-              {parties.map(p => (
-                <option key={p.partyId} value={p.partyId}>{p.name} ({p.partyId})</option>
-              ))}
-            </datalist>
-          </div>
+        {/* Parties Section */}
+        <div className="ds-card p-6 space-y-5">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-3">
+            <Building2 size={18} className="text-indigo-400" /> Cari Bilgileri
+          </h3>
 
-          {/* Invoice Details Section */}
-          <div>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-              <FileText size={18} color="var(--primary)" /> Fatura Detayları
-            </h3>
-            
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Fatura Türü</label>
-                <div style={{ position: 'relative' }}>
-                  <FileText size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <select 
-                    name="invoiceTypeId" 
-                    value={formData.invoiceTypeId} 
-                    onChange={handleChange} 
-                    className="glass-input"
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-                  >
-                    {invoiceTypes.length > 0 ? (
-                      invoiceTypes.map(t => (
-                        <option key={t.invoiceTypeId} value={t.invoiceTypeId}>{t.description}</option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="SALES_INVOICE">Satış Faturası (SALES_INVOICE)</option>
-                        <option value="PURCHASE_INVOICE">Alış Faturası (PURCHASE_INVOICE)</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Para Birimi</label>
-                <div style={{ position: 'relative' }}>
-                  <DollarSign size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <select 
-                    name="currencyUomId" 
-                    value={formData.currencyUomId} 
-                    onChange={handleChange} 
-                    className="glass-input"
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="EUR">EUR - Euro</option>
-                    <option value="TRY">TRY - Turkish Lira</option>
-                    <option value="GBP">GBP - British Pound</option>
-                    {currencies.filter(c => !['USD', 'EUR', 'TRY', 'GBP'].includes(c.uomId)).slice(0, 20).map(c => (
-                      <option key={c.uomId} value={c.uomId}>{c.description}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Fatura Tarihi</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="date" 
-                    name="invoiceDate" 
-                    value={formData.invoiceDate} 
-                    onChange={handleChange} 
-                    className="glass-input" 
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box', colorScheme: 'dark' }}
-                    required 
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Vade Tarihi (Opsiyonel)</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="date" 
-                    name="dueDate" 
-                    value={formData.dueDate} 
-                    onChange={handleChange} 
-                    className="glass-input" 
-                    style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box', colorScheme: 'dark' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-              <label>Referans Numarası (Belge No / İrsaliye No)</label>
-              <div style={{ position: 'relative' }}>
-                <Hash size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  name="referenceNumber" 
-                  value={formData.referenceNumber} 
-                  onChange={handleChange} 
-                  placeholder="Örn: REF-2026-001" 
-                  className="glass-input" 
-                  style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box' }}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="ds-label">Gönderen Cari (Party From)</label>
+              <div className="relative">
+                <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  name="partyIdFrom"
+                  list="partyList"
+                  value={formData.partyIdFrom}
+                  onChange={handleChange}
+                  placeholder="Örn: Company"
+                  className="ds-input pl-9 w-full"
+                  required
                 />
               </div>
             </div>
 
-            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-              <label>Açıklama / Notlar</label>
-              <div style={{ position: 'relative' }}>
-                <AlignLeft size={16} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-muted)' }} />
-                <textarea 
-                  name="description" 
-                  value={formData.description} 
-                  onChange={handleChange} 
-                  placeholder="Faturaya dair genel açıklama veya proje detayı..." 
-                  className="glass-input" 
-                  style={{ paddingLeft: '2.5rem', width: '100%', minHeight: '100px', boxSizing: 'border-box', resize: 'vertical' }}
+            <div>
+              <label className="ds-label">Alıcı Cari (Party To)</label>
+              <div className="relative">
+                <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  name="partyIdTo"
+                  list="partyList"
+                  value={formData.partyIdTo}
+                  onChange={handleChange}
+                  placeholder="Örn: DemoCustomer"
+                  className="ds-input pl-9 w-full"
+                  required
                 />
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
-            <button type="button" onClick={onCancel} className="btn-secondary" disabled={loading}>
-              <X size={18} /> İptal
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              {loading ? 'Oluşturuluyor...' : 'Faturayı Oluştur'}
-            </button>
-          </div>
-
+          {/* Datalist for autocomplete */}
+          <datalist id="partyList">
+            {parties.map(p => (
+              <option key={p.partyId} value={p.partyId}>{p.name} ({p.partyId})</option>
+            ))}
+          </datalist>
         </div>
+
+        {/* Invoice Details Section */}
+        <div className="ds-card p-6 space-y-5">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-slate-200 border-b border-slate-700/50 pb-3">
+            <FileText size={18} className="text-indigo-400" /> Fatura Detayları
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="ds-label">Fatura Türü</label>
+              <div className="relative">
+                <FileText size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <select
+                  name="invoiceTypeId"
+                  value={formData.invoiceTypeId}
+                  onChange={handleChange}
+                  className="ds-select pl-9 w-full"
+                >
+                  {invoiceTypes.length > 0 ? (
+                    invoiceTypes.map(t => (
+                      <option key={t.invoiceTypeId} value={t.invoiceTypeId}>{t.description}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="SALES_INVOICE">Satış Faturası (SALES_INVOICE)</option>
+                      <option value="PURCHASE_INVOICE">Alış Faturası (PURCHASE_INVOICE)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="ds-label">Para Birimi</label>
+              <div className="relative">
+                <DollarSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <select
+                  name="currencyUomId"
+                  value={formData.currencyUomId}
+                  onChange={handleChange}
+                  className="ds-select pl-9 w-full"
+                >
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="TRY">TRY - Turkish Lira</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  {currencies.filter(c => !['USD', 'EUR', 'TRY', 'GBP'].includes(c.uomId)).slice(0, 20).map(c => (
+                    <option key={c.uomId} value={c.uomId}>{c.description}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="ds-label">Fatura Tarihi</label>
+              <div className="relative">
+                <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <input
+                  type="date"
+                  name="invoiceDate"
+                  value={formData.invoiceDate}
+                  onChange={handleChange}
+                  className="ds-input pl-9 w-full [color-scheme:dark]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="ds-label">Vade Tarihi (Opsiyonel)</label>
+              <div className="relative">
+                <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  className="ds-input pl-9 w-full [color-scheme:dark]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="ds-label">Referans Numarası (Belge No / İrsaliye No)</label>
+            <div className="relative">
+              <Hash size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                name="referenceNumber"
+                value={formData.referenceNumber}
+                onChange={handleChange}
+                placeholder="Örn: REF-2026-001"
+                className="ds-input pl-9 w-full"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="ds-label">Açıklama / Notlar</label>
+            <div className="relative">
+              <AlignLeft size={15} className="absolute left-3 top-3.5 text-slate-500 pointer-events-none" />
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Faturaya dair genel açıklama veya proje detayı..."
+                className="ds-input pl-9 w-full min-h-[100px] resize-y"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 justify-end border-t border-slate-700/50 pt-5">
+          <button type="button" onClick={onCancel} className="ds-btn-secondary flex items-center gap-2" disabled={loading}>
+            <X size={16} /> İptal
+          </button>
+          <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={loading}>
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            {loading ? 'Oluşturuluyor...' : 'Faturayı Oluştur'}
+          </button>
+        </div>
+
       </form>
     </div>
   );

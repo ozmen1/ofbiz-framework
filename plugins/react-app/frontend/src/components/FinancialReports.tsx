@@ -149,96 +149,45 @@ const FinancialReports: React.FC = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="flex flex-col gap-8">
       {/* Top Filter and Actions Toolbar */}
-      <div className="glass-card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-card p-5">
+        <div className="flex justify-between items-center flex-wrap gap-4">
           {/* Navigation Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(15, 23, 42, 0.8)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+          <div className="ds-tab-bar">
             <button
               onClick={() => setActiveTab('trial-balance')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'trial-balance' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                color: activeTab === 'trial-balance' ? 'white' : 'var(--text-muted)',
-                fontWeight: activeTab === 'trial-balance' ? 600 : 400,
-                cursor: 'pointer'
-              }}
+              className={activeTab === 'trial-balance' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
               <FileText size={16} /> Mizan (Trial Balance)
             </button>
             <button
               onClick={() => setActiveTab('balance-sheet')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'balance-sheet' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                color: activeTab === 'balance-sheet' ? 'white' : 'var(--text-muted)',
-                fontWeight: activeTab === 'balance-sheet' ? 600 : 400,
-                cursor: 'pointer'
-              }}
+              className={activeTab === 'balance-sheet' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
               <Landmark size={16} /> Bilanço (Balance Sheet)
             </button>
             <button
               onClick={() => setActiveTab('income-statement')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'income-statement' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                color: activeTab === 'income-statement' ? 'white' : 'var(--text-muted)',
-                fontWeight: activeTab === 'income-statement' ? 600 : 400,
-                cursor: 'pointer'
-              }}
+              className={activeTab === 'income-statement' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
               <TrendingUp size={16} /> Gelir Tablosu (P&L)
             </button>
             <button
               onClick={() => setActiveTab('aging')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: activeTab === 'aging' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                color: activeTab === 'aging' ? 'white' : 'var(--text-muted)',
-                fontWeight: activeTab === 'aging' ? 600 : 400,
-                cursor: 'pointer'
-              }}
+              className={activeTab === 'aging' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
               <Clock size={16} /> Yaşlandırma (Aging)
             </button>
           </div>
 
           {/* Right Filters & Tools */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-3 flex-wrap">
             {/* Organization */}
             <select
               value={organizationPartyId}
               onChange={(e) => setOrganizationPartyId(e.target.value)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(15, 23, 42, 0.6)',
-                color: 'white',
-                fontSize: '0.85rem'
-              }}
+              className="ds-select text-sm"
             >
               {metadata.organizations.map(org => (
                 <option key={org.partyId} value={org.partyId}>{org.name}</option>
@@ -250,14 +199,7 @@ const FinancialReports: React.FC = () => {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.85rem'
-                }}
+                className="ds-select text-sm"
               >
                 <option value="">Tüm Zamanlar (Canlı)</option>
                 {metadata.years.map(y => (
@@ -271,14 +213,7 @@ const FinancialReports: React.FC = () => {
               <select
                 value={agingType}
                 onChange={(e) => setAgingType(e.target.value as 'AR' | 'AP')}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white',
-                  fontSize: '0.85rem'
-                }}
+                className="ds-select text-sm"
               >
                 <option value="AR">Müşteri Alacakları (AR)</option>
                 <option value="AP">Tedarikçi Borçları (AP)</option>
@@ -288,33 +223,15 @@ const FinancialReports: React.FC = () => {
             <button
               onClick={loadReport}
               title="Yenile"
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
-                cursor: 'pointer'
-              }}
+              className="ds-btn-secondary p-2"
             >
-              <RefreshCw size={14} className={loading ? 'spin' : ''} />
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             </button>
 
             <button
               onClick={handleExportCsv}
               title="CSV İndir"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
+              className="ds-btn-secondary flex items-center gap-1 text-sm"
             >
               <Download size={14} /> CSV
             </button>
@@ -322,18 +239,7 @@ const FinancialReports: React.FC = () => {
             <button
               onClick={handlePrint}
               title="Yazdır / PDF"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
+              className="ds-btn-secondary flex items-center gap-1 text-sm"
             >
               <Printer size={14} /> Yazdır
             </button>
@@ -342,166 +248,122 @@ const FinancialReports: React.FC = () => {
       </div>
 
       {error && (
-        <div style={{
-          padding: '1rem',
-          borderRadius: '8px',
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-          color: '#f87171',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-error">
           <AlertTriangle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '5rem' }}>
-          <Loader2 size={36} className="spin" style={{ color: 'var(--primary)', margin: '0 auto 1rem' }} />
-          <div style={{ color: 'var(--text-muted)' }}>Mali rapor hesaplanıyor...</div>
+        <div className="text-center py-20">
+          <Loader2 size={36} className="ds-spinner mx-auto mb-4" />
+          <div className="text-slate-400">Mali rapor hesaplanıyor...</div>
         </div>
       ) : (
         <>
           {/* TAB 1: TRIAL BALANCE (MİZAN) */}
           {activeTab === 'trial-balance' && trialBalanceData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="flex flex-col gap-6">
               {/* Summary Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Toplam Borç (Debit)</span>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.25rem 0', color: '#60a5fa' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
+                <div className="ds-card p-6">
+                  <span className="text-xs text-slate-400 uppercase">Toplam Borç (Debit)</span>
+                  <div className="text-[1.75rem] font-bold my-1 text-blue-400">
                     ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tüm hesapların borç toplamı</div>
+                  <div className="text-xs text-slate-400">Tüm hesapların borç toplamı</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Toplam Alacak (Credit)</span>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.25rem 0', color: '#c084fc' }}>
+                <div className="ds-card p-6">
+                  <span className="text-xs text-slate-400 uppercase">Toplam Alacak (Credit)</span>
+                  <div className="text-[1.75rem] font-bold my-1 text-purple-400">
                     ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tüm hesapların alacak toplamı</div>
+                  <div className="text-xs text-slate-400">Tüm hesapların alacak toplamı</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mizan Denge Durumu</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+                <div className="ds-card p-6">
+                  <span className="text-xs text-slate-400 uppercase">Mizan Denge Durumu</span>
+                  <div className="flex items-center gap-2 my-2">
                     {trialBalanceData.isBalanced ? (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        background: 'rgba(34, 197, 94, 0.15)',
-                        color: '#4ade80'
-                      }}>
+                      <span className="ds-badge ds-badge-green inline-flex items-center gap-1">
                         <CheckCircle2 size={16} /> Mizan Dengede (Fark: $0.00)
                       </span>
                     ) : (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        color: '#f87171'
-                      }}>
+                      <span className="ds-badge ds-badge-red inline-flex items-center gap-1">
                         <AlertTriangle size={16} /> Denge Farkı: ${trialBalanceData.difference.toFixed(2)}
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Toplam {trialBalanceData.accounts.length} hesap listeleniyor</div>
+                  <div className="text-xs text-slate-400">Toplam {trialBalanceData.accounts.length} hesap listeleniyor</div>
                 </div>
               </div>
 
               {/* Table Toolbar */}
-              <div className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: '320px' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <div className="ds-card p-4 flex items-center">
+                <div className="relative w-80">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Hesap kodu veya adı ile filtrele..."
                     value={tbSearch}
                     onChange={(e) => setTbSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem 0.5rem 2.25rem',
-                      borderRadius: '8px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'rgba(15, 23, 42, 0.6)',
-                      color: 'white',
-                      fontSize: '0.85rem'
-                    }}
+                    className="ds-input pl-9 w-full text-sm"
                   />
                 </div>
               </div>
 
               {/* Trial Balance Table */}
-              <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <div className="ds-card overflow-hidden p-0">
+                <table className="ds-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '1rem 1.25rem' }}>Hesap Kodu</th>
-                      <th style={{ padding: '1rem 1.25rem' }}>Hesap Adı</th>
-                      <th style={{ padding: '1rem 1.25rem' }}>Hesap Sınıfı</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Toplam Borç</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Toplam Alacak</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>Net Bakiye</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>B/A</th>
+                    <tr className="ds-thead-row">
+                      <th className="ds-th">Hesap Kodu</th>
+                      <th className="ds-th">Hesap Adı</th>
+                      <th className="ds-th">Hesap Sınıfı</th>
+                      <th className="ds-th-right">Toplam Borç</th>
+                      <th className="ds-th-right">Toplam Alacak</th>
+                      <th className="ds-th-right">Net Bakiye</th>
+                      <th className="ds-th text-center">B/A</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTbAccounts.map(acc => (
-                      <tr key={acc.glAccountId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                        <td style={{ padding: '0.75rem 1.25rem', fontWeight: 600, color: 'white' }}>
+                      <tr key={acc.glAccountId} className="ds-tbody-row">
+                        <td className="ds-td-primary">
                           #{acc.accountCode || acc.glAccountId}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem' }}>
+                        <td className="ds-td">
                           {acc.accountName}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        <td className="ds-td-muted text-xs">
                           {acc.glAccountClassId}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                        <td className="ds-td-right">
                           {acc.debits > 0 ? `$${acc.debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                        <td className="ds-td-right">
                           {acc.credits > 0 ? `$${acc.credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right', fontWeight: 700, color: acc.balance >= 0 ? '#4ade80' : '#f87171' }}>
+                        <td className={`ds-td-right font-bold ${acc.balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           ${Math.abs(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </td>
-                        <td style={{ padding: '0.75rem 1.25rem', textAlign: 'center' }}>
-                          <span style={{
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            background: acc.debitCreditFlag === 'D' ? 'rgba(96, 165, 250, 0.15)' : 'rgba(192, 132, 252, 0.15)',
-                            color: acc.debitCreditFlag === 'D' ? '#60a5fa' : '#c084fc'
-                          }}>
+                        <td className="ds-td text-center">
+                          <span className={`ds-badge ${acc.debitCreditFlag === 'D' ? 'ds-badge-blue' : 'ds-badge-purple'}`}>
                             {acc.debitCreditFlag === 'D' ? 'Borç (D)' : 'Alacak (C)'}
                           </span>
                         </td>
                       </tr>
                     ))}
-                    <tr style={{ background: 'rgba(255,255,255,0.04)', fontWeight: 700, fontSize: '0.95rem' }}>
-                      <td colSpan={3} style={{ padding: '1rem 1.25rem' }}>GENEL TOPLAM</td>
-                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#60a5fa' }}>
+                    <tr className="bg-white/[0.04] font-bold text-[0.95rem]">
+                      <td colSpan={3} className="ds-td">GENEL TOPLAM</td>
+                      <td className="ds-td-right text-blue-400">
                         ${trialBalanceData.totalDebits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#c084fc' }}>
+                      <td className="ds-td-right text-purple-400">
                         ${trialBalanceData.totalCredits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
-                      <td colSpan={2} style={{ padding: '1rem 1.25rem', textAlign: 'center', color: '#4ade80' }}>
+                      <td colSpan={2} className="ds-td text-center text-green-400">
                         Dengede (Fark: $0.00)
                       </td>
                     </tr>
@@ -513,40 +375,20 @@ const FinancialReports: React.FC = () => {
 
           {/* TAB 2: BALANCE SHEET (BİLANÇO) */}
           {activeTab === 'balance-sheet' && balanceSheetData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="flex flex-col gap-6">
               {/* Balance Badge */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1rem 1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+              <div className="flex justify-between items-center bg-white/[0.02] p-4 px-6 rounded-xl border border-slate-700/50">
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Bilanço Raporu ({balanceSheetData.asOfDate})</h4>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Şirket: {balanceSheetData.organizationPartyId}</div>
+                  <h4 className="m-0 text-[1.1rem] text-white">Bilanço Raporu ({balanceSheetData.asOfDate})</h4>
+                  <div className="text-xs text-slate-400 mt-1">Şirket: {balanceSheetData.organizationPartyId}</div>
                 </div>
                 <div>
                   {balanceSheetData.isBalanced ? (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      padding: '0.4rem 0.9rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      background: 'rgba(34, 197, 94, 0.15)',
-                      color: '#4ade80'
-                    }}>
+                    <span className="ds-badge ds-badge-green inline-flex items-center gap-1">
                       <CheckCircle2 size={16} /> Aktif = Pasif (Dengede)
                     </span>
                   ) : (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      padding: '0.4rem 0.9rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      color: '#f87171'
-                    }}>
+                    <span className="ds-badge ds-badge-red inline-flex items-center gap-1">
                       <AlertTriangle size={16} /> Denge Farkı: ${balanceSheetData.difference.toFixed(2)}
                     </span>
                   )}
@@ -554,29 +396,29 @@ const FinancialReports: React.FC = () => {
               </div>
 
               {/* Side by Side Grid: Aktif (Assets) vs Pasif (Liabilities & Equity) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
                 {/* AKTİFLER (ASSETS) */}
-                <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <div style={{ borderBottom: '2px solid rgba(99, 102, 241, 0.3)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="ds-card p-6 flex flex-col gap-6">
+                  <div className="border-b-2 border-indigo-500/30 pb-3 flex justify-between items-center">
+                    <h3 className="m-0 text-[1.25rem] text-blue-400 flex items-center gap-2">
                       <Landmark size={20} /> I. AKTİF (VARLIKLAR)
                     </h3>
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#60a5fa' }}>
+                    <span className="font-bold text-[1.1rem] text-blue-400">
                       ${balanceSheetData.assets.totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
 
                   {/* Dönen Varlıklar */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'white', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
                       <span>A. Dönen Varlıklar (Current Assets)</span>
                       <span>${balanceSheetData.assets.totalCurrentAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                    <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.assets.currentAssets.map(a => (
-                        <div key={a.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                        <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
@@ -584,48 +426,48 @@ const FinancialReports: React.FC = () => {
 
                   {/* Duran Varlıklar */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'white', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
                       <span>B. Duran Varlıklar (Long-term / Fixed Assets)</span>
                       <span>${balanceSheetData.assets.totalLongTermAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                    <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.assets.longTermAssets.map(a => (
-                        <div key={a.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                        <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.1rem' }}>
+                  <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between font-bold text-[1.1rem]">
                     <span>TOPLAM AKTİFLER</span>
-                    <span style={{ color: '#60a5fa' }}>${balanceSheetData.assets.totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-blue-400">${balanceSheetData.assets.totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
 
                 {/* PASİFLER (LIABILITIES & EQUITY) */}
-                <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <div style={{ borderBottom: '2px solid rgba(168, 85, 247, 0.3)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="ds-card p-6 flex flex-col gap-6">
+                  <div className="border-b-2 border-purple-500/30 pb-3 flex justify-between items-center">
+                    <h3 className="m-0 text-[1.25rem] text-purple-400 flex items-center gap-2">
                       <Layers size={20} /> II. PASİF (KAYNAKLAR)
                     </h3>
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#c084fc' }}>
+                    <span className="font-bold text-[1.1rem] text-purple-400">
                       ${balanceSheetData.totalLiabilitiesAndEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
 
                   {/* Kısa Vadeli Yabancı Kaynaklar */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'white', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
                       <span>A. Kısa Vadeli Borçlar (Current Liabilities)</span>
                       <span>${balanceSheetData.liabilities.totalCurrentLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                    <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.liabilities.currentLiabilities.map(a => (
-                        <div key={a.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                        <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
@@ -633,15 +475,15 @@ const FinancialReports: React.FC = () => {
 
                   {/* Uzun Vadeli Yabancı Kaynaklar */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'white', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
                       <span>B. Uzun Vadeli Borçlar (Long-term Liabilities)</span>
                       <span>${balanceSheetData.liabilities.totalLongTermLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                    <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.liabilities.longTermLiabilities.map(a => (
-                        <div key={a.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                        <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName} (#{a.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
@@ -649,15 +491,15 @@ const FinancialReports: React.FC = () => {
 
                   {/* Özkaynaklar */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'white', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    <div className="flex justify-between font-semibold text-white mb-2 text-[0.95rem]">
                       <span>C. Özkaynaklar (Equity)</span>
                       <span>${balanceSheetData.equity.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                    <div className="pl-4 flex flex-col gap-[0.4rem] text-sm">
                       {balanceSheetData.equity.equityAccounts.map(a => (
-                        <div key={a.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                        <div key={a.glAccountId} className="flex justify-between text-slate-400">
                           <span>{a.accountName}</span>
-                          <span style={{ color: a.balance >= 0 ? 'white' : '#f87171', fontWeight: a.glAccountId === 'NET_INCOME' ? 600 : 400 }}>
+                          <span className={`${a.balance >= 0 ? 'text-white' : 'text-red-400'} ${a.glAccountId === 'NET_INCOME' ? 'font-semibold' : ''}`}>
                             ${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -665,9 +507,9 @@ const FinancialReports: React.FC = () => {
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.1rem' }}>
+                  <div className="mt-auto pt-4 border-t border-slate-700/50 flex justify-between font-bold text-[1.1rem]">
                     <span>TOPLAM PASİFLER</span>
-                    <span style={{ color: '#c084fc' }}>${balanceSheetData.totalLiabilitiesAndEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-purple-400">${balanceSheetData.totalLiabilitiesAndEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -676,56 +518,56 @@ const FinancialReports: React.FC = () => {
 
           {/* TAB 3: INCOME STATEMENT (GELİR TABLOSU) */}
           {activeTab === 'income-statement' && incomeStatementData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '850px', margin: '0 auto', width: '100%' }}>
+            <div className="flex flex-col gap-6 max-w-[850px] mx-auto w-full">
               {/* Executive Summary Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Toplam Gelir</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#4ade80', margin: '0.25rem 0' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">Toplam Gelir</span>
+                  <div className="text-[1.5rem] font-bold text-green-400 my-1">
                     ${incomeStatementData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Satışların Maliyeti (COGS)</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f87171', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">Satışların Maliyeti (COGS)</span>
+                  <div className="text-[1.5rem] font-bold text-red-400 my-1">
                     ${incomeStatementData.totalCogs.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Brüt Kâr (Gross Profit)</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#60a5fa', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">Brüt Kâr (Gross Profit)</span>
+                  <div className="text-[1.5rem] font-bold text-blue-400 my-1">
                     ${incomeStatementData.grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Dönem Net Kâr/Zarar</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: incomeStatementData.netIncome >= 0 ? '#4ade80' : '#f87171', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">Dönem Net Kâr/Zarar</span>
+                  <div className={`text-[1.5rem] font-bold my-1 ${incomeStatementData.netIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     ${incomeStatementData.netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
 
               {/* Waterfall Statement Table */}
-              <div className="glass-card" style={{ padding: '2rem' }}>
-                <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.25rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem' }}>
+              <div className="ds-card p-8">
+                <h3 className="m-0 mb-6 text-[1.25rem] text-white border-b border-slate-700/50 pb-3">
                   Ayrıntılı Gelir Tablosu ({incomeStatementData.period})
                 </h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="flex flex-col gap-6">
                   {/* Revenue Section */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: '#4ade80', borderBottom: '1px solid rgba(74, 222, 128, 0.2)', paddingBottom: '0.5rem' }}>
+                    <div className="flex justify-between font-bold text-base text-green-400 border-b border-green-400/20 pb-2">
                       <span>1. HASILAT VE GELİRLER (Revenues)</span>
                       <span>${incomeStatementData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ padding: '0.5rem 0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
                       {incomeStatementData.revenues.map(r => (
-                        <div key={r.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <div key={r.glAccountId} className="flex justify-between text-sm text-slate-400">
                           <span>{r.accountName} (#{r.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
@@ -733,55 +575,50 @@ const FinancialReports: React.FC = () => {
 
                   {/* COGS Section */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: '#f87171', borderBottom: '1px solid rgba(248, 113, 113, 0.2)', paddingBottom: '0.5rem' }}>
+                    <div className="flex justify-between font-bold text-base text-red-400 border-b border-red-400/20 pb-2">
                       <span>2. SATIŞLARIN MALİYETİ (COGS)</span>
                       <span>-${incomeStatementData.totalCogs.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ padding: '0.5rem 0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
                       {incomeStatementData.cogs.map(c => (
-                        <div key={c.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <div key={c.glAccountId} className="flex justify-between text-sm text-slate-400">
                           <span>{c.accountName} (#{c.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${c.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${c.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Gross Profit Callout */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)', fontWeight: 700 }}>
-                    <span>BRÜT FAALİYET KÂRI</span>
-                    <span style={{ color: '#60a5fa' }}>${incomeStatementData.grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                  <div className="flex justify-between p-3 px-4 bg-indigo-500/10 rounded-lg border border-indigo-500/20 font-bold">
+                    <span className="text-white">BRÜT FAALİYET KÂRI</span>
+                    <span className="text-blue-400">${incomeStatementData.grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
 
                   {/* Expenses Section */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: '#facc15', borderBottom: '1px solid rgba(250, 204, 21, 0.2)', paddingBottom: '0.5rem' }}>
+                    <div className="flex justify-between font-bold text-base text-amber-400 border-b border-amber-400/20 pb-2">
                       <span>3. FAALİYET GİDERLERİ (OPEX)</span>
                       <span>-${incomeStatementData.totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div style={{ padding: '0.5rem 0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <div className="pt-2 pl-4 flex flex-col gap-[0.35rem]">
                       {incomeStatementData.expenses.map(e => (
-                        <div key={e.glAccountId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <div key={e.glAccountId} className="flex justify-between text-sm text-slate-400">
                           <span>{e.accountName} (#{e.glAccountId})</span>
-                          <span style={{ color: 'white' }}>${e.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-white">${e.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Net Income Callout */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '1rem 1.25rem',
-                    background: incomeStatementData.netIncome >= 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    borderRadius: '8px',
-                    border: `1px solid ${incomeStatementData.netIncome >= 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                    fontWeight: 800,
-                    fontSize: '1.15rem'
-                  }}>
-                    <span>DÖNEM NET KÂRI / (ZARARI)</span>
-                    <span style={{ color: incomeStatementData.netIncome >= 0 ? '#4ade80' : '#f87171' }}>
+                  <div className={`flex justify-between p-4 px-5 rounded-lg border font-extrabold text-[1.15rem] ${
+                    incomeStatementData.netIncome >= 0
+                      ? 'bg-green-500/15 border-green-500/30'
+                      : 'bg-red-500/15 border-red-500/30'
+                  }`}>
+                    <span className="text-white">DÖNEM NET KÂRI / (ZARARI)</span>
+                    <span className={incomeStatementData.netIncome >= 0 ? 'text-green-400' : 'text-red-400'}>
                       ${incomeStatementData.netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -792,101 +629,101 @@ const FinancialReports: React.FC = () => {
 
           {/* TAB 4: AGING SUMMARY (YAŞLANDIRMA RAPORU) */}
           {activeTab === 'aging' && agingData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="flex flex-col gap-6">
               {/* Bucket Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Vadesi Gelmemiş</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#4ade80', margin: '0.25rem 0' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">Vadesi Gelmemiş</span>
+                  <div className="text-[1.4rem] font-bold text-green-400 my-1">
                     ${agingData.bucketTotals.current.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vadesi henüz dolmamış</div>
+                  <div className="text-xs text-slate-400">Vadesi henüz dolmamış</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>1 - 30 Gün</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#facc15', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">1 - 30 Gün</span>
+                  <div className="text-[1.4rem] font-bold text-amber-400 my-1">
                     ${agingData.bucketTotals.days1_30.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>1 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">1 aya kadar gecikme</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>31 - 60 Gün</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fb923c', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">31 - 60 Gün</span>
+                  <div className="text-[1.4rem] font-bold text-orange-400 my-1">
                     ${agingData.bucketTotals.days31_60.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>2 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">2 aya kadar gecikme</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>61 - 90 Gün</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#f87171', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">61 - 90 Gün</span>
+                  <div className="text-[1.4rem] font-bold text-red-400 my-1">
                     ${agingData.bucketTotals.days61_90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>3 aya kadar gecikme</div>
+                  <div className="text-xs text-slate-400">3 aya kadar gecikme</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>90+ Gün</span>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ef4444', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5">
+                  <span className="text-xs text-slate-400 uppercase">90+ Gün</span>
+                  <div className="text-[1.4rem] font-bold text-red-500 my-1">
                     ${agingData.bucketTotals.daysOver90.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>3 aydan eski gecikme</div>
+                  <div className="text-xs text-slate-400">3 aydan eski gecikme</div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.25rem', border: '1px solid rgba(99, 102, 241, 0.4)' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Genel Toplam Bakiye</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#c084fc', margin: '0.25rem 0' }}>
+                <div className="ds-card p-5 border-indigo-500/40">
+                  <span className="text-xs text-slate-400 uppercase">Genel Toplam Bakiye</span>
+                  <div className="text-[1.5rem] font-bold text-purple-400 my-1">
                     ${agingData.bucketTotals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agingData.type === 'AR' ? 'Açık Alacaklar' : 'Açık Borçlar'}</div>
+                  <div className="text-xs text-slate-400">{agingData.type === 'AR' ? 'Açık Alacaklar' : 'Açık Borçlar'}</div>
                 </div>
               </div>
 
               {/* Aging Breakdown Table */}
-              <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <div className="ds-card overflow-hidden p-0">
+                <table className="ds-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '1rem 1.25rem' }}>Cari ID</th>
-                      <th style={{ padding: '1rem 1.25rem' }}>Cari Ünvanı</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#4ade80' }}>Vadesi Gelmemiş</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#facc15' }}>1 - 30 Gün</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#fb923c' }}>31 - 60 Gün</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#f87171' }}>61 - 90 Gün</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: '#ef4444' }}>90+ Gün</th>
-                      <th style={{ padding: '1rem 1.25rem', textAlign: 'right', fontWeight: 700 }}>Toplam Bakiye</th>
+                    <tr className="ds-thead-row">
+                      <th className="ds-th">Cari ID</th>
+                      <th className="ds-th">Cari Ünvanı</th>
+                      <th className="ds-th-right text-green-400">Vadesi Gelmemiş</th>
+                      <th className="ds-th-right text-amber-400">1 - 30 Gün</th>
+                      <th className="ds-th-right text-orange-400">31 - 60 Gün</th>
+                      <th className="ds-th-right text-red-400">61 - 90 Gün</th>
+                      <th className="ds-th-right text-red-500">90+ Gün</th>
+                      <th className="ds-th-right font-bold">Toplam Bakiye</th>
                     </tr>
                   </thead>
                   <tbody>
                     {agingData.rows.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                        <td colSpan={8} className="text-center py-12 text-slate-400">
                           Açık bakiye içeren cari bulunamadı.
                         </td>
                       </tr>
                     ) : (
                       agingData.rows.map(row => (
-                        <tr key={row.partyId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                          <td style={{ padding: '0.75rem 1.25rem', fontWeight: 600 }}>{row.partyId}</td>
-                          <td style={{ padding: '0.75rem 1.25rem' }}>{row.partyName}</td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                        <tr key={row.partyId} className="ds-tbody-row">
+                          <td className="ds-td font-semibold">{row.partyId}</td>
+                          <td className="ds-td">{row.partyName}</td>
+                          <td className="ds-td-right">
                             {row.current > 0 ? `$${row.current.toFixed(2)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                          <td className="ds-td-right">
                             {row.days1_30 > 0 ? `$${row.days1_30.toFixed(2)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                          <td className="ds-td-right">
                             {row.days31_60 > 0 ? `$${row.days31_60.toFixed(2)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right' }}>
+                          <td className="ds-td-right">
                             {row.days61_90 > 0 ? `$${row.days61_90.toFixed(2)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right', color: row.daysOver90 > 0 ? '#ef4444' : 'inherit' }}>
+                          <td className={`ds-td-right ${row.daysOver90 > 0 ? 'text-red-500' : ''}`}>
                             {row.daysOver90 > 0 ? `$${row.daysOver90.toFixed(2)}` : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1.25rem', textAlign: 'right', fontWeight: 700, color: 'white' }}>
+                          <td className="ds-td-right font-bold text-white">
                             ${row.total.toFixed(2)}
                           </td>
                         </tr>

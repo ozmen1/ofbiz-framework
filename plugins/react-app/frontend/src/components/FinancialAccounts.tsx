@@ -423,29 +423,28 @@ export const FinancialAccounts: React.FC = () => {
   const cashAccountsCount = accounts.filter(a => a.finAccountTypeId === 'DEPOSIT_ACCOUNT' || a.finAccountName.toLowerCase().includes('kasa')).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
       
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-page-header">
         <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.025em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Landmark size={28} color="var(--primary)" />
+          <h1 className="ds-page-title">
+            <Landmark size={26} className="text-indigo-400" />
             Kasa & Banka Yönetimi (Financial Accounts)
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+          <p className="ds-page-subtitle">
             Banka hesapları, nakit kasalar, hesap hareketleri, virman transferleri ve banka mutabakatı
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-3 flex-wrap">
           <button 
             onClick={() => {
               if (activeTab === 'accounts') loadAccounts();
               else if (activeTab === 'transactions') loadTransactions();
               else loadReconciliations();
             }} 
-            className="glass-card" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', cursor: 'pointer' }}
+            className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Yenile
@@ -453,8 +452,7 @@ export const FinancialAccounts: React.FC = () => {
           
           <button 
             onClick={() => handleOpenTransferModal()} 
-            className="glass-card" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.125rem', cursor: 'pointer', color: '#60a5fa' }}
+            className="ds-btn-secondary text-blue-400 hover:text-blue-300"
           >
             <ArrowRightLeft size={16} />
             Virman (Transfer)
@@ -462,8 +460,7 @@ export const FinancialAccounts: React.FC = () => {
 
           <button 
             onClick={() => setShowCreateAccountModal(true)} 
-            className="btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem' }}
+            className="ds-btn-primary"
           >
             <Plus size={18} />
             Yeni Hesap Ekle
@@ -473,16 +470,7 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* Success Notification */}
       {successMsg && (
-        <div style={{ 
-          background: 'rgba(34, 197, 94, 0.15)', 
-          border: '1px solid rgba(34, 197, 94, 0.3)', 
-          color: '#4ade80', 
-          padding: '0.875rem 1.25rem', 
-          borderRadius: '10px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem' 
-        }}>
+        <div className="ds-alert-success flex items-center gap-3">
           <CheckCircle2 size={18} />
           <span>{successMsg}</span>
         </div>
@@ -490,60 +478,51 @@ export const FinancialAccounts: React.FC = () => {
 
       {/* Error Notification */}
       {error && (
-        <div style={{ 
-          background: 'rgba(239, 68, 68, 0.15)', 
-          border: '1px solid rgba(239, 68, 68, 0.3)', 
-          color: '#f87171', 
-          padding: '0.875rem 1.25rem', 
-          borderRadius: '10px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem' 
-        }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Top Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <DollarSign size={16} color="var(--primary)" /> Toplam Kasa & Banka Varlığı
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="ds-stat-card border-l-4 border-l-emerald-500">
+          <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
+            <DollarSign size={16} /> Toplam Kasa & Banka Varlığı
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4ade80' }}>
+          <div className="ds-stat-value text-emerald-400">
             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalActiveBalance)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Aktif hesapların toplam fiili bakiyesi</div>
+          <div className="ds-stat-sub">Aktif hesapların toplam fiili bakiyesi</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Landmark size={16} color="#60a5fa" /> Banka Hesapları
+        <div className="ds-stat-card border-l-4 border-l-blue-500">
+          <div className="ds-stat-label flex items-center gap-2 text-blue-400">
+            <Landmark size={16} /> Banka Hesapları
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#60a5fa' }}>{bankAccountsCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Vadesiz mevduat & ticari hesaplar</div>
+          <div className="ds-stat-value text-blue-400">{bankAccountsCount}</div>
+          <div className="ds-stat-sub">Vadesiz mevduat & ticari hesaplar</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Wallet size={16} color="#fb923c" /> Kasa Hesapları
+        <div className="ds-stat-card border-l-4 border-l-amber-500">
+          <div className="ds-stat-label flex items-center gap-2 text-amber-400">
+            <Wallet size={16} /> Kasa Hesapları
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fb923c' }}>{cashAccountsCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Nakit & depozito kasaları</div>
+          <div className="ds-stat-value text-amber-400">{cashAccountsCount}</div>
+          <div className="ds-stat-sub">Nakit & depozito kasaları</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileSpreadsheet size={16} color="#c084fc" /> Toplam Hesap Sayısı
+        <div className="ds-stat-card border-l-4 border-l-purple-500">
+          <div className="ds-stat-label flex items-center gap-2 text-purple-400">
+            <FileSpreadsheet size={16} /> Toplam Hesap Sayısı
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{totalAccountsCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Sistemde kayıtlı tüm hesaplar</div>
+          <div className="ds-stat-value">{totalAccountsCount}</div>
+          <div className="ds-stat-sub">Sistemde kayıtlı tüm hesaplar</div>
         </div>
       </div>
 
       {/* Main Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
+      <div className="ds-tab-bar">
         {[
           { id: 'accounts', label: 'Kasa & Banka Hesapları', icon: <Landmark size={18} /> },
           { id: 'transactions', label: 'Hesap Hareketleri (Transactions)', icon: <ArrowRightLeft size={18} /> },
@@ -552,26 +531,16 @@ export const FinancialAccounts: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as FinAccountTab)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === tab.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              color: activeTab === tab.id ? '#818cf8' : 'var(--text-muted)',
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
+            className={`ds-tab flex items-center gap-2 ${
+              activeTab === tab.id ? 'ds-tab-active' : ''
+            }`}
           >
             {tab.icon}
             {tab.label}
           </button>
         ))}
       </div>
+
 
       {/* TAB 1: ACCOUNTS LIST */}
       {activeTab === 'accounts' && (

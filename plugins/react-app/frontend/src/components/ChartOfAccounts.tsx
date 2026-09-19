@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Search, RefreshCw, Plus, Edit3, Eye, CheckCircle2, 
-  X, AlertCircle, Loader2, BookOpen, Layers,
+  X, AlertCircle, BookOpen, Layers,
   Filter, Building, ArrowUpRight, ArrowDownLeft
 } from 'lucide-react';
 import { 
@@ -14,24 +14,24 @@ import {
   UpdateGlAccountPayload 
 } from '../services/api';
 
-const getClassBadgeStyle = (classId: string) => {
+const getClassBadgeClass = (classId: string) => {
   const c = classId.toUpperCase();
   if (c.includes('ASSET') || c.includes('CASH')) {
-    return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.3)' };
+    return 'ds-badge-green';
   }
   if (c.includes('LIABILITY')) {
-    return { bg: 'rgba(249, 115, 22, 0.15)', text: '#fb923c', border: 'rgba(249, 115, 22, 0.3)' };
+    return 'ds-badge-yellow';
   }
   if (c.includes('EQUITY')) {
-    return { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' };
+    return 'ds-badge-blue';
   }
   if (c.includes('REVENUE') || c.includes('INCOME')) {
-    return { bg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
+    return 'ds-badge-purple';
   }
   if (c.includes('EXPENSE')) {
-    return { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.3)' };
+    return 'ds-badge-red';
   }
-  return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', border: 'rgba(148, 163, 184, 0.3)' };
+  return 'ds-badge-slate';
 };
 
 type QuickClassFilter = 'ALL' | 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
@@ -231,33 +231,31 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
   const expenseCount = accounts.filter(a => a.glAccountClassId.includes('EXPENSE')).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
       
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-page-header">
         <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.025em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <BookOpen size={28} color="var(--primary)" />
+          <h1 className="ds-page-title">
+            <BookOpen size={26} className="text-indigo-400" />
             Hesap Planı (Chart of Accounts)
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+          <p className="ds-page-subtitle">
             Tekdüzen hesap planı, muhasebe sınıfları ve şirket defter-i kebir hesap tanımları
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="flex items-center gap-3">
           <button 
             onClick={loadAccounts} 
-            className="glass-card" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', cursor: 'pointer' }}
+            className="ds-btn-secondary"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Yenile
           </button>
           <button 
             onClick={() => setShowCreateModal(true)} 
-            className="btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem' }}
+            className="ds-btn-primary"
           >
             <Plus size={18} />
             Yeni Hesap Ekle
@@ -267,16 +265,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
       {/* Success Notification */}
       {successMsg && (
-        <div style={{ 
-          background: 'rgba(34, 197, 94, 0.15)', 
-          border: '1px solid rgba(34, 197, 94, 0.3)', 
-          color: '#4ade80', 
-          padding: '0.875rem 1.25rem', 
-          borderRadius: '10px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem' 
-        }}>
+        <div className="ds-alert-success flex items-center gap-3">
           <CheckCircle2 size={18} />
           <span>{successMsg}</span>
         </div>
@@ -284,60 +273,51 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
       {/* Error Notification */}
       {error && (
-        <div style={{ 
-          background: 'rgba(239, 68, 68, 0.15)', 
-          border: '1px solid rgba(239, 68, 68, 0.3)', 
-          color: '#f87171', 
-          padding: '0.875rem 1.25rem', 
-          borderRadius: '10px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem' 
-        }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="ds-stat-card border-l-4 border-l-indigo-500">
+          <div className="ds-stat-label flex items-center gap-2">
             <Layers size={16} /> Toplam Hesap
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{totalCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Sistemde kayıtlı hesaplar</div>
+          <div className="ds-stat-value">{totalCount}</div>
+          <div className="ds-stat-sub">Sistemde kayıtlı hesaplar</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Building size={16} color="#60a5fa" /> Şirkete Atanan
+        <div className="ds-stat-card border-l-4 border-l-blue-500">
+          <div className="ds-stat-label flex items-center gap-2 text-blue-400">
+            <Building size={16} /> Şirkete Atanan
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#60a5fa' }}>{totalAssignedCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Aktif kullanılan hesaplar</div>
+          <div className="ds-stat-value text-blue-400">{totalAssignedCount}</div>
+          <div className="ds-stat-sub">Aktif kullanılan hesaplar</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ArrowUpRight size={16} color="#4ade80" /> Varlık Hesapları
+        <div className="ds-stat-card border-l-4 border-l-emerald-500">
+          <div className="ds-stat-label flex items-center gap-2 text-emerald-400">
+            <ArrowUpRight size={16} /> Varlık Hesapları
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4ade80' }}>{assetCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Kasa, banka, alacaklar vb.</div>
+          <div className="ds-stat-value text-emerald-400">{assetCount}</div>
+          <div className="ds-stat-sub">Kasa, banka, alacaklar vb.</div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ArrowDownLeft size={16} color="#f87171" /> Gider Hesapları
+        <div className="ds-stat-card border-l-4 border-l-red-500">
+          <div className="ds-stat-label flex items-center gap-2 text-red-400">
+            <ArrowDownLeft size={16} /> Gider Hesapları
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f87171' }}>{expenseCount}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Maliyet ve faaliyet giderleri</div>
+          <div className="ds-stat-value text-red-400">{expenseCount}</div>
+          <div className="ds-stat-sub">Maliyet ve faaliyet giderleri</div>
         </div>
       </div>
 
       {/* Filter Bar & Class Tabs */}
-      <div className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="ds-card p-5 space-y-4">
         {/* Class Pills */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="flex gap-2 flex-wrap">
           {[
             { id: 'ALL', label: 'Tüm Hesaplar' },
             { id: 'ASSET', label: '1 - Varlıklar (Asset)' },
@@ -349,17 +329,11 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
             <button
               key={tab.id}
               onClick={() => { setClassFilter(tab.id as QuickClassFilter); setViewIndex(0); }}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: classFilter === tab.id ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
-                background: classFilter === tab.id ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                color: classFilter === tab.id ? '#818cf8' : 'var(--text-muted)',
-                fontWeight: classFilter === tab.id ? 700 : 500,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                classFilter === tab.id
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'bg-slate-700/60 hover:bg-slate-700 text-slate-300 border border-slate-600/50'
+              }`}
             >
               {tab.label}
             </button>
@@ -367,33 +341,24 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         </div>
 
         {/* Search & Checkbox */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <div className="flex gap-4 items-center flex-wrap">
+          <div className="relative flex-1 min-w-[260px]">
+            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text"
               placeholder="Hesap kodu, hesap adı veya açıklama ile ara..."
               value={searchTerm}
               onChange={e => { setSearchTerm(e.target.value); setViewIndex(0); }}
-              style={{
-                width: '100%',
-                padding: '0.625rem 1rem 0.625rem 2.75rem',
-                background: 'rgba(0,0,0,0.2)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                color: 'white',
-                outline: 'none',
-                fontSize: '0.875rem'
-              }}
+              className="ds-input pl-10"
             />
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
             <input 
               type="checkbox"
               checked={assignedOnly}
               onChange={e => { setAssignedOnly(e.target.checked); setViewIndex(0); }}
-              style={{ cursor: 'pointer' }}
+              className="accent-indigo-500 rounded"
             />
             <span>Yalnızca Şirkete Atananlar</span>
           </label>
@@ -401,97 +366,70 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
       </div>
 
       {/* Accounts Table */}
-      <div className="glass-card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+      <div className="ds-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="ds-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap Kodu</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Hesap Adı</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Sınıf (Class)</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tür (Type)</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)' }}>Üst Hesap</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center' }}>Şirket Durumu</th>
-                <th style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>İşlemler</th>
+              <tr className="ds-thead-row">
+                <th className="ds-th">Hesap Kodu</th>
+                <th className="ds-th">Hesap Adı</th>
+                <th className="ds-th">Sınıf (Class)</th>
+                <th className="ds-th">Tür (Type)</th>
+                <th className="ds-th">Üst Hesap</th>
+                <th className="ds-th text-center">Şirket Durumu</th>
+                <th className="ds-th-right">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                      <Loader2 className="animate-spin" size={24} color="var(--primary)" />
+                  <td colSpan={7} className="py-16 text-center text-slate-400">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="ds-spinner-sm" />
                       <span>Hesap planı yükleniyor...</span>
                     </div>
                   </td>
                 </tr>
               ) : accounts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Filter size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
+                  <td colSpan={7} className="py-16 text-center text-slate-400">
+                    <Filter size={32} className="mx-auto mb-3 opacity-40" />
                     <p>Kriterlere uygun GL hesabı bulunamadı.</p>
                   </td>
                 </tr>
               ) : (
                 accounts.map(acc => {
-                  const badgeStyle = getClassBadgeStyle(acc.glAccountClassId);
                   return (
-                    <tr 
-                      key={acc.glAccountId}
-                      style={{ 
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        transition: 'background 0.15s ease',
-                      }}
-                      className="table-row-hover"
-                    >
-                      <td style={{ padding: '1rem 1.25rem', fontWeight: 700, fontFamily: 'monospace', color: '#e2e8f0' }}>
+                    <tr key={acc.glAccountId} className="ds-tbody-row">
+                      <td className="ds-td-mono font-bold">
                         {acc.accountCode}
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', fontWeight: 600 }}>
-                        {acc.accountName}
+                      <td className="ds-td">
+                        <div className="font-semibold text-white">{acc.accountName}</div>
                         {acc.description && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          <div className="text-xs text-slate-400 mt-0.5">
                             {acc.description}
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '1rem 1.25rem' }}>
-                        <span style={{ 
-                          display: 'inline-block',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          background: badgeStyle.bg,
-                          color: badgeStyle.text,
-                          border: `1px solid ${badgeStyle.border}`
-                        }}>
+                      <td className="ds-td">
+                        <span className={`ds-badge ${getClassBadgeClass(acc.glAccountClassId)}`}>
                           {acc.glAccountClassDesc || acc.glAccountClassId}
                         </span>
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
+                      <td className="ds-td-muted">
                         {acc.glAccountTypeDesc || '-'}
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8125rem', fontFamily: 'monospace' }}>
+                      <td className="ds-td-muted font-mono text-xs">
                         {acc.parentGlAccountId || '-'}
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
+                      <td className="ds-td text-center">
                         <button
                           onClick={() => handleToggleAssign(acc.glAccountId, acc.isAssigned)}
                           title="Şirket atamasını aç/kapat"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '20px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            border: 'none',
-                            background: acc.isAssigned ? 'rgba(34, 197, 94, 0.15)' : 'rgba(148, 163, 184, 0.1)',
-                            color: acc.isAssigned ? '#4ade80' : '#94a3b8'
-                          }}
+                          className={`inline-flex items-center gap-1.5 ds-badge cursor-pointer ${
+                            acc.isAssigned ? 'ds-badge-green' : 'ds-badge-slate'
+                          }`}
                         >
                           {acc.isAssigned ? (
                             <>
@@ -503,22 +441,20 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                           )}
                         </button>
                       </td>
-                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <td className="ds-td-right">
+                        <div className="inline-flex gap-2 items-center justify-end">
                           <button
                             onClick={() => handleOpenDetail(acc.glAccountId)}
-                            className="glass-card"
+                            className="ds-btn-secondary px-2.5 py-1 text-xs"
                             title="Hesap Detayı ve Hareketleri"
-                            style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', cursor: 'pointer' }}
                           >
                             <Eye size={14} />
                             İncele
                           </button>
                           <button
                             onClick={() => handleOpenEdit(acc)}
-                            className="glass-card"
+                            className="ds-btn-secondary px-2.5 py-1 text-xs"
                             title="Hesabı Düzenle"
-                            style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', cursor: 'pointer' }}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -533,24 +469,22 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
         </div>
 
         {/* Pagination Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderTop: '1px solid var(--glass-border)' }}>
-          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+        <div className="flex justify-between items-center px-5 py-4 border-t border-slate-700/50 bg-slate-800/30">
+          <span className="text-xs text-slate-400">
             Toplam <strong>{totalCount}</strong> hesap (Sayfa {viewIndex + 1} / {Math.max(1, Math.ceil(totalCount / viewSize))})
           </span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             <button
               disabled={viewIndex === 0}
               onClick={() => setViewIndex(prev => Math.max(0, prev - 1))}
-              className="glass-card"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8125rem', cursor: viewIndex === 0 ? 'not-allowed' : 'pointer', opacity: viewIndex === 0 ? 0.5 : 1 }}
+              className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Önceki
             </button>
             <button
               disabled={(viewIndex + 1) * viewSize >= totalCount}
               onClick={() => setViewIndex(prev => prev + 1)}
-              className="glass-card"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8125rem', cursor: (viewIndex + 1) * viewSize >= totalCount ? 'not-allowed' : 'pointer', opacity: (viewIndex + 1) * viewSize >= totalCount ? 0.5 : 1 }}
+              className="ds-btn-secondary px-3 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Sonraki
             </button>
@@ -560,26 +494,25 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
       {/* CREATE MODAL */}
       {showCreateModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Plus size={20} color="var(--primary)" />
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plus size={20} className="text-indigo-400" />
                 Yeni Hesap Tanımla
               </h2>
-              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button 
+                onClick={() => setShowCreateModal(false)} 
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label className="ds-label">
                     Hesap Kodu *
                   </label>
                   <input
@@ -588,15 +521,12 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                     placeholder="Örn: 102100"
                     value={createForm.accountCode}
                     onChange={e => setCreateForm({ ...createForm, accountCode: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input font-mono"
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <div className="sm:col-span-2">
+                  <label className="ds-label">
                     Hesap Adı *
                   </label>
                   <input
@@ -605,26 +535,20 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                     placeholder="Örn: Garanti Bankası Vadesiz TL"
                     value={createForm.accountName}
                     onChange={e => setCreateForm({ ...createForm, accountName: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-input"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label className="ds-label">
                     Hesap Sınıfı (Class) *
                   </label>
                   <select
                     value={createForm.glAccountClassId}
                     onChange={e => setCreateForm({ ...createForm, glAccountClassId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {metadata?.glAccountClasses?.map(c => (
                       <option key={c.glAccountClassId} value={c.glAccountClassId}>
@@ -646,16 +570,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label className="ds-label">
                     Hesap Türü (Type)
                   </label>
                   <select
                     value={createForm.glAccountTypeId}
                     onChange={e => setCreateForm({ ...createForm, glAccountTypeId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     <option value="_NA_">-- Seçiniz / _NA_ --</option>
                     {metadata?.glAccountTypes?.map(t => (
@@ -668,16 +589,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label className="ds-label">
                   Üst Hesap (Bağlı Olduğu Ana Hesap)
                 </label>
                 <select
                   value={createForm.parentGlAccountId}
                   onChange={e => setCreateForm({ ...createForm, parentGlAccountId: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-select"
                 >
                   <option value="">-- Yok (Ana Hesap) --</option>
                   {metadata?.accounts?.map(a => (
@@ -689,7 +607,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label className="ds-label">
                   Açıklama
                 </label>
                 <textarea
@@ -697,29 +615,24 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   placeholder="Hesabın muhasebe tanımı ve kullanım amacı..."
                   value={createForm.description}
                   onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input resize-none"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
-                  {createLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
+                  {createLoading ? <div className="ds-spinner-sm" /> : <CheckCircle2 size={16} />}
                   Hesabı Kaydet
                 </button>
               </div>
@@ -730,25 +643,24 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
       {/* EDIT MODAL */}
       {showEditModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Edit3 size={20} color="var(--primary)" />
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 size={20} className="text-indigo-400" />
                 Hesabı Düzenle: {editForm.glAccountId}
               </h2>
-              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button 
+                onClick={() => setShowEditModal(false)} 
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label className="ds-label">
                   Hesap Adı *
                 </label>
                 <input
@@ -756,25 +668,19 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   required
                   value={editForm.accountName}
                   onChange={e => setEditForm({ ...editForm, accountName: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label className="ds-label">
                     Hesap Sınıfı (Class)
                   </label>
                   <select
                     value={editForm.glAccountClassId}
                     onChange={e => setEditForm({ ...editForm, glAccountClassId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     {metadata?.glAccountClasses?.map(c => (
                       <option key={c.glAccountClassId} value={c.glAccountClassId}>
@@ -785,16 +691,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label className="ds-label">
                     Hesap Türü (Type)
                   </label>
                   <select
                     value={editForm.glAccountTypeId}
                     onChange={e => setEditForm({ ...editForm, glAccountTypeId: e.target.value })}
-                    style={{
-                      width: '100%', padding: '0.625rem', borderRadius: '8px',
-                      background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                    }}
+                    className="ds-select"
                   >
                     <option value="_NA_">-- _NA_ --</option>
                     {metadata?.glAccountTypes?.map(t => (
@@ -807,16 +710,13 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label className="ds-label">
                   Üst Hesap
                 </label>
                 <select
                   value={editForm.parentGlAccountId}
                   onChange={e => setEditForm({ ...editForm, parentGlAccountId: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-select"
                 >
                   <option value="">-- Yok (Ana Hesap) --</option>
                   {metadata?.accounts?.filter(a => a.glAccountId !== editForm.glAccountId).map(a => (
@@ -828,47 +728,43 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label className="ds-label">
                   Açıklama
                 </label>
                 <textarea
                   rows={3}
                   value={editForm.description}
                   onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.625rem', borderRadius: '8px',
-                    background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                  }}
+                  className="ds-input resize-none"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
                   <input
                     type="checkbox"
                     checked={editForm.isAssigned === 'Y'}
                     onChange={e => setEditForm({ ...editForm, isAssigned: e.target.checked ? 'Y' : 'N' })}
+                    className="accent-indigo-500 rounded"
                   />
                   <span>Şirket (Company) defterinde aktif hesap olarak kullan</span>
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="glass-card"
-                  style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                  className="ds-btn-secondary"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="btn-primary"
-                  style={{ padding: '0.625rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  className="ds-btn-primary"
                 >
-                  {editLoading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
+                  {editLoading ? <div className="ds-spinner-sm" /> : <CheckCircle2 size={16} />}
                   Güncelle
                 </button>
               </div>
@@ -879,131 +775,127 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
 
       {/* DETAIL & RECENT ENTRIES MODAL */}
       {showDetailModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-4xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <BookOpen size={20} color="var(--primary)" />
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <BookOpen size={20} className="text-indigo-400" />
                   Hesap Özeti & Defter-i Kebir Hareketleri
                 </h2>
                 {selectedAccountDetail && (
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  <div className="text-xs text-slate-400 mt-1">
                     {selectedAccountDetail.accountCode} - {selectedAccountDetail.accountName}
                   </div>
                 )}
               </div>
-              <button onClick={() => setShowDetailModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <button 
+                onClick={() => setShowDetailModal(false)} 
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
 
             {detailLoading ? (
-              <div style={{ padding: '4rem', textAlign: 'center' }}>
-                <Loader2 className="animate-spin" size={32} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
-                <p style={{ color: 'var(--text-muted)' }}>Hesap hareketleri getiriliyor...</p>
+              <div className="py-16 text-center">
+                <div className="ds-spinner mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">Hesap hareketleri getiriliyor...</p>
               </div>
             ) : selectedAccountDetail ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="space-y-5">
                 
                 {/* Balance Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                  <div className="glass-card" style={{ padding: '1rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Normal Bakiye Yönü</div>
-                    <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="ds-stat-card border-l-4 border-l-slate-500">
+                    <div className="ds-stat-label">Normal Bakiye Yönü</div>
+                    <div className="ds-stat-value text-base mt-1">
                       {selectedAccountDetail.normalSide === 'D' ? 'Borç Bakiyeli (Debit)' : 'Alacak Bakiyeli (Credit)'}
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: '1rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Toplam Borç (Debit)</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#60a5fa' }}>
+                  <div className="ds-stat-card border-l-4 border-l-blue-500">
+                    <div className="ds-stat-label text-blue-400">Toplam Borç (Debit)</div>
+                    <div className="ds-stat-value text-blue-400 text-xl mt-1">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalDebits || 0)}
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: '1rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Toplam Alacak (Credit)</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fb923c' }}>
+                  <div className="ds-stat-card border-l-4 border-l-amber-500">
+                    <div className="ds-stat-label text-amber-400">Toplam Alacak (Credit)</div>
+                    <div className="ds-stat-value text-amber-400 text-xl mt-1">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.totalCredits || 0)}
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: '1rem', border: '1px solid rgba(99, 102, 241, 0.4)' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Net Bakiye</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ade80' }}>
+                  <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                    <div className="ds-stat-label text-emerald-400">Net Bakiye</div>
+                    <div className="ds-stat-value text-emerald-400 text-xl mt-1">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedAccountDetail.balance || 0)}
                     </div>
                   </div>
                 </div>
 
                 {/* Account Properties */}
-                <div className="glass-card" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.8125rem' }}>
+                <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Sınıf: </span>
-                    <strong>{selectedAccountDetail.glAccountClassDesc || selectedAccountDetail.glAccountClassId}</strong>
+                    <span className="text-slate-400 block mb-0.5">Sınıf: </span>
+                    <strong className="text-slate-200">{selectedAccountDetail.glAccountClassDesc || selectedAccountDetail.glAccountClassId}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Tür: </span>
-                    <strong>{selectedAccountDetail.glAccountTypeDesc || '-'}</strong>
+                    <span className="text-slate-400 block mb-0.5">Tür: </span>
+                    <strong className="text-slate-200">{selectedAccountDetail.glAccountTypeDesc || '-'}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Üst Hesap: </span>
-                    <strong>{selectedAccountDetail.parentAccountName || selectedAccountDetail.parentGlAccountId || 'Yok'}</strong>
+                    <span className="text-slate-400 block mb-0.5">Üst Hesap: </span>
+                    <strong className="text-slate-200">{selectedAccountDetail.parentAccountName || selectedAccountDetail.parentGlAccountId || 'Yok'}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Şirket Durumu: </span>
-                    <strong style={{ color: selectedAccountDetail.isAssigned ? '#4ade80' : '#94a3b8' }}>
+                    <span className="text-slate-400 block mb-0.5">Şirket Durumu: </span>
+                    <strong className={selectedAccountDetail.isAssigned ? 'text-emerald-400' : 'text-slate-400'}>
                       {selectedAccountDetail.isAssigned ? 'Atandı (Aktif)' : 'Boşta'}
                     </strong>
                   </div>
                 </div>
 
                 {/* Recent Entries Table */}
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-white">
                     Son Yevmiye Hareketleri ({accountEntries.length})
                   </h3>
 
                   {accountEntries.length === 0 ? (
-                    <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <div className="ds-card ds-empty py-12">
                       Bu hesaba ait henüz onaylı bir yevmiye kaydı bulunmuyor.
                     </div>
                   ) : (
-                    <div className="glass-card" style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                    <div className="ds-card overflow-hidden">
+                      <table className="ds-table text-xs">
                         <thead>
-                          <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Tarih</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Fiş No</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>İşlem Türü</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Açıklama</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Borç (Debit)</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Alacak (Credit)</th>
-                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Cari / İlgili</th>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">Tarih</th>
+                            <th className="ds-th">Fiş No</th>
+                            <th className="ds-th">İşlem Türü</th>
+                            <th className="ds-th">Açıklama</th>
+                            <th className="ds-th-right">Borç (Debit)</th>
+                            <th className="ds-th-right">Alacak (Credit)</th>
+                            <th className="ds-th">Cari / İlgili</th>
                           </tr>
                         </thead>
                         <tbody>
                           {accountEntries.map(e => (
-                            <tr key={`${e.acctgTransId}-${e.acctgTransEntrySeqId}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                              <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            <tr key={`${e.acctgTransId}-${e.acctgTransEntrySeqId}`} className="ds-tbody-row">
+                              <td className="ds-td-muted whitespace-nowrap">
                                 {e.transactionDate ? e.transactionDate.substring(0, 10) : '-'}
                               </td>
-                              <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>
+                              <td className="ds-td-mono font-bold">
                                 {onSelectTransaction ? (
                                   <button
                                     onClick={() => {
                                       setShowDetailModal(false);
                                       onSelectTransaction(e.acctgTransId);
                                     }}
-                                    style={{
-                                      background: 'none', border: 'none', color: '#818cf8',
-                                      cursor: 'pointer', textDecoration: 'underline', padding: 0, font: 'inherit', fontWeight: 700
-                                    }}
+                                    className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
                                   >
                                     #{e.acctgTransId}
                                   </button>
@@ -1011,15 +903,15 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                                   <span>#{e.acctgTransId}</span>
                                 )}
                               </td>
-                              <td style={{ padding: '0.75rem 1rem' }}>{e.transTypeDescription || e.acctgTransTypeId}</td>
-                              <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{e.description || '-'}</td>
-                              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: e.debitCreditFlag === 'D' ? '#60a5fa' : 'var(--text-muted)' }}>
+                              <td className="ds-td">{e.transTypeDescription || e.acctgTransTypeId}</td>
+                              <td className="ds-td-muted">{e.description || '-'}</td>
+                              <td className="ds-td-right text-blue-400">
                                 {e.debitCreditFlag === 'D' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
                               </td>
-                              <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: e.debitCreditFlag === 'C' ? '#fb923c' : 'var(--text-muted)' }}>
+                              <td className="ds-td-right text-amber-400">
                                 {e.debitCreditFlag === 'C' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currencyUomId || 'USD' }).format(e.amount) : '-'}
                               </td>
-                              <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{e.partyName || e.partyId || '-'}</td>
+                              <td className="ds-td-muted">{e.partyName || e.partyId || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1031,11 +923,10 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
               </div>
             ) : null}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <div className="flex justify-end pt-3 border-t border-slate-700/50">
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="glass-card"
-                style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+                className="ds-btn-secondary"
               >
                 Kapat
               </button>
@@ -1047,4 +938,5 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
     </div>
   );
 };
+
 export default ChartOfAccounts;

@@ -45,125 +45,121 @@ const AccountingDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
-        <div className="animate-spin" style={{ 
-          width: '40px', 
-          height: '40px', 
-          border: '4px solid var(--glass-border)', 
-          borderTopColor: 'var(--primary)', 
-          borderRadius: '50%' 
-        }}></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="ds-spinner"></div>
       </div>
     );
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+      className="space-y-5"
     >
       {/* Stats Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-        <StatCard 
-          icon={<FileText color="#6366f1" />} 
-          title="Total Invoices" 
-          value={data?.invoiceCount?.toString() || '0'} 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          icon={<FileText size={22} className="text-indigo-400" />}
+          title="Total Invoices"
+          value={data?.invoiceCount?.toString() || '0'}
+          accentColor="border-l-indigo-500"
         />
-        <StatCard 
-          icon={<DollarSign color="#a855f7" />} 
-          title="Total Payments" 
-          value={data?.paymentCount?.toString() || '0'} 
+        <StatCard
+          icon={<DollarSign size={22} className="text-purple-400" />}
+          title="Total Payments"
+          value={data?.paymentCount?.toString() || '0'}
+          accentColor="border-l-purple-500"
         />
-        <StatCard 
-          icon={<Users color="#ec4899" />} 
-          title="Active Customers" 
-          value={data?.customerCount?.toString() || '0'} 
+        <StatCard
+          icon={<Users size={22} className="text-pink-400" />}
+          title="Active Customers"
+          value={data?.customerCount?.toString() || '0'}
+          accentColor="border-l-pink-500"
         />
-        <StatCard 
-          icon={<Clock color="#f59e0b" />} 
-          title="Pending Approvals" 
-          value={data?.pendingApprovals?.toString() || '0'} 
+        <StatCard
+          icon={<Clock size={22} className="text-amber-400" />}
+          title="Pending Approvals"
+          value={data?.pendingApprovals?.toString() || '0'}
+          accentColor="border-l-amber-500"
         />
       </div>
 
-
-
       {/* Recent Invoices */}
-      <div className="glass-card" style={{ padding: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: 600 }}>Recent Invoices</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--glass-border)', textAlign: 'left' }}>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>ID</th>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>Type</th>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>Party From</th>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>Date</th>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>Status</th>
-              <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.875rem' }}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.recentInvoices.map((inv) => (
-              <tr key={inv.invoiceId} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s' }}>
-                <td style={{ padding: '1rem', fontWeight: 600 }}>{inv.invoiceId}</td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{inv.invoiceTypeId}</td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{inv.partyIdFrom}</td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{inv.invoiceDate}</td>
-                <td style={{ padding: '1rem' }}>
-                  <StatusBadge status={inv.statusId} />
-                </td>
-                <td style={{ padding: '1rem', fontWeight: 600 }}>-</td>
+      <div className="ds-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-700/50">
+          <h3 className="text-white text-base font-semibold m-0">Recent Invoices</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="ds-table">
+            <thead>
+              <tr className="ds-thead-row">
+                <th className="ds-th">ID</th>
+                <th className="ds-th">Type</th>
+                <th className="ds-th">Party From</th>
+                <th className="ds-th">Date</th>
+                <th className="ds-th">Status</th>
+                <th className="ds-th">Amount</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data?.recentInvoices.map((inv) => (
+                <tr key={inv.invoiceId} className="ds-tbody-row">
+                  <td className="ds-td-primary">{inv.invoiceId}</td>
+                  <td className="ds-td">{inv.invoiceTypeId}</td>
+                  <td className="ds-td">{inv.partyIdFrom}</td>
+                  <td className="ds-td-muted">{inv.invoiceDate}</td>
+                  <td className="ds-td">
+                    <StatusBadge status={inv.statusId} />
+                  </td>
+                  <td className="ds-td-primary">-</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </motion.div>
   );
 };
 
-const StatCard = ({ icon, title, value, trend }: { icon: React.ReactNode, title: string, value: string, trend?: string }) => (
-  <div className="glass-card" style={{ padding: '1.25rem' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-      <div style={{ 
-        padding: '0.5rem', 
-        borderRadius: '10px', 
-        background: 'rgba(255,255,255,0.05)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+const StatCard = ({
+  icon,
+  title,
+  value,
+  trend,
+  accentColor = 'border-l-indigo-500',
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  trend?: string;
+  accentColor?: string;
+}) => (
+  <div className={`ds-stat-card border-l-4 ${accentColor}`}>
+    <div className="flex justify-between items-start mb-3">
+      <div className="p-2 rounded-xl bg-slate-700/60 flex items-center justify-center">
         {icon}
       </div>
-      {trend && <span style={{ fontSize: '0.75rem', color: '#22c55e', fontWeight: 500 }}>{trend}</span>}
+      {trend && <span className="text-xs text-emerald-400 font-medium">{trend}</span>}
     </div>
-    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{title}</div>
-    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{value}</div>
+    <div className="ds-stat-label">{title}</div>
+    <div className="ds-stat-value">{value}</div>
   </div>
 );
 
 const StatusBadge = ({ status }: { status: string }) => {
-  const getColors = () => {
+  const getBadgeClass = (): string => {
     switch (status) {
-      case 'INVOICE_PAID': return { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e' };
-      case 'INVOICE_IN_PROCESS': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#f59e0b' };
-      case 'INVOICE_READY': return { bg: 'rgba(99, 102, 241, 0.1)', text: '#6366f1' };
-      default: return { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8' };
+      case 'INVOICE_PAID':         return 'ds-badge ds-badge-green';
+      case 'INVOICE_IN_PROCESS':   return 'ds-badge ds-badge-yellow';
+      case 'INVOICE_READY':        return 'ds-badge ds-badge-indigo';
+      default:                     return 'ds-badge ds-badge-slate';
     }
   };
-  const colors = getColors();
   return (
-    <span style={{ 
-      padding: '0.25rem 0.75rem', 
-      borderRadius: '20px', 
-      fontSize: '0.75rem', 
-      fontWeight: 600,
-      background: colors.bg,
-      color: colors.text,
-      textTransform: 'uppercase'
-    }}>
+    <span className={getBadgeClass()}>
       {status.replace('INVOICE_', '')}
     </span>
   );

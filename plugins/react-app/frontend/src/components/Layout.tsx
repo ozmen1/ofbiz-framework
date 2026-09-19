@@ -1,5 +1,8 @@
-import { LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut, Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2 } from 'lucide-react';
-
+import React from 'react';
+import {
+  LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
+  Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus
+} from 'lucide-react';
 import { ViewType } from '../App';
 
 interface LayoutProps {
@@ -8,207 +11,171 @@ interface LayoutProps {
   onNavigate: (view: ViewType) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
-  const isInvoiceView = currentView === 'invoices' || currentView === 'create-invoice' || currentView === 'invoice-detail';
-  const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
-  const isPaymentGroupView = currentView === 'payment-groups';
-  const isFinAccountView = currentView === 'financial-accounts';
-  const isJournalView = currentView === 'journal-entries' || currentView === 'create-journal-entry';
-  const isAccountsView = currentView === 'chart-of-accounts';
-  const isAdvancedView = currentView === 'advanced-accounting';
-  const isTaxAndGlView = currentView === 'tax-and-gl-mapping';
+// ─── Sayfa meta bilgileri ────────────────────────────────────────────────────
+const PAGE_META: Partial<Record<ViewType, { title: string; subtitle: string }>> = {
+  'dashboard':            { title: 'Dashboard',                subtitle: "Today's financial activity at a glance." },
+  'invoices':             { title: 'Faturalar',                subtitle: 'Tüm satış ve alış faturalarınızı görüntüleyin.' },
+  'create-invoice':       { title: 'Yeni Fatura',              subtitle: 'Yeni bir satış veya alış faturası oluşturun.' },
+  'invoice-detail':       { title: 'Fatura Detayı',            subtitle: 'Fatura başlık bilgilerini görüntüleyin ve düzenleyin.' },
+  'payments':             { title: 'Ödemeler',                  subtitle: 'Tahsilat ve tediye kayıtlarını yönetin.' },
+  'create-payment':       { title: 'Yeni Ödeme',               subtitle: 'Yeni bir tahsilat veya tediye kaydı oluşturun.' },
+  'payment-detail':       { title: 'Ödeme Detayı',             subtitle: 'Ödeme detaylarını görüntüleyin ve faturalarla eşleştirin.' },
+  'payment-groups':       { title: 'Ödeme Grupları',           subtitle: 'Toplu tahsilat fişleri ve EFT bordrolarını yönetin.' },
+  'financial-accounts':   { title: 'Kasa & Banka',             subtitle: 'Finansal hesaplar, virman ve banka mutabakatı.' },
+  'chart-of-accounts':    { title: 'Hesap Planı',              subtitle: 'GL hesapları ve muhasebe ağacını yönetin.' },
+  'journal-entries':      { title: 'Yevmiye Fişleri',          subtitle: 'Muhasebe kayıtlarını görüntüleyin ve oluşturun.' },
+  'create-journal-entry': { title: 'Yeni Yevmiye Fişi',        subtitle: 'Manuel muhasebe kaydı oluşturun.' },
+  'reports':              { title: 'Mali Raporlar',             subtitle: 'Mizan, Bilanço, Gelir Tablosu ve Yaşlandırma.' },
+  'advanced-accounting':  { title: 'Varlık & Bütçe',           subtitle: 'Cari hesaplar, sabit varlıklar ve bütçe yönetimi.' },
+  'tax-and-gl-mapping':   { title: 'Vergi & GL Eşlemeleri',    subtitle: 'Vergi otoriteler, oranları ve otomatik GL hesap eşlemeleri.' },
+  'test-page':            { title: 'API Test',                  subtitle: 'OFBiz REST API entegrasyonu test sayfası.' },
+};
 
+// ─── Navigasyon grupları ─────────────────────────────────────────────────────
+const NAV_GROUPS = [
+  {
+    label: 'Ana Menü',
+    items: [
+      { icon: <LayoutDashboard size={18} />, label: 'Dashboard',      view: 'dashboard'          as ViewType },
+    ]
+  },
+  {
+    label: 'Muhasebe',
+    items: [
+      { icon: <FileText   size={18} />, label: 'Faturalar',       view: 'invoices'           as ViewType },
+      { icon: <CreditCard size={18} />, label: 'Ödemeler',         view: 'payments'           as ViewType },
+      { icon: <Layers2    size={18} />, label: 'Ödeme Grupları',   view: 'payment-groups'     as ViewType },
+      { icon: <Landmark   size={18} />, label: 'Kasa & Banka',     view: 'financial-accounts' as ViewType },
+    ]
+  },
+  {
+    label: 'Genel Muhasebe',
+    items: [
+      { icon: <BookOpen   size={18} />, label: 'Hesap Planı',      view: 'chart-of-accounts'  as ViewType },
+      { icon: <ScrollText size={18} />, label: 'Yevmiye Fişleri',  view: 'journal-entries'    as ViewType },
+      { icon: <PieChart   size={18} />, label: 'Raporlar',         view: 'reports'            as ViewType },
+    ]
+  },
+  {
+    label: 'İleri Muhasebe',
+    items: [
+      { icon: <Layers   size={18} />, label: 'Varlık & Bütçe',  view: 'advanced-accounting' as ViewType },
+      { icon: <Percent  size={18} />, label: 'Vergi & GL',       view: 'tax-and-gl-mapping'  as ViewType },
+    ]
+  },
+  {
+    label: 'Sistem',
+    items: [
+      { icon: <Beaker   size={18} />, label: 'API Test', view: 'test-page' as ViewType },
+      { icon: <Settings size={18} />, label: 'Ayarlar',  view: null as any },
+    ]
+  }
+];
+
+// Hangi view'ın hangi nav item'ını aktif ettiğini belirle
+function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean {
+  if (!itemView) return false;
+  if (currentView === itemView) return true;
+  // Gruplar
+  if (itemView === 'invoices' && ['create-invoice', 'invoice-detail'].includes(currentView)) return true;
+  if (itemView === 'payments' && ['create-payment', 'payment-detail'].includes(currentView)) return true;
+  if (itemView === 'journal-entries' && currentView === 'create-journal-entry') return true;
+  return false;
+}
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
+const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
+  const meta = PAGE_META[currentView];
+  const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: '280px',
-        borderRight: '1px solid var(--glass-border)',
-        padding: '2rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem',
-        background: 'rgba(15, 23, 42, 0.8)',
-        backdropFilter: 'blur(20px)',
-        position: 'sticky',
-        top: 0,
-        height: '100vh'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            borderRadius: '10px', 
-            background: 'linear-gradient(135deg, var(--primary), #a855f7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-          }}>
-            <PieChart size={24} color="white" />
+    <div className="flex min-h-screen bg-slate-950 text-white">
+      {/* ── Sidebar ── */}
+      <aside className="w-72 shrink-0 border-r border-slate-800 bg-slate-900/80 backdrop-blur-xl flex flex-col sticky top-0 h-screen overflow-y-auto">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-800">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <PieChart size={20} className="text-white" />
           </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px' }}>OFBiz Accounting</span>
+          <div>
+            <span className="text-sm font-bold text-white tracking-tight">OFBiz Accounting</span>
+            <p className="text-xs text-slate-500">Finansal Yönetim</p>
+          </div>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <SidebarItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Dashboard" 
-            active={currentView === 'dashboard'} 
-            onClick={() => onNavigate('dashboard')} 
-          />
-          <SidebarItem 
-            icon={<FileText size={20} />} 
-            label="Invoices" 
-            active={isInvoiceView} 
-            onClick={() => onNavigate('invoices')} 
-          />
-          <SidebarItem 
-            icon={<CreditCard size={20} />} 
-            label="Payments" 
-            active={isPaymentView} 
-            onClick={() => onNavigate('payments')} 
-          />
-          <SidebarItem 
-            icon={<Layers2 size={20} />} 
-            label="Ödeme Grupları" 
-            active={isPaymentGroupView} 
-            onClick={() => onNavigate('payment-groups')} 
-          />
-
-          <SidebarItem 
-            icon={<Landmark size={20} />} 
-            label="Kasa & Banka" 
-            active={isFinAccountView} 
-            onClick={() => onNavigate('financial-accounts')} 
-          />
-          <SidebarItem 
-            icon={<BookOpen size={20} />} 
-            label="Hesap Planı" 
-            active={isAccountsView} 
-            onClick={() => onNavigate('chart-of-accounts')} 
-          />
-          <SidebarItem 
-            icon={<ScrollText size={20} />} 
-            label="Yevmiye Fişleri" 
-            active={isJournalView} 
-            onClick={() => onNavigate('journal-entries')} 
-          />
-          <SidebarItem 
-            icon={<PieChart size={20} />} 
-            label="Reports" 
-            active={currentView === 'reports'}
-            onClick={() => onNavigate('reports')}
-          />
-          <SidebarItem 
-            icon={<Layers size={20} />} 
-            label="Varlık & Bütçe" 
-            active={isAdvancedView} 
-            onClick={() => onNavigate('advanced-accounting')} 
-          />
-          <SidebarItem 
-            icon={<Percent size={20} />} 
-            label="Vergi & Eşlemeler" 
-            active={isTaxAndGlView} 
-            onClick={() => onNavigate('tax-and-gl-mapping')} 
-          />
-          <SidebarItem 
-            icon={<Settings size={20} />} 
-            label="Settings" 
-          />
-          <SidebarItem 
-            icon={<Beaker size={20} />} 
-            label="API Test" 
-            active={currentView === 'test-page'} 
-            onClick={() => onNavigate('test-page')} 
-          />
+        {/* Nav Grupları */}
+        <nav className="flex-1 px-3 py-4 space-y-5">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label}>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(item => {
+                  const active = isNavActive(item.view, currentView);
+                  return (
+                    <a
+                      key={item.label}
+                      href="#"
+                      onClick={e => { e.preventDefault(); if (item.view) onNavigate(item.view); }}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                        active
+                          ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
+                          : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                      }`}
+                    >
+                      <span className={active ? 'text-indigo-400' : 'text-slate-600'}>{item.icon}</span>
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)' }}>
-          <SidebarItem icon={<LogOut size={20} />} label="Logout" />
+        {/* Logout */}
+        <div className="px-3 py-4 border-t border-slate-800">
+          <a href="#"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+            <LogOut size={18} className="text-slate-600" />
+            Çıkış Yap
+          </a>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-        <header style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '3rem' 
-        }}>
+      {/* ── İçerik Alanı ── */}
+      <main className="flex-1 min-w-0 overflow-y-auto">
+        {/* Üst Bar */}
+        <header className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 px-8 py-4 flex items-center justify-between">
           <div>
-            <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: 0 }}>
-              {currentView === 'dashboard' && 'Welcome back'}
-              {currentView === 'invoices' && 'Invoices'}
-              {currentView === 'create-invoice' && 'Create New Invoice'}
-              {currentView === 'invoice-detail' && 'Invoice Details'}
-              {currentView === 'payments' && 'Payments'}
-              {currentView === 'create-payment' && 'Create New Payment'}
-              {currentView === 'payment-detail' && 'Payment Details'}
-              {currentView === 'payment-groups' && 'Ödeme Grupları & Bordrolar'}
-              {currentView === 'reports' && 'Mali Raporlar ve Tablolar'}
-              {currentView === 'test-page' && 'API Test Sayfası'}
+            <h2 className="text-lg font-bold text-white leading-none">
+              {meta?.title || ''}
             </h2>
-            <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {currentView === 'dashboard' && "Here's what's happening with your accounts today."}
-              {currentView === 'invoices' && "Search and manage your invoices."}
-              {currentView === 'create-invoice' && "Enter details for a new sales or purchase invoice."}
-              {currentView === 'invoice-detail' && "View and edit invoice header information."}
-              {currentView === 'payments' && "Manage customer receipts, vendor disbursements, and payment applications."}
-              {currentView === 'create-payment' && "Record a new customer receipt or vendor disbursement."}
-              {currentView === 'payment-detail' && "View payment details and match with invoices."}
-              {currentView === 'payment-groups' && "Toplu tahsilat fişleri, çek run ve EFT bordrolarını yönetin."}
-              {currentView === 'reports' && "Mizan (Trial Balance), Bilanço, Gelir Tablosu ve Yaşlandırma Analizleri."}
-              {currentView === 'test-page' && "OFBiz REST API entegrasyonu test sayfası."}
-            </p>
-
+            {meta?.subtitle && (
+              <p className="text-xs text-slate-500 mt-0.5">{meta.subtitle}</p>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="flex gap-3">
             {isPaymentView ? (
-              <button 
-                className="btn-primary" 
-                style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} 
-                onClick={() => onNavigate('create-payment')}
-              >
-                + New Payment
+              <button className="ds-btn-primary" onClick={() => onNavigate('create-payment')}>
+                <Plus size={16} /> Yeni Ödeme
               </button>
             ) : (
-              <button 
-                className="btn-primary" 
-                style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }} 
-                onClick={() => onNavigate('create-invoice')}
-              >
-                + New Invoice
+              <button className="ds-btn-primary" onClick={() => onNavigate('create-invoice')}>
+                <Plus size={16} /> Yeni Fatura
               </button>
             )}
           </div>
         </header>
 
-        {children}
+        {/* Sayfa İçeriği */}
+        <div className="px-8 py-6">
+          {children}
+        </div>
       </main>
     </div>
   );
 };
-
-const SidebarItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }) => (
-  <a href="#" onClick={(e) => { e.preventDefault(); if (onClick) onClick(); }} style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    padding: '0.75rem 1rem',
-    borderRadius: '12px',
-    textDecoration: 'none',
-    color: active ? 'white' : 'var(--text-muted)',
-    background: active ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-    transition: 'all 0.2s ease',
-    fontWeight: active ? 600 : 400,
-    border: active ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent'
-  }}>
-    <span style={{ color: active ? 'var(--primary)' : 'inherit' }}>{icon}</span>
-    {label}
-  </a>
-);
 
 export default Layout;

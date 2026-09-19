@@ -189,43 +189,42 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
   if (metaLoading) {
     return (
-      <div className="glass-card" style={{ padding: '4rem', textAlign: 'center' }}>
-        <Loader2 className="animate-spin" size={32} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
-        <p style={{ color: 'var(--text-muted)' }}>Hesap planı ve meta veriler yükleniyor...</p>
+      <div className="ds-card p-16 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-indigo-400" size={32} />
+        <p className="text-slate-400 text-sm">Hesap planı ve meta veriler yükleniyor...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
-      
+    <div className="flex flex-col gap-6 w-full max-w-screen-xl mx-auto">
+
       {/* Top Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="ds-page-header">
+        <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="glass-card"
-            style={{ padding: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '10px' }}
+            className="ds-btn-secondary p-2.5"
+            aria-label="Geri dön"
           >
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <FileText size={26} color="var(--primary)" />
+            <h1 className="ds-page-title flex items-center gap-3">
+              <FileText size={24} className="text-indigo-400" />
               Yeni Yevmiye Fişi Oluştur
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+            <p className="ds-page-subtitle mt-0.5">
               Çift taraflı kayıt esasına göre dengeli (Borç = Alacak) yevmiye veya mahsup fişi girişi
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="glass-card"
-            style={{ padding: '0.625rem 1.25rem', cursor: 'pointer' }}
+            className="ds-btn-secondary"
           >
             İptal
           </button>
@@ -233,77 +232,48 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
             type="button"
             onClick={handleSubmit}
             disabled={loading || !isBalanced}
-            className="btn-primary"
-            style={{
-              padding: '0.625rem 1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              opacity: isBalanced ? 1 : 0.6,
-              cursor: isBalanced ? 'pointer' : 'not-allowed'
-            }}
+            className="ds-btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : shouldPost ? <Send size={16} /> : <CheckCircle2 size={16} />}
-            {shouldPost ? 'Kaydet ve Defter-i Kebir’e İşle' : 'Taslak Olarak Kaydet'}
+            {shouldPost ? 'Kaydet ve Defter-i Kebir\'e İşle' : 'Taslak Olarak Kaydet'}
           </button>
         </div>
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.15)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          color: '#f87171',
-          padding: '1rem 1.25rem',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <AlertCircle size={20} />
+        <div className="ds-alert-error flex items-center gap-3">
+          <AlertCircle size={20} className="shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Header Info Form */}
-      <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem' }}>
+      <div className="ds-card p-6 flex flex-col gap-5">
+        <h2 className="text-lg font-bold text-white border-b border-slate-700/50 pb-3">
           Fiş Genel Bilgileri
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Transaction Date */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-              Fiş / Yevmiye Tarihi *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="date"
-                required
-                value={transactionDate}
-                onChange={e => setTransactionDate(e.target.value)}
-                style={{
-                  width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px',
-                  background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-                }}
-              />
-            </div>
+            <label className="ds-label">Fiş / Yevmiye Tarihi *</label>
+            <input
+              type="date"
+              required
+              value={transactionDate}
+              onChange={e => setTransactionDate(e.target.value)}
+              className="ds-input w-full [color-scheme:dark]"
+            />
           </div>
 
           {/* Acctg Trans Type */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-              İşlem / Fiş Türü *
-            </label>
+            <label className="ds-label">İşlem / Fiş Türü *</label>
             <select
               value={acctgTransTypeId}
               onChange={e => setAcctgTransTypeId(e.target.value)}
-              style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px',
-                background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-              }}
+              className="ds-select w-full"
             >
               {metadata?.acctgTransTypes?.map(t => (
                 <option key={t.acctgTransTypeId} value={t.acctgTransTypeId}>
@@ -322,16 +292,11 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
           {/* Fiscal Type */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-              Mali Tür (Fiscal Type) *
-            </label>
+            <label className="ds-label">Mali Tür (Fiscal Type) *</label>
             <select
               value={glFiscalTypeId}
               onChange={e => setGlFiscalTypeId(e.target.value)}
-              style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px',
-                background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white'
-              }}
+              className="ds-select w-full"
             >
               {metadata?.glFiscalTypes?.map(f => (
                 <option key={f.glFiscalTypeId} value={f.glFiscalTypeId}>
@@ -345,146 +310,115 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
 
           {/* Voucher Ref */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-              Belge / Fiş Ref No
-            </label>
+            <label className="ds-label">Belge / Fiş Ref No</label>
             <input
               type="text"
               placeholder="Örn: MHS-2026-001"
               value={voucherRef}
               onChange={e => setVoucherRef(e.target.value)}
-              style={{
-                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px',
-                background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-              }}
+              className="ds-input w-full"
             />
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-muted)' }}>
-            Genel Fiş Açıklaması
-          </label>
+          <label className="ds-label">Genel Fiş Açıklaması</label>
           <input
             type="text"
             placeholder="Yevmiye kaydının genel açıklamasını giriniz..."
             value={description}
             onChange={e => setDescription(e.target.value)}
-            style={{
-              width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px',
-              background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white'
-            }}
+            className="ds-input w-full"
           />
         </div>
 
         {/* Posting Options Toggle */}
-        <div style={{
-          padding: '0.875rem 1rem',
-          borderRadius: '10px',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid var(--glass-border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Info size={18} color="var(--primary)" />
+        <div className="flex items-center justify-between flex-wrap gap-4 p-4 rounded-xl bg-slate-700/30 border border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <Info size={18} className="text-indigo-400 shrink-0" />
             <div>
-              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Kayıt Sonrası Defter-i Kebir Onayı:</span>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-                {shouldPost ? 'Kaydedildikten hemen sonra Defter-i Kebir’e işlenecek (Posted)' : 'Taslak (Draft) olarak kaydedilecek, daha sonra onaylanabilir'}
+              <span className="text-sm font-semibold text-slate-200">Kayıt Sonrası Defter-i Kebir Onayı:</span>
+              <span className="text-xs text-slate-400 ml-2">
+                {shouldPost ? 'Kaydedildikten hemen sonra Defter-i Kebir\'e işlenecek (Posted)' : 'Taslak (Draft) olarak kaydedilecek, daha sonra onaylanabilir'}
               </span>
             </div>
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold select-none">
             <input
               type="checkbox"
               checked={shouldPost}
               onChange={e => setShouldPost(e.target.checked)}
-              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+              className="cursor-pointer w-4 h-4 accent-indigo-500"
             />
-            <span style={{ color: shouldPost ? '#4ade80' : 'var(--text-muted)' }}>Doğrudan Onayla</span>
+            <span className={shouldPost ? 'text-emerald-400' : 'text-slate-400'}>Doğrudan Onayla</span>
           </label>
         </div>
       </div>
 
       {/* Line Items Table */}
-      <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="ds-card p-6 flex flex-col gap-4">
+        <div className="flex justify-between items-center flex-wrap gap-3">
           <div>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700 }}>
+            <h2 className="text-lg font-bold text-white">
               Yevmiye Maddeleri ({lines.length} Satır)
             </h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+            <p className="text-xs text-slate-400 mt-0.5">
               Her satır için GL hesabı, Borç (D) veya Alacak (C) yönünü ve tutarı belirleyiniz.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleAutoBalance}
-              className="glass-card"
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              className="ds-btn-secondary text-xs flex items-center gap-1.5"
             >
               Otomatik Dengele
             </button>
             <button
               type="button"
               onClick={() => handleAddLine('D')}
-              className="glass-card"
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#60a5fa' }}
+              className="ds-btn-secondary text-xs flex items-center gap-1.5 text-blue-400 border-blue-500/30 hover:border-blue-400/50"
             >
-              <Plus size={14} />
-              Borç Satırı Ekle
+              <Plus size={13} /> Borç Satırı Ekle
             </button>
             <button
               type="button"
               onClick={() => handleAddLine('C')}
-              className="glass-card"
-              style={{ padding: '0.5rem 0.875rem', fontSize: '0.8125rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#fb923c' }}
+              className="ds-btn-secondary text-xs flex items-center gap-1.5 text-orange-400 border-orange-500/30 hover:border-orange-400/50"
             >
-              <Plus size={14} />
-              Alacak Satırı Ekle
+              <Plus size={13} /> Alacak Satırı Ekle
             </button>
           </div>
         </div>
 
         {/* Lines Grid / Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <div className="overflow-x-auto">
+          <table className="ds-table w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', width: '40px' }}>#</th>
-                <th style={{ padding: '0.75rem 0.75rem', textAlign: 'left', minWidth: '240px' }}>GL Hesabı *</th>
-                <th style={{ padding: '0.75rem 0.75rem', textAlign: 'center', width: '130px' }}>Yön *</th>
-                <th style={{ padding: '0.75rem 0.75rem', textAlign: 'right', width: '160px' }}>Tutar ($) *</th>
-                <th style={{ padding: '0.75rem 0.75rem', textAlign: 'left', minWidth: '180px' }}>Satır Açıklaması</th>
-                <th style={{ padding: '0.75rem 0.75rem', textAlign: 'left', width: '140px' }}>Cari / İlgili</th>
-                <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', width: '45px' }}></th>
+              <tr className="ds-thead-row">
+                <th className="ds-th w-10 text-center">#</th>
+                <th className="ds-th min-w-[240px]">GL Hesabı *</th>
+                <th className="ds-th w-[130px] text-center">Yön *</th>
+                <th className="ds-th-right w-[160px]">Tutar ($) *</th>
+                <th className="ds-th min-w-[180px]">Satır Açıklaması</th>
+                <th className="ds-th w-[140px]">Cari / İlgili</th>
+                <th className="ds-th w-11 text-center"></th>
               </tr>
             </thead>
             <tbody>
               {lines.map((line, idx) => (
-                <tr key={line.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    {idx + 1}
-                  </td>
+                <tr key={line.id} className="ds-tbody-row">
+                  <td className="ds-td-muted text-center">{idx + 1}</td>
 
                   {/* GL Account Selector */}
-                  <td style={{ padding: '0.75rem 0.75rem' }}>
+                  <td className="ds-td">
                     <select
                       value={line.glAccountId}
                       onChange={e => handleLineChange(line.id, 'glAccountId', e.target.value)}
-                      style={{
-                        width: '100%', padding: '0.5rem 0.625rem', borderRadius: '6px',
-                        background: '#1e293b', border: '1px solid var(--glass-border)', color: 'white',
-                        fontSize: '0.8125rem'
-                      }}
+                      className="ds-select w-full text-xs py-1.5"
                     >
                       <option value="">-- Hesap Seçiniz --</option>
                       {metadata?.accounts?.map(a => (
@@ -496,35 +430,27 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                   </td>
 
                   {/* Debit / Credit Selector */}
-                  <td style={{ padding: '0.75rem 0.75rem', textAlign: 'center' }}>
-                    <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                  <td className="ds-td text-center">
+                    <div className="inline-flex rounded-lg overflow-hidden border border-slate-600">
                       <button
                         type="button"
                         onClick={() => handleLineChange(line.id, 'debitCreditFlag', 'D')}
-                        style={{
-                          padding: '0.35rem 0.65rem',
-                          border: 'none',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: line.debitCreditFlag === 'D' ? 'rgba(59, 130, 246, 0.3)' : 'transparent',
-                          color: line.debitCreditFlag === 'D' ? '#60a5fa' : 'var(--text-muted)'
-                        }}
+                        className={`px-2.5 py-1 text-xs font-bold border-none cursor-pointer transition-colors ${
+                          line.debitCreditFlag === 'D'
+                            ? 'bg-blue-500/25 text-blue-400'
+                            : 'bg-transparent text-slate-500 hover:text-slate-300'
+                        }`}
                       >
                         Borç (D)
                       </button>
                       <button
                         type="button"
                         onClick={() => handleLineChange(line.id, 'debitCreditFlag', 'C')}
-                        style={{
-                          padding: '0.35rem 0.65rem',
-                          border: 'none',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: line.debitCreditFlag === 'C' ? 'rgba(249, 115, 22, 0.3)' : 'transparent',
-                          color: line.debitCreditFlag === 'C' ? '#fb923c' : 'var(--text-muted)'
-                        }}
+                        className={`px-2.5 py-1 text-xs font-bold border-none cursor-pointer transition-colors ${
+                          line.debitCreditFlag === 'C'
+                            ? 'bg-orange-500/25 text-orange-400'
+                            : 'bg-transparent text-slate-500 hover:text-slate-300'
+                        }`}
                       >
                         Alacak (C)
                       </button>
@@ -532,7 +458,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                   </td>
 
                   {/* Amount Input */}
-                  <td style={{ padding: '0.75rem 0.75rem', textAlign: 'right' }}>
+                  <td className="ds-td text-right">
                     <input
                       type="number"
                       step="0.01"
@@ -540,58 +466,45 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
                       placeholder="0.00"
                       value={line.amount || ''}
                       onChange={e => handleLineChange(line.id, 'amount', parseFloat(e.target.value) || 0)}
-                      style={{
-                        width: '100%', padding: '0.5rem 0.625rem', borderRadius: '6px', textAlign: 'right',
-                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                        fontWeight: 700, fontSize: '0.875rem'
-                      }}
+                      className="ds-input w-full text-right font-bold py-1.5 text-sm"
                     />
                   </td>
 
                   {/* Line Description */}
-                  <td style={{ padding: '0.75rem 0.75rem' }}>
+                  <td className="ds-td">
                     <input
                       type="text"
                       placeholder="Satır açıklaması (opsiyonel)"
                       value={line.description || ''}
                       onChange={e => handleLineChange(line.id, 'description', e.target.value)}
-                      style={{
-                        width: '100%', padding: '0.5rem 0.625rem', borderRadius: '6px',
-                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                        fontSize: '0.8125rem'
-                      }}
+                      className="ds-input w-full text-xs py-1.5"
                     />
                   </td>
 
                   {/* Party */}
-                  <td style={{ padding: '0.75rem 0.75rem' }}>
+                  <td className="ds-td">
                     <input
                       type="text"
                       placeholder="Cari ID"
                       value={line.partyId || ''}
                       onChange={e => handleLineChange(line.id, 'partyId', e.target.value)}
-                      style={{
-                        width: '100%', padding: '0.5rem 0.625rem', borderRadius: '6px',
-                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'white',
-                        fontSize: '0.8125rem'
-                      }}
+                      className="ds-input w-full text-xs py-1.5"
                     />
                   </td>
 
                   {/* Remove Action */}
-                  <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
+                  <td className="ds-td text-center">
                     <button
                       type="button"
                       onClick={() => handleRemoveLine(line.id)}
                       disabled={lines.length <= 2}
-                      style={{
-                        background: 'none', border: 'none',
-                        color: lines.length <= 2 ? 'rgba(255,255,255,0.1)' : '#f87171',
-                        cursor: lines.length <= 2 ? 'not-allowed' : 'pointer',
-                        padding: '0.25rem'
-                      }}
+                      className={`p-1 rounded transition-colors ${
+                        lines.length <= 2
+                          ? 'text-slate-700 cursor-not-allowed'
+                          : 'text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer'
+                      }`}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={15} />
                     </button>
                   </td>
                 </tr>
@@ -602,39 +515,27 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
       </div>
 
       {/* Live Balance Summary Card */}
-      <div className="glass-card" style={{
-        padding: '1.5rem',
-        borderRadius: '16px',
-        border: `1px solid ${isBalanced ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-        background: isBalanced ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div className={`ds-card p-6 flex flex-col gap-4 border ${
+        isBalanced ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-red-500/40 bg-red-500/5'
+      }`}>
+        <div className="flex justify-between items-center flex-wrap gap-4">
+
+          <div className="flex items-center gap-3">
             {isBalanced ? (
-              <div style={{
-                width: '40px', height: '40px', borderRadius: '50%',
-                background: 'rgba(34, 197, 94, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <CheckCircle2 size={24} color="#4ade80" />
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={22} className="text-emerald-400" />
               </div>
             ) : (
-              <div style={{
-                width: '40px', height: '40px', borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <AlertCircle size={24} color="#f87171" />
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                <AlertCircle size={22} className="text-red-400" />
               </div>
             )}
             <div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: isBalanced ? '#4ade80' : '#f87171' }}>
+              <div className={`text-base font-extrabold ${isBalanced ? 'text-emerald-400' : 'text-red-400'}`}>
                 {isBalanced ? 'Fiş Dengeli (Kayıt Yapılabilir)' : 'Fiş Dengesiz! Borç ve Alacak Eşitlenmelidir'}
               </div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                {isBalanced 
+              <div className="text-xs text-slate-400 mt-0.5">
+                {isBalanced
                   ? 'Borç ve alacak toplamları tam olarak uyuşuyor. Defter-i kebir kaydına hazır.'
                   : `Borç ve Alacak arasında $${difference.toFixed(2)} tutarında fark bulunmaktadır.`}
               </div>
@@ -642,24 +543,20 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({ onBack, 
           </div>
 
           {/* Quick numbers */}
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="flex gap-8 items-center flex-wrap">
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Toplam Borç (Debit)</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#60a5fa' }}>
-                ${totalDebit.toFixed(2)}
-              </div>
+              <div className="text-xs text-slate-400">Toplam Borç (Debit)</div>
+              <div className="text-2xl font-extrabold text-blue-400">${totalDebit.toFixed(2)}</div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Toplam Alacak (Credit)</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#fb923c' }}>
-                ${totalCredit.toFixed(2)}
-              </div>
+              <div className="text-xs text-slate-400">Toplam Alacak (Credit)</div>
+              <div className="text-2xl font-extrabold text-orange-400">${totalCredit.toFixed(2)}</div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Bakiye Farkı</div>
-              <div style={{ fontSize: '1.375rem', fontWeight: 800, color: isBalanced ? '#4ade80' : '#f87171' }}>
+              <div className="text-xs text-slate-400">Bakiye Farkı</div>
+              <div className={`text-2xl font-extrabold ${isBalanced ? 'text-emerald-400' : 'text-red-400'}`}>
                 ${difference.toFixed(2)}
               </div>
             </div>

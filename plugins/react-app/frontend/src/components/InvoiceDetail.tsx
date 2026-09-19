@@ -15,27 +15,27 @@ interface InvoiceDetailProps {
   onViewPayment?: (paymentId: string) => void;
 }
 
-const getStatusColor = (statusId: string) => {
+const getStatusBadgeClass = (statusId: string): string => {
   switch (statusId) {
-    case 'INVOICE_PAID': return 'rgba(34, 197, 94, 0.15)';
+    case 'INVOICE_PAID': return 'ds-badge ds-badge-green';
     case 'INVOICE_APPROVED':
-    case 'INVOICE_SENT': return 'rgba(59, 130, 246, 0.15)';
-    case 'INVOICE_READY': return 'rgba(168, 85, 247, 0.15)';
-    case 'INVOICE_IN_PROCESS': return 'rgba(234, 179, 8, 0.15)';
-    case 'INVOICE_CANCELLED': return 'rgba(239, 68, 68, 0.15)';
-    default: return 'var(--glass-border)';
+    case 'INVOICE_SENT': return 'ds-badge ds-badge-blue';
+    case 'INVOICE_READY': return 'ds-badge ds-badge-purple';
+    case 'INVOICE_IN_PROCESS': return 'ds-badge ds-badge-yellow';
+    case 'INVOICE_CANCELLED': return 'ds-badge ds-badge-red';
+    default: return 'ds-badge ds-badge-slate';
   }
 };
 
-const getStatusTextColor = (statusId: string) => {
+const getStatusDotColor = (statusId: string): string => {
   switch (statusId) {
-    case 'INVOICE_PAID': return '#4ade80';
+    case 'INVOICE_PAID': return 'bg-emerald-400';
     case 'INVOICE_APPROVED':
-    case 'INVOICE_SENT': return '#60a5fa';
-    case 'INVOICE_READY': return '#c084fc';
-    case 'INVOICE_IN_PROCESS': return '#facc15';
-    case 'INVOICE_CANCELLED': return '#f87171';
-    default: return 'white';
+    case 'INVOICE_SENT': return 'bg-blue-400';
+    case 'INVOICE_READY': return 'bg-purple-400';
+    case 'INVOICE_IN_PROCESS': return 'bg-amber-400';
+    case 'INVOICE_CANCELLED': return 'bg-red-400';
+    default: return 'bg-indigo-400';
   }
 };
 
@@ -242,20 +242,20 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', gap: '1rem' }}>
-        <Loader2 size={36} className="animate-spin" color="var(--primary)" />
-        <span style={{ color: 'var(--text-muted)' }}>Fatura detayları OFBiz'den yükleniyor...</span>
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <Loader2 size={36} className="animate-spin text-indigo-500" />
+        <span className="text-slate-400">Fatura detayları OFBiz'den yükleniyor...</span>
       </div>
     );
   }
 
   if (!detail || !detail.invoice) {
     return (
-      <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-        <ShieldAlert size={48} color="#f87171" style={{ margin: '0 auto 1rem' }} />
-        <h3 style={{ margin: 0, marginBottom: '1rem' }}>Fatura Bulunamadı</h3>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{error || 'Belirtilen fatura sistemde mevcut değil.'}</p>
-        <button className="btn-secondary" onClick={onBack}>
+      <div className="ds-card p-8 text-center">
+        <ShieldAlert size={48} className="text-red-400 mx-auto mb-4" />
+        <h3 className="text-white text-lg font-semibold mb-4">Fatura Bulunamadı</h3>
+        <p className="text-slate-400 mb-6">{error || 'Belirtilen fatura sistemde mevcut değil.'}</p>
+        <button className="ds-btn-secondary" onClick={onBack}>
           <ArrowLeft size={16} /> Faturalara Geri Dön
         </button>
       </div>
@@ -266,133 +266,106 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
   const isEditable = invoice.statusId === 'INVOICE_IN_PROCESS';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      
+    <div className="flex flex-col gap-8">
+
       {/* Top Bar / Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <button className="btn-secondary" onClick={onBack} style={{ padding: '0.5rem 1rem' }}>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <button className="ds-btn-secondary" onClick={onBack}>
           <ArrowLeft size={18} /> Faturalar Listesine Dön
         </button>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button 
-            className="btn-secondary" 
-            onClick={handleCopyInvoice} 
+
+        <div className="flex items-center gap-4">
+          <button
+            className="ds-btn-secondary flex items-center gap-2"
+            onClick={handleCopyInvoice}
             disabled={actionLoading}
             title="Bu faturanın bir kopyasını oluştur"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
             <Copy size={16} /> Faturayı Kopyala
           </button>
-          
-          <span className="status-badge" style={{ 
-            background: getStatusColor(invoice.statusId),
-            color: getStatusTextColor(invoice.statusId),
-            border: `1px solid ${getStatusTextColor(invoice.statusId)}40`,
-            fontSize: '0.875rem',
-            padding: '0.5rem 1rem'
-          }}>
+
+          <span className={`${getStatusBadgeClass(invoice.statusId)} flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
             {getStatusIcon(invoice.statusId)}
             {formatStatus(invoice.statusId)}
           </span>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>#{invoice.invoiceId}</h2>
+          <h2 className="text-2xl font-bold text-white">#{invoice.invoiceId}</h2>
         </div>
       </div>
 
       {/* Messages / Alerts */}
       {message && (
-        <div style={{
-          background: 'rgba(34, 197, 94, 0.1)',
-          border: '1px solid rgba(34, 197, 94, 0.3)',
-          padding: '1rem 1.5rem',
-          borderRadius: '12px',
-          color: '#4ade80',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-success flex items-center gap-3">
           <Check size={20} />
           <div>{message}</div>
         </div>
       )}
 
       {error && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          padding: '1rem 1.5rem',
-          borderRadius: '12px',
-          color: '#fca5a5',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={20} />
           <div><strong>Hata:</strong> {error}</div>
         </div>
       )}
 
       {/* Financial Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Ara Toplam (KDV Hariç)</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.5rem' }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+        <div className="ds-stat-card">
+          <div className="ds-stat-label">Ara Toplam (KDV Hariç)</div>
+          <div className="ds-stat-value">
             {totals.subTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Vergi / KDV</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.5rem', color: '#93c5fd' }}>
+        <div className="ds-stat-card">
+          <div className="ds-stat-label">Vergi / KDV</div>
+          <div className="ds-stat-value text-blue-300">
             {totals.taxTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem', border: '1px solid rgba(99, 102, 241, 0.4)' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>Genel Toplam</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.5rem', color: 'white' }}>
+        <div className="ds-stat-card border border-indigo-500/40">
+          <div className="ds-stat-label text-indigo-400">Genel Toplam</div>
+          <div className="ds-stat-value text-white">
             {totals.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Kalan Açık Bakiye</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, marginTop: '0.5rem', color: totals.outstandingAmount > 0 ? '#facc15' : '#4ade80' }}>
+        <div className="ds-stat-card">
+          <div className="ds-stat-label">Kalan Açık Bakiye</div>
+          <div className={`ds-stat-value ${totals.outstandingAmount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
             {totals.outstandingAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
           </div>
         </div>
       </div>
 
       {/* Invoice Status Action Bar */}
-      <div className="glass-card animate-fade-in" style={{ padding: '1.25rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-card px-8 py-5 flex items-center justify-between flex-wrap gap-4 animate-fade-in">
         <div>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'block' }}>Fatura Durumu İşlemleri</span>
-          <span style={{ fontWeight: 600 }}>Mevcut Aşama: {formatStatus(invoice.statusId)}</span>
+          <span className="text-sm text-slate-400 block">Fatura Durumu İşlemleri</span>
+          <span className="font-semibold text-slate-200">Mevcut Aşama: {formatStatus(invoice.statusId)}</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="flex gap-3 flex-wrap">
           {invoice.statusId === 'INVOICE_IN_PROCESS' && (
             <>
-              <button 
-                className="btn-primary" 
+              <button
+                className="ds-btn-primary bg-gradient-to-r from-blue-500 to-blue-700 flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_APPROVED')}
                 disabled={actionLoading}
-                style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}
               >
                 <CheckCircle2 size={16} /> Faturayı Onayla (Approved)
               </button>
-              <button 
-                className="btn-secondary" 
+              <button
+                className="ds-btn-secondary flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_READY')}
                 disabled={actionLoading}
               >
                 Hazır Olarak İşaretle (Ready)
               </button>
-              <button 
-                className="btn-secondary" 
+              <button
+                className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
-                style={{ color: '#f87171' }}
               >
                 <XCircle size={16} /> İptal Et
               </button>
@@ -401,27 +374,24 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
 
           {(invoice.statusId === 'INVOICE_APPROVED' || invoice.statusId === 'INVOICE_READY') && (
             <>
-              <button 
-                className="btn-primary" 
+              <button
+                className="ds-btn-primary bg-gradient-to-r from-sky-500 to-sky-700 flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_SENT')}
                 disabled={actionLoading}
-                style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)' }}
               >
                 <FileText size={16} /> Gönderildi Yap (Sent)
               </button>
-              <button 
-                className="btn-primary" 
+              <button
+                className="ds-btn-primary bg-gradient-to-r from-emerald-600 to-emerald-800 flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_PAID')}
                 disabled={actionLoading}
-                style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}
               >
                 <CheckCircle2 size={16} /> Ödendi Olarak Kapat (Paid)
               </button>
-              <button 
-                className="btn-secondary" 
+              <button
+                className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
-                style={{ color: '#f87171' }}
               >
                 <XCircle size={16} /> İptal Et
               </button>
@@ -430,19 +400,17 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
 
           {invoice.statusId === 'INVOICE_SENT' && (
             <>
-              <button 
-                className="btn-primary" 
+              <button
+                className="ds-btn-primary bg-gradient-to-r from-emerald-600 to-emerald-800 flex items-center gap-2"
                 onClick={() => handleStatusChange('INVOICE_PAID')}
                 disabled={actionLoading}
-                style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)' }}
               >
                 <CheckCircle2 size={16} /> Ödendi Olarak Kapat (Paid)
               </button>
-              <button 
-                className="btn-secondary" 
+              <button
+                className="ds-btn-secondary flex items-center gap-2 text-red-400 hover:text-red-300"
                 onClick={() => handleStatusChange('INVOICE_CANCELLED')}
                 disabled={actionLoading}
-                style={{ color: '#f87171' }}
               >
                 <XCircle size={16} /> İptal Et
               </button>
@@ -450,13 +418,13 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
           )}
 
           {invoice.statusId === 'INVOICE_PAID' && (
-            <span style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+            <span className="text-emerald-400 flex items-center gap-2 font-semibold">
               <CheckCircle2 size={18} /> Fatura tahsilatı tamamlandı ve kapandı.
             </span>
           )}
 
           {invoice.statusId === 'INVOICE_CANCELLED' && (
-            <span style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+            <span className="text-red-400 flex items-center gap-2 font-semibold">
               <XCircle size={18} /> Bu fatura iptal edilmiştir.
             </span>
           )}
@@ -464,114 +432,111 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       </div>
 
       {/* Invoice Header Details */}
-      <div className="glass-card animate-fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Edit3 size={20} color="var(--primary)" /> Fatura Başlık Bilgileri
+      <div className="ds-card animate-fade-in">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-white text-xl font-semibold flex items-center gap-2">
+            <Edit3 size={20} className="text-indigo-400" /> Fatura Başlık Bilgileri
           </h3>
           {!isEditingHeader && isEditable && (
-            <button className="btn-secondary" onClick={() => setIsEditingHeader(true)}>
+            <button className="ds-btn-secondary flex items-center gap-2" onClick={() => setIsEditingHeader(true)}>
               <Edit3 size={16} /> Başlığı Düzenle
             </button>
           )}
         </div>
 
         <form onSubmit={handleSaveHeader}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-            
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-8">
+
             {/* Parties Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+            <div className="flex flex-col gap-5 p-6 bg-black/20 rounded-xl">
               <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Gönderen Cari (Party From)</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '1.1rem', marginTop: '0.25rem' }}>
-                  <Building2 size={18} color="var(--primary)" /> {invoice.partyIdFrom}
+                <span className="text-sm text-slate-400">Gönderen Cari (Party From)</span>
+                <div className="flex items-center gap-2 font-semibold text-lg text-slate-100 mt-1">
+                  <Building2 size={18} className="text-indigo-400" /> {invoice.partyIdFrom}
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Alıcı Cari (Party To)</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '1.1rem', marginTop: '0.25rem' }}>
-                  <User size={18} color="var(--primary)" /> {invoice.partyIdTo}
+                <span className="text-sm text-slate-400">Alıcı Cari (Party To)</span>
+                <div className="flex items-center gap-2 font-semibold text-lg text-slate-100 mt-1">
+                  <User size={18} className="text-indigo-400" /> {invoice.partyIdTo}
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fatura Türü</span>
-                <div style={{ fontWeight: 600, marginTop: '0.25rem' }}>
-                  <Tag size={16} style={{ display: 'inline', marginRight: '0.35rem' }} />
+                <span className="text-sm text-slate-400">Fatura Türü</span>
+                <div className="font-semibold text-slate-100 mt-1 flex items-center gap-1.5">
+                  <Tag size={16} className="text-slate-400" />
                   {invoice.invoiceTypeId.replace(/_/g, ' ')}
                 </div>
               </div>
             </div>
 
             {/* Dates & Reference */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Fatura Tarihi</label>
-                  <div style={{ position: 'relative' }}>
-                    <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="date" 
-                      name="invoiceDate" 
-                      value={headerForm.invoiceDate} 
-                      onChange={(e) => setHeaderForm({ ...headerForm, invoiceDate: e.target.value })} 
-                      className="glass-input" 
-                      style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box', colorScheme: 'dark' }}
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="ds-label">Fatura Tarihi</label>
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="date"
+                      name="invoiceDate"
+                      value={headerForm.invoiceDate}
+                      onChange={(e) => setHeaderForm({ ...headerForm, invoiceDate: e.target.value })}
+                      className="ds-input pl-9 w-full [color-scheme:dark]"
                       disabled={!isEditingHeader}
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label>Vade Tarihi</label>
-                  <div style={{ position: 'relative' }}>
-                    <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="date" 
-                      name="dueDate" 
-                      value={headerForm.dueDate} 
-                      onChange={(e) => setHeaderForm({ ...headerForm, dueDate: e.target.value })} 
-                      className="glass-input" 
-                      style={{ paddingLeft: '2.5rem', width: '100%', boxSizing: 'border-box', colorScheme: 'dark' }}
+                <div>
+                  <label className="ds-label">Vade Tarihi</label>
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={headerForm.dueDate}
+                      onChange={(e) => setHeaderForm({ ...headerForm, dueDate: e.target.value })}
+                      className="ds-input pl-9 w-full [color-scheme:dark]"
                       disabled={!isEditingHeader}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Referans No (Belge No)</label>
-                <input 
-                  type="text" 
-                  name="referenceNumber" 
-                  value={headerForm.referenceNumber} 
-                  onChange={(e) => setHeaderForm({ ...headerForm, referenceNumber: e.target.value })} 
-                  className="glass-input" 
+              <div>
+                <label className="ds-label">Referans No (Belge No)</label>
+                <input
+                  type="text"
+                  name="referenceNumber"
+                  value={headerForm.referenceNumber}
+                  onChange={(e) => setHeaderForm({ ...headerForm, referenceNumber: e.target.value })}
+                  className="ds-input w-full"
                   placeholder="Opsiyonel referans numarası"
                   disabled={!isEditingHeader}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Açıklama</label>
-                <div style={{ position: 'relative' }}>
-                  <AlignLeft size={16} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-muted)' }} />
-                  <textarea 
-                    name="description" 
-                    value={headerForm.description} 
-                    onChange={(e) => setHeaderForm({ ...headerForm, description: e.target.value })} 
-                    className="glass-input" 
+              <div>
+                <label className="ds-label">Açıklama</label>
+                <div className="relative">
+                  <AlignLeft size={16} className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" />
+                  <textarea
+                    name="description"
+                    value={headerForm.description}
+                    onChange={(e) => setHeaderForm({ ...headerForm, description: e.target.value })}
+                    className="ds-input pl-9 w-full min-h-[70px]"
                     placeholder="Fatura açıklaması..."
-                    style={{ paddingLeft: '2.5rem', width: '100%', minHeight: '70px', boxSizing: 'border-box' }}
                     disabled={!isEditingHeader}
                   />
                 </div>
               </div>
 
               {isEditingHeader && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button type="button" onClick={() => setIsEditingHeader(false)} className="btn-secondary">
+                <div className="flex justify-end gap-4 mt-2">
+                  <button type="button" onClick={() => setIsEditingHeader(false)} className="ds-btn-secondary">
                     İptal
                   </button>
-                  <button type="submit" className="btn-primary" disabled={actionLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={actionLoading}>
                     <Save size={16} /> Değişiklikleri Kaydet
                   </button>
                 </div>
@@ -583,17 +548,16 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       </div>
 
       {/* Invoice Line Items Section */}
-      <div className="glass-card animate-fade-in" style={{ padding: '1.5rem 0' }}>
-        <div style={{ padding: '0 2rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="ds-card pt-6 pb-0 px-0 animate-fade-in overflow-hidden">
+        <div className="px-8 mb-6 flex justify-between items-center">
           <div>
-            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Fatura Kalemleri ({items.length})</h3>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Faturaya dahil edilen ürün, hizmet ve masraflar</span>
+            <h3 className="text-white text-xl font-semibold">Fatura Kalemleri ({items.length})</h3>
+            <span className="text-sm text-slate-400">Faturaya dahil edilen ürün, hizmet ve masraflar</span>
           </div>
           {isEditable && !showAddItem && (
-            <button 
-              className="btn-primary" 
+            <button
+              className="ds-btn-primary flex items-center gap-2 text-sm"
               onClick={() => setShowAddItem(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
             >
               <Plus size={16} /> Yeni Kalem Ekle
             </button>
@@ -602,16 +566,16 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
 
         {/* Add Item Inline Form */}
         {showAddItem && (
-          <div style={{ margin: '0 2rem 1.5rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-            <h4 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--primary)' }}>Yeni Kalem Ekle</h4>
+          <div className="mx-8 mb-6 p-6 bg-black/30 rounded-xl border border-slate-700/50">
+            <h4 className="text-indigo-400 font-semibold mb-4">Yeni Kalem Ekle</h4>
             <form onSubmit={handleAddItem}>
-              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-                <div className="form-group">
-                  <label>Kalem Tipi</label>
-                  <select 
-                    value={itemForm.invoiceItemTypeId} 
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                <div>
+                  <label className="ds-label">Kalem Tipi</label>
+                  <select
+                    value={itemForm.invoiceItemTypeId}
                     onChange={(e) => setItemForm({ ...itemForm, invoiceItemTypeId: e.target.value })}
-                    className="glass-input"
+                    className="ds-select w-full"
                   >
                     {itemTypes.length > 0 ? (
                       itemTypes.map(t => (
@@ -627,48 +591,48 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Açıklama / Ürün Adı</label>
-                  <input 
-                    type="text" 
-                    value={itemForm.description} 
+                <div>
+                  <label className="ds-label">Açıklama / Ürün Adı</label>
+                  <input
+                    type="text"
+                    value={itemForm.description}
                     onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
                     placeholder="Örn: Danışmanlık Hizmeti"
-                    className="glass-input"
+                    className="ds-input w-full"
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Miktar</label>
-                  <input 
-                    type="number" 
+                <div>
+                  <label className="ds-label">Miktar</label>
+                  <input
+                    type="number"
                     step="any"
-                    value={itemForm.quantity} 
+                    value={itemForm.quantity}
                     onChange={(e) => setItemForm({ ...itemForm, quantity: parseFloat(e.target.value) || 0 })}
-                    className="glass-input"
+                    className="ds-input w-full"
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Birim Fiyat ({invoice.currencyUomId})</label>
-                  <input 
-                    type="number" 
+                <div>
+                  <label className="ds-label">Birim Fiyat ({invoice.currencyUomId})</label>
+                  <input
+                    type="number"
                     step="any"
-                    value={itemForm.amount} 
+                    value={itemForm.amount}
                     onChange={(e) => setItemForm({ ...itemForm, amount: parseFloat(e.target.value) || 0 })}
-                    className="glass-input"
+                    className="ds-input w-full"
                     required
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.25rem' }}>
-                <button type="button" onClick={() => setShowAddItem(false)} className="btn-secondary">
+              <div className="flex justify-end gap-4 mt-5">
+                <button type="button" onClick={() => setShowAddItem(false)} className="ds-btn-secondary">
                   Vazgeç
                 </button>
-                <button type="submit" className="btn-primary" disabled={actionLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button type="submit" className="ds-btn-primary flex items-center gap-2" disabled={actionLoading}>
                   <Plus size={16} /> Kalemi Kaydet
                 </button>
               </div>
@@ -677,41 +641,40 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
         )}
 
         {/* Table of items */}
-        <div style={{ overflowX: 'auto' }}>
-          <table className="glass-table">
+        <div className="overflow-x-auto">
+          <table className="ds-table">
             <thead>
-              <tr>
-                <th>Sıra No</th>
-                <th>Kalem Tipi</th>
-                <th>Açıklama</th>
-                <th style={{ textAlign: 'right' }}>Miktar</th>
-                <th style={{ textAlign: 'right' }}>Birim Fiyat</th>
-                <th style={{ textAlign: 'right' }}>Tutar</th>
-                {isEditable && <th style={{ textAlign: 'center' }}>İşlem</th>}
+              <tr className="ds-thead-row">
+                <th className="ds-th">Sıra No</th>
+                <th className="ds-th">Kalem Tipi</th>
+                <th className="ds-th">Açıklama</th>
+                <th className="ds-th-right">Miktar</th>
+                <th className="ds-th-right">Birim Fiyat</th>
+                <th className="ds-th-right">Tutar</th>
+                {isEditable && <th className="ds-th text-center">İşlem</th>}
               </tr>
             </thead>
             <tbody>
               {items.length > 0 ? (
                 items.map((it) => (
-                  <tr key={it.invoiceItemSeqId}>
-                    <td style={{ fontWeight: 600 }}>{it.invoiceItemSeqId}</td>
-                    <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{it.invoiceItemTypeId.replace('INV_', '').replace(/_/g, ' ')}</td>
-                    <td>{it.description || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{it.quantity}</td>
-                    <td style={{ textAlign: 'right' }}>
+                  <tr key={it.invoiceItemSeqId} className="ds-tbody-row">
+                    <td className="ds-td-primary">{it.invoiceItemSeqId}</td>
+                    <td className="ds-td-muted">{it.invoiceItemTypeId.replace('INV_', '').replace(/_/g, ' ')}</td>
+                    <td className="ds-td">{it.description || '-'}</td>
+                    <td className="ds-td-right">{it.quantity}</td>
+                    <td className="ds-td-mono text-right">
                       {it.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                    <td className="ds-td-mono text-right font-semibold text-slate-100">
                       {it.itemTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
                     </td>
                     {isEditable && (
-                      <td style={{ textAlign: 'center' }}>
-                        <button 
-                          className="btn-icon" 
+                      <td className="ds-td text-center">
+                        <button
                           onClick={() => handleDeleteItem(it.invoiceItemSeqId)}
                           disabled={actionLoading}
                           title="Kalemi Sil"
-                          style={{ color: '#f87171' }}
+                          className="inline-flex items-center justify-center p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-40"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -721,7 +684,7 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isEditable ? 7 : 6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={isEditable ? 7 : 6} className="ds-td text-center py-10 text-slate-500">
                     Bu faturaya henüz bir kalem eklenmemiş.
                   </td>
                 </tr>
@@ -732,67 +695,72 @@ const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack, onView
       </div>
 
       {/* Applied Payments & Status History */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-        
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-8">
+
         {/* Applied Payments */}
-        <div className="glass-card animate-fade-in" style={{ padding: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CreditCard size={18} color="var(--primary)" /> Eşleşen Ödemeler ({paymentsApplied.length})
+        <div className="ds-card animate-fade-in">
+          <h3 className="text-white text-lg font-semibold flex items-center gap-2 mb-4">
+            <CreditCard size={18} className="text-indigo-400" /> Eşleşen Ödemeler ({paymentsApplied.length})
           </h3>
           {paymentsApplied.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="flex flex-col gap-3">
               {paymentsApplied.map((pa) => (
-                <div key={pa.paymentApplicationId} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                <div
+                  key={pa.paymentApplicationId}
+                  className="flex justify-between items-start p-3 bg-black/20 rounded-xl"
+                >
                   <div>
-                    <div 
+                    <div
                       onClick={() => onViewPayment && onViewPayment(pa.paymentId)}
-                      style={{ 
-                        fontWeight: 600, 
-                        color: onViewPayment ? 'var(--primary)' : 'white', 
-                        cursor: onViewPayment ? 'pointer' : 'default',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem'
-                      }}
+                      className={`font-semibold flex items-center gap-1.5 ${
+                        onViewPayment
+                          ? 'text-indigo-400 hover:text-indigo-300 cursor-pointer'
+                          : 'text-slate-100 cursor-default'
+                      }`}
                     >
                       Ödeme No: #{pa.paymentId}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Uygulama ID: {pa.paymentApplicationId}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">Uygulama ID: {pa.paymentApplicationId}</div>
                   </div>
-                  <div style={{ textAlign: 'right', fontWeight: 600, color: '#4ade80' }}>
+                  <div className="text-right font-semibold text-emerald-400">
                     {pa.amountApplied.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {invoice.currencyUomId}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <div className="text-slate-500 text-sm">
               Henüz bu fatura ile eşleştirilmiş bir ödeme kaydı bulunmuyor.
             </div>
           )}
         </div>
 
         {/* Status History Timeline */}
-        <div className="glass-card animate-fade-in" style={{ padding: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Clock size={18} color="var(--primary)" /> Durum Değişiklik Geçmişi
+        <div className="ds-card animate-fade-in">
+          <h3 className="text-white text-lg font-semibold flex items-center gap-2 mb-4">
+            <Clock size={18} className="text-indigo-400" /> Durum Değişiklik Geçmişi
           </h3>
           {statusHistory.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="flex flex-col gap-3">
               {statusHistory.map((sh, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem 0', borderBottom: idx < statusHistory.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{formatStatus(sh.statusId)}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {sh.statusDate} {sh.changeByUserLoginId ? `• ${sh.changeByUserLoginId}` : ''}
+                <div
+                  key={idx}
+                  className={`flex items-center gap-4 py-2 ${
+                    idx < statusHistory.length - 1 ? 'border-b border-white/5' : ''
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDotColor(sh.statusId)}`} />
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-100 text-sm">{formatStatus(sh.statusId)}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {sh.statusDate}{sh.changeByUserLoginId ? ` • ${sh.changeByUserLoginId}` : ''}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <div className="text-slate-500 text-sm">
               Geçmiş durum kaydı bulunmuyor.
             </div>
           )}

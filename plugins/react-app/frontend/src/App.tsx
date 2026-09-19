@@ -17,6 +17,8 @@ import AdvancedAccounting from './components/AdvancedAccounting'
 import { TaxAndGlMapping } from './components/TaxAndGlMapping'
 import TestPage from './components/TestPage'
 import './index.css'
+import './design-system.css'
+
 
 
 export type ViewType = 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ArrowLeft, Edit3, Save, CheckCircle2, CreditCard, 
-  User, Calendar, AlignLeft, Plus, Trash2, AlertCircle, Loader2, Link2, ExternalLink
+  User, Calendar, AlignLeft, Plus, Trash2, AlertCircle, Link2, ExternalLink, X
 } from 'lucide-react';
 import { api, PaymentDetailResponse, OpenInvoiceItem, PaymentMetadataResponse } from '../services/api';
 
@@ -11,27 +11,15 @@ interface PaymentDetailProps {
   onViewInvoice?: (invoiceId: string) => void;
 }
 
-const getPaymentStatusColor = (statusId: string) => {
+const getPaymentBadgeClass = (statusId: string) => {
   switch (statusId) {
-    case 'PMNT_CONFIRMED': return 'rgba(168, 85, 247, 0.15)';
-    case 'PMNT_RECEIVED': return 'rgba(34, 197, 94, 0.15)';
-    case 'PMNT_SENT': return 'rgba(59, 130, 246, 0.15)';
-    case 'PMNT_NOT_PAID': return 'rgba(234, 179, 8, 0.15)';
+    case 'PMNT_CONFIRMED': return 'ds-badge-purple';
+    case 'PMNT_RECEIVED': return 'ds-badge-green';
+    case 'PMNT_SENT': return 'ds-badge-blue';
+    case 'PMNT_NOT_PAID': return 'ds-badge-yellow';
     case 'PMNT_CANCELLED':
-    case 'PMNT_VOID': return 'rgba(239, 68, 68, 0.15)';
-    default: return 'var(--glass-border)';
-  }
-};
-
-const getPaymentStatusTextColor = (statusId: string) => {
-  switch (statusId) {
-    case 'PMNT_CONFIRMED': return '#c084fc';
-    case 'PMNT_RECEIVED': return '#4ade80';
-    case 'PMNT_SENT': return '#60a5fa';
-    case 'PMNT_NOT_PAID': return '#facc15';
-    case 'PMNT_CANCELLED':
-    case 'PMNT_VOID': return '#f87171';
-    default: return 'white';
+    case 'PMNT_VOID': return 'ds-badge-red';
+    default: return 'ds-badge-slate';
   }
 };
 
@@ -216,20 +204,20 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <Loader2 size={36} className="spin" style={{ color: 'var(--primary)', margin: '0 auto 1rem' }} />
-        <div style={{ color: 'var(--text-muted)' }}>Ödeme detayları yükleniyor...</div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="ds-spinner mb-3" />
+        <div className="text-slate-400 text-sm">Ödeme detayları yükleniyor...</div>
       </div>
     );
   }
 
   if (!detail || !detail.payment) {
     return (
-      <div>
-        <button onClick={onBack} className="btn-secondary" style={{ marginBottom: '1rem' }}>
+      <div className="space-y-4">
+        <button onClick={onBack} className="ds-btn-secondary">
           <ArrowLeft size={16} /> Geri Dön
         </button>
-        <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: '#f87171' }}>
+        <div className="ds-card p-8 text-center text-red-400">
           Ödeme bulunamadı veya bir hata oluştu.
         </div>
       </div>
@@ -240,58 +228,32 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
   const isIncoming = payment.paymentTypeId.includes('CUSTOMER') || payment.paymentTypeId.includes('RECEIPT');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
       {/* Top Navigation & Status Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-page-header">
         <button 
           onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
+          className="ds-btn-ghost flex items-center gap-2"
         >
           <ArrowLeft size={16} />
           Ödemeler Listesine Dön
         </button>
 
         {/* Status Actions */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-2 flex-wrap">
           {payment.statusId === 'PMNT_NOT_PAID' && (
             <>
               <button
                 onClick={() => handleStatusChange(isIncoming ? 'PMNT_RECEIVED' : 'PMNT_SENT')}
                 disabled={actionLoading}
-                style={{
-                  background: 'rgba(34, 197, 94, 0.15)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  color: '#4ade80',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.85rem'
-                }}
+                className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
               >
                 {isIncoming ? 'Tahsil Edildi İşaretle' : 'Ödendi / Gönderildi İşaretle'}
               </button>
               <button
                 onClick={() => handleStatusChange('PMNT_CANCELLED')}
                 disabled={actionLoading}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
+                className="ds-btn-danger text-xs"
               >
                 İptal Et
               </button>
@@ -303,31 +265,14 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
               <button
                 onClick={() => handleStatusChange('PMNT_CONFIRMED')}
                 disabled={actionLoading}
-                style={{
-                  background: 'rgba(168, 85, 247, 0.15)',
-                  border: '1px solid rgba(168, 85, 247, 0.3)',
-                  color: '#c084fc',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.85rem'
-                }}
+                className="px-3 py-1.5 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
               >
                 Onayla (Confirm)
               </button>
               <button
                 onClick={() => handleStatusChange('PMNT_CANCELLED')}
                 disabled={actionLoading}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
+                className="ds-btn-danger text-xs"
               >
                 İptal Et
               </button>
@@ -338,15 +283,7 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
             <button
               onClick={() => handleStatusChange('PMNT_VOID')}
               disabled={actionLoading}
-              style={{
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#f87171',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
+              className="ds-btn-danger text-xs"
             >
               Hükümsüz Kıl (Void)
             </button>
@@ -356,125 +293,76 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
 
       {/* Messages */}
       {message && (
-        <div style={{
-          padding: '1rem',
-          borderRadius: '8px',
-          background: 'rgba(34, 197, 94, 0.1)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
-          color: '#4ade80',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-success flex items-center gap-3">
           <CheckCircle2 size={18} />
           <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div style={{
-          padding: '1rem',
-          borderRadius: '8px',
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-          color: '#f87171',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
+        <div className="ds-alert-error flex items-center gap-3">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
       {/* Header Cards & Financial Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="ds-stat-card border-l-4 border-l-indigo-500">
+          <div className="flex justify-between items-start mb-1">
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Ödeme Bilgisi
-              </span>
-              <h3 style={{ margin: '0.25rem 0 0', fontSize: '1.5rem', fontWeight: 700 }}>
-                #{payment.paymentId}
-              </h3>
+              <span className="ds-stat-label">Ödeme Bilgisi</span>
+              <h3 className="ds-stat-value">#{payment.paymentId}</h3>
             </div>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.3rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              background: getPaymentStatusColor(payment.statusId),
-              color: getPaymentStatusTextColor(payment.statusId)
-            }}>
+            <span className={`ds-badge ${getPaymentBadgeClass(payment.statusId)}`}>
               {payment.statusDesc || formatStatus(payment.statusId)}
             </span>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Tür: <strong style={{ color: 'white' }}>{payment.paymentTypeDesc}</strong>
+          <div className="ds-stat-sub">
+            Tür: <strong className="text-slate-200">{payment.paymentTypeDesc}</strong>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Toplam Tutar
-          </span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.25rem 0' }}>
+        <div className="ds-stat-card border-l-4 border-l-blue-500">
+          <span className="ds-stat-label">Toplam Tutar</span>
+          <div className="ds-stat-value text-blue-400">
             ${payment.amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '0.35rem' }}>{payment.currencyUomId}</span>
+            <span className="text-xs text-slate-400 font-normal ml-1.5">{payment.currencyUomId}</span>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Ödeme Yöntemi: <strong style={{ color: 'white' }}>{payment.paymentMethodTypeDesc || payment.paymentMethodTypeId || '-'}</strong>
+          <div className="ds-stat-sub">
+            Yöntem: <strong className="text-slate-200">{payment.paymentMethodTypeDesc || payment.paymentMethodTypeId || '-'}</strong>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Faturalara Mahsup Edilen
-          </span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.25rem 0', color: '#4ade80' }}>
+        <div className="ds-stat-card border-l-4 border-l-emerald-500">
+          <span className="ds-stat-label">Mahsup Edilen</span>
+          <div className="ds-stat-value text-emerald-400">
             ${appliedAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div className="ds-stat-sub">
             {applications.length} adet faturaya bağlandı
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Kalan Açık Tutar
-          </span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0.25rem 0', color: openAmount > 0 ? '#facc15' : '#4ade80' }}>
+        <div className="ds-stat-card border-l-4 border-l-amber-500">
+          <span className="ds-stat-label">Kalan Açık Tutar</span>
+          <div className={`ds-stat-value ${openAmount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
             ${openAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          <div className="ds-stat-sub">
             {openAmount > 0 ? 'Faturaya bağlanabilir bakiye' : 'Tamamı eşleşti'}
           </div>
         </div>
       </div>
 
       {/* Details Grid & Edit Section */}
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Ödeme Başlık Bilgileri</h4>
+      <div className="ds-card p-6">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-700/50">
+          <h4 className="text-base font-bold text-white">Ödeme Başlık Bilgileri</h4>
           {payment.statusId !== 'PMNT_CANCELLED' && payment.statusId !== 'PMNT_VOID' && (
             <button
               onClick={() => setIsEditing(!isEditing)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid var(--glass-border)',
-                color: 'white',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.8rem'
-              }}
+              className="ds-btn-secondary px-3 py-1.5 text-xs"
             >
               <Edit3 size={14} />
               {isEditing ? 'Düzenlemeyi Kapat' : 'Düzenle'}
@@ -483,23 +371,14 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
         </div>
 
         {isEditing ? (
-          <form onSubmit={handleSaveHeader}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+          <form onSubmit={handleSaveHeader} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  Ödeme Yöntemi
-                </label>
+                <label className="ds-label">Ödeme Yöntemi</label>
                 <select
                   value={editForm.paymentMethodTypeId}
                   onChange={(e) => setEditForm(prev => ({ ...prev, paymentMethodTypeId: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    color: 'white'
-                  }}
+                  className="ds-select"
                 >
                   {paymentMethodTypes.map(pm => (
                     <option key={pm.paymentMethodTypeId} value={pm.paymentMethodTypeId}>{pm.description || pm.paymentMethodTypeId}</option>
@@ -508,108 +387,59 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  Tutar
-                </label>
+                <label className="ds-label">Tutar</label>
                 <input
                   type="number"
                   step="0.01"
                   value={editForm.amount}
                   onChange={(e) => setEditForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  İşlem Tarihi
-                </label>
+                <label className="ds-label">İşlem Tarihi</label>
                 <input
                   type="date"
                   value={editForm.effectiveDate}
                   onChange={(e) => setEditForm(prev => ({ ...prev, effectiveDate: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  Referans / Dekont No
-                </label>
+                <label className="ds-label">Referans / Dekont No</label>
                 <input
                   type="text"
                   value={editForm.paymentRefNum}
                   onChange={(e) => setEditForm(prev => ({ ...prev, paymentRefNum: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    color: 'white'
-                  }}
+                  className="ds-input"
                 />
               </div>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                Açıklama / Notlar
-              </label>
+            <div>
+              <label className="ds-label">Açıklama / Notlar</label>
               <textarea
                 rows={2}
                 value={editForm.comments}
                 onChange={(e) => setEditForm(prev => ({ ...prev, comments: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '0.6rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: 'white'
-                }}
+                className="ds-input resize-none"
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'transparent',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer'
-                }}
+                className="ds-btn-secondary"
               >
                 Vazgeç
               </button>
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="btn-primary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.5rem 1.25rem'
-                }}
+                className="ds-btn-primary"
               >
                 <Save size={14} />
                 Kaydet
@@ -617,56 +447,56 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
             </div>
           </form>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', fontSize: '0.875rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-sm">
             <div>
-              <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+              <div className="text-slate-400 text-xs flex items-center gap-1.5 mb-1">
                 <User size={14} /> Gönderen (Borçlu)
               </div>
-              <div style={{ fontWeight: 600, color: 'white' }}>{payment.partyNameFrom}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {payment.partyIdFrom}</div>
+              <div className="font-semibold text-white">{payment.partyNameFrom}</div>
+              <div className="text-xs text-slate-500 mt-0.5">ID: {payment.partyIdFrom}</div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+              <div className="text-slate-400 text-xs flex items-center gap-1.5 mb-1">
                 <User size={14} /> Alan (Alacaklı)
               </div>
-              <div style={{ fontWeight: 600, color: 'white' }}>{payment.partyNameTo}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {payment.partyIdTo}</div>
+              <div className="font-semibold text-white">{payment.partyNameTo}</div>
+              <div className="text-xs text-slate-500 mt-0.5">ID: {payment.partyIdTo}</div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+              <div className="text-slate-400 text-xs flex items-center gap-1.5 mb-1">
                 <Calendar size={14} /> İşlem Tarihi
               </div>
-              <div style={{ fontWeight: 600, color: 'white' }}>{payment.effectiveDate || '-'}</div>
+              <div className="font-semibold text-white">{payment.effectiveDate || '-'}</div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+              <div className="text-slate-400 text-xs flex items-center gap-1.5 mb-1">
                 <CreditCard size={14} /> Belge / Dekont No
               </div>
-              <div style={{ fontWeight: 600, color: 'white' }}>{payment.paymentRefNum || '-'}</div>
+              <div className="font-semibold text-white">{payment.paymentRefNum || '-'}</div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+            <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-slate-700/50">
+              <div className="text-slate-400 text-xs flex items-center gap-1.5 mb-1">
                 <AlignLeft size={14} /> Açıklama
               </div>
-              <div style={{ color: 'white' }}>{payment.comments || 'Belirtilmedi'}</div>
+              <div className="text-slate-200">{payment.comments || 'Belirtilmedi'}</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Applied Invoices Section (Fatura Mahsup Tablosu) */}
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="ds-card p-6">
+        <div className="flex justify-between items-center mb-5 flex-wrap gap-4 pb-3 border-b border-slate-700/50">
           <div>
-            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Link2 size={18} color="var(--primary)" />
+            <h4 className="text-base font-bold text-white flex items-center gap-2">
+              <Link2 size={18} className="text-indigo-400" />
               Uygulanan Faturalar (Mahsup Listesi)
             </h4>
-            <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <p className="text-xs text-slate-400 mt-0.5">
               Bu ödemenin düşüldüğü ve kapatıldığı faturalar
             </p>
           </div>
@@ -674,14 +504,7 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
           {openAmount > 0 && payment.statusId !== 'PMNT_CANCELLED' && payment.statusId !== 'PMNT_VOID' && (
             <button
               onClick={handleOpenApplyModal}
-              className="btn-primary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.5rem 1rem',
-                fontSize: '0.85rem'
-              }}
+              className="ds-btn-primary"
             >
               <Plus size={16} />
               Faturaya Mahsup Et
@@ -690,80 +513,67 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
         </div>
 
         {applications.length === 0 ? (
-          <div style={{ 
-            padding: '2.5rem', 
-            textAlign: 'center', 
-            border: '1px dashed var(--glass-border)', 
-            borderRadius: '12px',
-            color: 'var(--text-muted)' 
-          }}>
+          <div className="p-8 text-center border border-dashed border-slate-700/60 rounded-xl text-slate-400">
             Bu ödemeye henüz hiçbir fatura bağlanmamış.
             {openAmount > 0 && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <button onClick={handleOpenApplyModal} className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+              <div className="mt-3">
+                <button onClick={handleOpenApplyModal} className="ds-btn-primary mx-auto">
                   Fatura Seç ve Eşleştir
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <div className="overflow-x-auto">
+            <table className="ds-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Eşleşme No</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Fatura No</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Fatura Tarihi</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Fatura Açıklaması</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Fatura Tutarı</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Uygulanan Tutar</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>İşlem</th>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">Eşleşme No</th>
+                  <th className="ds-th">Fatura No</th>
+                  <th className="ds-th">Fatura Tarihi</th>
+                  <th className="ds-th">Fatura Açıklaması</th>
+                  <th className="ds-th-right">Fatura Tutarı</th>
+                  <th className="ds-th-right">Uygulanan Tutar</th>
+                  <th className="ds-th text-center">İşlem</th>
                 </tr>
               </thead>
               <tbody>
                 {applications.map(app => (
-                  <tr key={app.paymentApplicationId} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
+                  <tr key={app.paymentApplicationId} className="ds-tbody-row">
+                    <td className="ds-td-muted">
                       #{app.paymentApplicationId}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
+                    <td className="ds-td font-semibold">
                       {app.invoiceId ? (
                         <span 
                           onClick={() => onViewInvoice && onViewInvoice(app.invoiceId!)}
-                          style={{ color: 'var(--primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          className="text-indigo-400 hover:text-indigo-300 cursor-pointer inline-flex items-center gap-1"
                         >
                           #{app.invoiceId}
                           <ExternalLink size={12} />
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>Cari Hesap ({app.billingAccountId || 'Diğer'})</span>
+                        <span className="text-slate-400">Cari Hesap ({app.billingAccountId || 'Diğer'})</span>
                       )}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
+                    <td className="ds-td-muted">
                       {app.invoiceDate ? app.invoiceDate.substring(0, 10) : '-'}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
+                    <td className="ds-td-muted">
                       {app.invoiceDescription || '-'}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                    <td className="ds-td-right">
                       {app.invoiceTotal ? `$${app.invoiceTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#4ade80' }}>
+                    <td className="ds-td-right text-emerald-400">
                       ${app.amountApplied?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                    <td className="ds-td text-center">
                       <button
                         onClick={() => handleRemoveApplication(app.paymentApplicationId)}
                         title="Mahsubu Kaldır"
                         disabled={actionLoading}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: 'none',
-                          color: '#f87171',
-                          padding: '0.35rem 0.5rem',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
+                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -778,58 +588,49 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
 
       {/* Modal: Apply to Invoice */}
       {showApplyModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div className="glass-card" style={{
-            maxWidth: '750px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            padding: '2rem'
-          }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.35rem', fontWeight: 700 }}>
-              Faturaya Ödeme Mahsup Et
-            </h3>
-            <p style={{ margin: '0 0 1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Bu ödemeden düşülecek açık bir fatura seçin. Kullanılabilir açık bakiye: <strong style={{ color: '#facc15' }}>${openAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
-            </p>
+        <div className="ds-overlay">
+          <div className="ds-modal max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-700/50">
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Faturaya Ödeme Mahsup Et
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Bu ödemeden düşülecek açık bir fatura seçin. Kullanılabilir açık bakiye: <strong className="text-amber-400">${openAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowApplyModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
             {invoicesLoading ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <Loader2 size={28} className="spin" style={{ color: 'var(--primary)', margin: '0 auto 0.5rem' }} />
-                <div style={{ color: 'var(--text-muted)' }}>Cariye ait açık faturalar taranıyor...</div>
+              <div className="py-12 text-center">
+                <div className="ds-spinner mx-auto mb-2" />
+                <div className="text-slate-400 text-xs">Cariye ait açık faturalar taranıyor...</div>
               </div>
             ) : openInvoices.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div className="py-8 text-center text-slate-400 text-sm">
                 Bu cariye ait henüz kapatılmamış / açık bir fatura bulunamadı.
               </div>
             ) : (
-              <form onSubmit={handleConfirmApply}>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+              <form onSubmit={handleConfirmApply} className="space-y-4">
+                <div>
+                  <label className="ds-label">
                     1. Fatura Seçiniz:
                   </label>
-                  <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <div className="max-h-56 overflow-y-auto border border-slate-700/60 rounded-xl">
+                    <table className="ds-table text-xs">
                       <thead>
-                        <tr style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}>
-                          <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Seç</th>
-                          <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Fatura No</th>
-                          <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left' }}>Tarih</th>
-                          <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>Toplam</th>
-                          <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>Kalan Borç</th>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th w-10">Seç</th>
+                          <th className="ds-th">Fatura No</th>
+                          <th className="ds-th">Tarih</th>
+                          <th className="ds-th-right">Toplam</th>
+                          <th className="ds-th-right">Kalan Borç</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -837,23 +638,22 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
                           <tr 
                             key={inv.invoiceId}
                             onClick={() => handleSelectInvoice(inv)}
-                            style={{
-                              borderTop: '1px solid var(--glass-border)',
-                              background: selectedInvoice?.invoiceId === inv.invoiceId ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                              cursor: 'pointer'
-                            }}
+                            className={`ds-tbody-row cursor-pointer ${
+                              selectedInvoice?.invoiceId === inv.invoiceId ? 'bg-indigo-500/20' : ''
+                            }`}
                           >
-                            <td style={{ padding: '0.5rem 0.75rem' }}>
+                            <td className="ds-td">
                               <input 
                                 type="radio" 
                                 checked={selectedInvoice?.invoiceId === inv.invoiceId} 
                                 onChange={() => handleSelectInvoice(inv)} 
+                                className="accent-indigo-500"
                               />
                             </td>
-                            <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>#{inv.invoiceId}</td>
-                            <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-muted)' }}>{inv.invoiceDate ? inv.invoiceDate.substring(0, 10) : '-'}</td>
-                            <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right' }}>${inv.total.toFixed(2)}</td>
-                            <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 700, color: '#facc15' }}>
+                            <td className="ds-td-mono font-bold">#{inv.invoiceId}</td>
+                            <td className="ds-td-muted">{inv.invoiceDate ? inv.invoiceDate.substring(0, 10) : '-'}</td>
+                            <td className="ds-td-right">${inv.total.toFixed(2)}</td>
+                            <td className="ds-td-right text-amber-400 font-bold">
                               ${inv.outstandingAmount.toFixed(2)}
                             </td>
                           </tr>
@@ -864,11 +664,11 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
                 </div>
 
                 {selectedInvoice && (
-                  <div style={{ marginBottom: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                  <div className="ds-card p-4 space-y-2">
+                    <label className="ds-label">
                       2. Uygulanacak Tutar ($):
                     </label>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div className="flex gap-3 items-center">
                       <input 
                         type="number"
                         step="0.01"
@@ -877,66 +677,36 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack, onView
                         value={applyAmount}
                         onChange={(e) => setApplyAmount(parseFloat(e.target.value) || 0)}
                         required
-                        style={{
-                          flex: 1,
-                          padding: '0.6rem 0.75rem',
-                          borderRadius: '6px',
-                          border: '1px solid var(--glass-border)',
-                          background: 'rgba(15, 23, 42, 0.6)',
-                          color: 'white',
-                          fontSize: '1rem',
-                          fontWeight: 600
-                        }}
+                        className="ds-input flex-1 font-bold text-base"
                       />
                       <button
                         type="button"
                         onClick={() => setApplyAmount(Math.min(openAmount, selectedInvoice.outstandingAmount))}
-                        style={{
-                          background: 'rgba(99, 102, 241, 0.1)',
-                          border: '1px solid rgba(99, 102, 241, 0.3)',
-                          color: 'var(--primary)',
-                          padding: '0.6rem 1rem',
-                          borderRadius: '6px',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer'
-                        }}
+                        className="ds-btn-secondary px-3 py-2 text-xs"
                       >
                         Tamamını Eşle
                       </button>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                    <div className="text-xs text-slate-400">
                       Fatura Kalanı: ${selectedInvoice.outstandingAmount.toFixed(2)} | Ödeme Açık Bakiyesi: ${openAmount.toFixed(2)}
                     </div>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-700/50">
                   <button
                     type="button"
                     onClick={() => setShowApplyModal(false)}
-                    style={{
-                      padding: '0.6rem 1.25rem',
-                      borderRadius: '6px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'transparent',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer'
-                    }}
+                    className="ds-btn-secondary"
                   >
                     Vazgeç
                   </button>
                   <button
                     type="submit"
                     disabled={!selectedInvoice || applyAmount <= 0 || actionLoading}
-                    className="btn-primary"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      padding: '0.6rem 1.5rem'
-                    }}
+                    className="ds-btn-primary"
                   >
-                    {actionLoading ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+                    {actionLoading ? <div className="ds-spinner-sm" /> : <CheckCircle2 size={16} />}
                     Mahsubu Onayla
                   </button>
                 </div>
