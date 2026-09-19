@@ -2226,6 +2226,60 @@ export const api = {
   getPaymentGatewayMetadata: async (): Promise<PaymentGatewayMetadataResponse> => {
     return requestApi<PaymentGatewayMetadataResponse>('getPaymentGatewayMetadata');
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Aşama 4: Toplu Çek Koşusu, Çek Yazdırma & İptal (Check Run & Voiding)
+  // ═════════════════════════════════════════════════════════════════
+  getCheckRuns: async (search?: string): Promise<{ checkRuns: CheckRunItem[]; stats: CheckRunStats }> => {
+    const q = search ? `?search=${encodeURIComponent(search)}` : '';
+    return requestApi<{ checkRuns: CheckRunItem[]; stats: CheckRunStats }>(`getCheckRuns${q}`);
+  },
+  getCheckRunDetail: async (paymentGroupId: string): Promise<{ checkRun: CheckRunDetail }> => {
+    return requestApi<{ checkRun: CheckRunDetail }>(`getCheckRunDetail?paymentGroupId=${encodeURIComponent(paymentGroupId)}`);
+  },
+  getPayableInvoicesForCheckRun: async (params?: { vendorPartyId?: string; asOfDate?: string }): Promise<{ payableInvoices: PayableInvoiceItem[]; totalOutstanding: number; invoiceCount: number }> => {
+    const q = new URLSearchParams();
+    if (params?.vendorPartyId) q.append('vendorPartyId', params.vendorPartyId);
+    if (params?.asOfDate) q.append('asOfDate', params.asOfDate);
+    const query = q.toString();
+    return requestApi<{ payableInvoices: PayableInvoiceItem[]; totalOutstanding: number; invoiceCount: number }>(query ? `getPayableInvoicesForCheckRun?${query}` : 'getPayableInvoicesForCheckRun');
+  },
+  createCheckRun: async (payload: { paymentMethodId: string; invoiceIds: string[]; checkStartNumber?: number; paymentGroupName?: string; organizationPartyId?: string }): Promise<{ paymentGroupId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ paymentGroupId: string; _EVENT_MESSAGE_?: string }>('createCheckRun', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({
+        paymentMethodId: payload.paymentMethodId,
+        invoiceIds: JSON.stringify(payload.invoiceIds),
+        checkStartNumber: payload.checkStartNumber !== undefined ? String(payload.checkStartNumber) : '',
+        paymentGroupName: payload.paymentGroupName || '',
+        organizationPartyId: payload.organizationPartyId || 'Company',
+      }),
+    });
+  },
+  cancelCheckRun: async (paymentGroupId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('cancelCheckRun', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentGroupId }),
+    });
+  },
+  voidPaymentRecord: async (paymentId: string): Promise<{ paymentId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ paymentId: string; _EVENT_MESSAGE_?: string }>('voidPaymentRecord', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ paymentId }),
+    });
+  },
+  getCheckPrintData: async (params: { paymentGroupId?: string; paymentId?: string }): Promise<{ vouchers: CheckVoucherItem[]; voucherCount: number }> => {
+    const q = new URLSearchParams();
+    if (params.paymentGroupId) q.append('paymentGroupId', params.paymentGroupId);
+    if (params.paymentId) q.append('paymentId', params.paymentId);
+    return requestApi<{ vouchers: CheckVoucherItem[]; voucherCount: number }>(`getCheckPrintData?${q.toString()}`);
+  },
+  getCheckRunMetadata: async (): Promise<CheckRunMetadataResponse> => {
+    return requestApi<CheckRunMetadataResponse>('getCheckRunMetadata');
+  },
 };
 
 // ==========================================
@@ -2672,7 +2726,119 @@ export interface PaymentGatewayMetadataResponse {
   };
 }
 
+// ═════════════════════════════════════════════════════════════════
+// Aşama 4: Toplu Çek Koşusu & Çek Yazdırma Tipleri
+// ═════════════════════════════════════════════════════════════════
+export interface CheckRunItem {
+  paymentGroupId: string;
+  paymentGroupName: string;
+  paymentGroupTypeId: string;
+  fromDate: string | null;
+  thruDate: string | null;
+  checkCount: number;
+  activeCheckCount: number;
+  voidedCheckCount: number;
+  totalAmount: number;
+  status: 'ACTIVE' | 'CANCELLED';
+  paymentMethodId?: string;
+  finAccountId?: string;
+}
 
+export interface CheckRunStats {
+  totalCheckRuns: number;
+  totalChecksIssued: number;
+  totalVoidedChecks: number;
+  totalCheckVolume: number;
+}
 
+export interface CheckItem {
+  paymentId: string;
+  paymentRefNum: string;
+  partyIdTo: string;
+  payeeName: string;
+  amount: number;
+  currencyUomId: string;
+  effectiveDate: string | null;
+  statusId: string;
+  statusDesc: string;
+  paymentMethodId?: string;
+  finAccountId?: string;
+  comments?: string;
+  appliedInvoices: Array<{
+    paymentApplicationId: string;
+    invoiceId: string;
+    amountApplied: number;
+  }>;
+  memberFromDate: string | null;
+  memberThruDate: string | null;
+}
 
+export interface CheckRunDetail {
+  paymentGroupId: string;
+  paymentGroupName: string;
+  paymentGroupTypeId: string;
+  fromDate: string | null;
+  thruDate: string | null;
+  totalAmount: number;
+  checkCount: number;
+  checks: CheckItem[];
+}
 
+export interface PayableInvoiceItem {
+  invoiceId: string;
+  invoiceTypeId: string;
+  invoiceDate: string | null;
+  dueDate: string | null;
+  statusId: string;
+  partyIdFrom: string;
+  vendorName: string;
+  currencyUomId: string;
+  totalAmount: number;
+  outstandingAmount: number;
+  description: string;
+}
+
+export interface CheckVoucherItem {
+  paymentId: string;
+  checkNumber: string;
+  date: string;
+  amount: number;
+  currencyUomId: string;
+  amountInWordsEn: string;
+  amountInWordsTr: string;
+  payee: {
+    partyId: string;
+    name: string;
+  };
+  payer: {
+    partyId: string;
+    name: string;
+    bankName: string;
+    accountNumber: string;
+  };
+  memo: string;
+  invoices: Array<{
+    invoiceId: string;
+    invoiceDate: string | null;
+    description: string;
+    amountApplied: number;
+  }>;
+  statusId: string;
+}
+
+export interface CheckRunMetadataResponse {
+  metadata: {
+    paymentMethods: Array<{
+      paymentMethodId: string;
+      paymentMethodTypeId: string;
+      finAccountId?: string;
+      finAccountName?: string;
+      description: string;
+    }>;
+    nextCheckNumber: number;
+    vendors: Array<{
+      partyId: string;
+      name: string;
+    }>;
+  };
+}

@@ -180,8 +180,13 @@ export const PaymentDetail: React.FC<PaymentDetailProps> = ({ paymentId, onBack,
     setActionLoading(true);
     setError(null);
     try {
-      const res = await api.setPaymentStatus(paymentId, newStatusId);
-      flash(res._EVENT_MESSAGE_ || (locale === 'tr' ? `Durum güncellendi: ${formatStatus(newStatusId)}` : `Status updated: ${formatStatus(newStatusId)}`));
+      if (newStatusId === 'PMNT_VOID') {
+        const res = await api.voidPaymentRecord(paymentId);
+        flash(res._EVENT_MESSAGE_ || (locale === 'tr' ? 'Ödeme ve muhasebe kayıtları iptal edildi (hükümsüz kılındı).' : 'Payment and accounting entries successfully voided.'));
+      } else {
+        const res = await api.setPaymentStatus(paymentId, newStatusId);
+        flash(res._EVENT_MESSAGE_ || (locale === 'tr' ? `Durum güncellendi: ${formatStatus(newStatusId)}` : `Status updated: ${formatStatus(newStatusId)}`));
+      }
       loadPayment();
     } catch (err: any) {
       setError(err.message || (locale === 'tr' ? 'Durum değiştirilemedi.' : 'Could not change status.'));

@@ -74,6 +74,7 @@ export interface Translations {
     depositSlips: string;
     accountingPreferences: string;
     paymentGateways: string;
+    checkRun: string;
     apiTest: string;
     settings: string;
     logout: string;
@@ -102,6 +103,7 @@ export interface Translations {
     depositSlips: { title: string; subtitle: string };
     accountingPreferences: { title: string; subtitle: string };
     paymentGateways: { title: string; subtitle: string };
+    checkRun: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
   };
   dashboard: {
@@ -1021,6 +1023,96 @@ export interface Translations {
     messages: {
       successSavedConfig: string;
       successDeletedConfig: string;
+    };
+  };
+  checkRun: {
+    title: string;
+    subtitle: string;
+    tabs: {
+      checkRuns: string;
+      newCheckRun: string;
+    };
+    stats: {
+      totalRuns: string;
+      issuedChecks: string;
+      voidedChecks: string;
+      totalVolume: string;
+    };
+    table: {
+      groupId: string;
+      name: string;
+      date: string;
+      checkCount: string;
+      amount: string;
+      status: string;
+      actions: string;
+      noRuns: string;
+    };
+    detail: {
+      title: string;
+      groupInfo: string;
+      cancelRun: string;
+      confirmCancelRun: string;
+      printChecks: string;
+      checksList: string;
+      checkNumber: string;
+      payee: string;
+      amount: string;
+      status: string;
+      appliedInvoices: string;
+      voidCheck: string;
+      confirmVoidCheck: string;
+      noChecks: string;
+    };
+    wizard: {
+      title: string;
+      bankAccount: string;
+      selectBankAccount: string;
+      startCheckNumber: string;
+      startCheckNumberHelp: string;
+      paymentDate: string;
+      runName: string;
+      runNamePlaceholder: string;
+      filterVendor: string;
+      allVendors: string;
+      dueDateBefore: string;
+      availableInvoices: string;
+      noPayableInvoices: string;
+      selectedCount: string;
+      selectedTotal: string;
+      selectAll: string;
+      deselectAll: string;
+      invoiceId: string;
+      vendor: string;
+      invoiceDate: string;
+      dueDate: string;
+      openAmount: string;
+      createRunButton: string;
+    };
+    voucher: {
+      title: string;
+      payer: string;
+      bank: string;
+      accountNo: string;
+      payToOrderOf: string;
+      date: string;
+      checkNo: string;
+      dollars: string;
+      amountWords: string;
+      memo: string;
+      authorizedSignature: string;
+      voucherStub: string;
+      invoiceRef: string;
+      paidAmount: string;
+      print: string;
+      close: string;
+    };
+    messages: {
+      createdSuccess: string;
+      cancelledSuccess: string;
+      voidedSuccess: string;
+      selectAtLeastOne: string;
+      selectBank: string;
     };
   };
 }

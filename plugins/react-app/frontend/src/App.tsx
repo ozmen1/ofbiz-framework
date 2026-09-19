@@ -21,6 +21,7 @@ import { CostCenters } from './components/CostCenters'
 import { DepositSlips } from './components/DepositSlips'
 import { AccountingPreferences } from './components/AccountingPreferences'
 import { PaymentGateways } from './components/PaymentGateways'
+import { CheckRun } from './components/CheckRun'
 import TestPage from './components/TestPage'
 import { I18nProvider } from './i18n'
 import './index.css'
@@ -50,6 +51,7 @@ export type ViewType =
   | 'cost-centers'
   | 'accounting-preferences'
   | 'payment-gateways'
+  | 'check-run'
   | 'test-page';
 
 
@@ -166,6 +168,9 @@ function App() {
 
       {/* Payment Gateways & Transaction Logs (Faz 3) */}
       {currentView === 'payment-gateways' && <PaymentGateways />}
+
+      {/* Batch Check Run & Voiding (Faz 4) */}
+      {currentView === 'check-run' && <CheckRun />}
 
       {currentView === 'test-page' && <TestPage />}
       </Layout>
