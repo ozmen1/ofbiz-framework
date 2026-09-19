@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Percent,
@@ -408,10 +408,18 @@ export const TaxAndGlMapping: React.FC = () => {
     d.accountCode.includes(searchTerm)
   );
 
+  const glAccountOptions = useMemo(() => {
+    return (metadata?.glAccounts || []).map((gla: any) => (
+      <option key={gla.glAccountId} value={gla.glAccountId}>
+        {gla.label}
+      </option>
+    ));
+  }, [metadata?.glAccounts]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <Percent className="w-7 h-7 text-indigo-400" />
@@ -512,7 +520,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* KPI Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 backdrop-blur-xl">
+        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-start">
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
               {translations.taxAndGlMapping.authorities.totalAuthorities}
@@ -525,7 +533,7 @@ export const TaxAndGlMapping: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 backdrop-blur-xl">
+        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-start">
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
               {translations.taxAndGlMapping.rates.activeRates}
@@ -538,7 +546,7 @@ export const TaxAndGlMapping: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 backdrop-blur-xl">
+        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-start">
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
               {translations.taxAndGlMapping.invoiceMappings.totalMappings}
@@ -551,7 +559,7 @@ export const TaxAndGlMapping: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 backdrop-blur-xl">
+        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-start">
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
               {translations.taxAndGlMapping.paymentDefaults.totalDefaults}
@@ -660,7 +668,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* TAB 1: TAX RATES */}
       {activeTab === 'rates' && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl min-h-[360px]">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden min-h-[360px]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
@@ -739,7 +747,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* TAB 2: TAX AUTHORITIES */}
       {activeTab === 'authorities' && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl min-h-[360px]">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden min-h-[360px]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
@@ -838,7 +846,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* TAB 3: INVOICE ITEM GL MAPPINGS */}
       {activeTab === 'invoice-mappings' && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
           <div className="p-4 border-b border-slate-700/60 bg-slate-800/60 flex justify-between items-center">
             <div>
               <h2 className="font-semibold text-white">
@@ -920,7 +928,7 @@ export const TaxAndGlMapping: React.FC = () => {
       {activeTab === 'payment-defaults' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Payment Method Types */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl">
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-slate-700/60 bg-slate-800/60 flex justify-between items-center">
               <div>
                 <h2 className="font-semibold text-white">
@@ -996,7 +1004,7 @@ export const TaxAndGlMapping: React.FC = () => {
           </div>
 
           {/* Default GL Account Types */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl">
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-slate-700/60 bg-slate-800/60 flex justify-between items-center">
               <div>
                 <h2 className="font-semibold text-white">
@@ -1074,7 +1082,7 @@ export const TaxAndGlMapping: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedAuthority(null)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80"
             />
             <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
               <motion.div
@@ -1088,15 +1096,16 @@ export const TaxAndGlMapping: React.FC = () => {
                   {/* Drawer Header */}
                   <div className="flex justify-between items-start border-b border-slate-800 pb-4">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <Landmark className="w-5 h-5 text-indigo-400" />
-                        <h2 className="text-xl font-bold text-white">{selectedAuthority.geoName}</h2>
+                      <div className="flex items-center gap-2 text-indigo-400 font-mono text-xs mb-1">
+                        <Globe className="w-4 h-4" />
+                        {selectedAuthority.taxAuthGeoId} • {selectedAuthority.taxAuthPartyId}
                       </div>
-                      <p className="text-sm text-slate-400 mt-1">{selectedAuthority.partyName}</p>
+                      <h2 className="text-xl font-bold text-white">{selectedAuthority.geoName}</h2>
+                      <p className="text-slate-400 text-sm">{selectedAuthority.partyName}</p>
                     </div>
                     <button
                       onClick={() => setSelectedAuthority(null)}
-                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -1207,7 +1216,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 1: CREATE TAX RATE */}
       {showCreateRateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1322,7 +1331,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 2: CREATE TAX AUTHORITY */}
       {showCreateAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1416,7 +1425,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 3: INVOICE ITEM GL MAP */}
       {showInvoiceMapModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1459,11 +1468,7 @@ export const TaxAndGlMapping: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200"
                 >
                   <option value="">-- {translations.common.select} --</option>
-                  {metadata?.glAccounts.map((gla: any) => (
-                    <option key={gla.glAccountId} value={gla.glAccountId}>
-                      {gla.label}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1490,7 +1495,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 4: PAYMENT METHOD GL MAP */}
       {showPaymentMapModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1533,11 +1538,7 @@ export const TaxAndGlMapping: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200"
                 >
                   <option value="">-- {translations.common.select} --</option>
-                  {metadata?.glAccounts.map((gla: any) => (
-                    <option key={gla.glAccountId} value={gla.glAccountId}>
-                      {gla.label}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1564,7 +1565,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 5: DEFAULT GL ACCOUNT MAP */}
       {showDefaultMapModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1607,11 +1608,7 @@ export const TaxAndGlMapping: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200"
                 >
                   <option value="">-- {translations.common.select} --</option>
-                  {metadata?.glAccounts.map((gla: any) => (
-                    <option key={gla.glAccountId} value={gla.glAccountId}>
-                      {gla.label}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -1638,7 +1635,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* MODAL 6: AUTHORITY GL ACCOUNT MAP */}
       {showAuthGlModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="bg-slate-900 border border-slate-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1669,11 +1666,7 @@ export const TaxAndGlMapping: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200"
                 >
                   <option value="">-- {translations.common.select} --</option>
-                  {metadata?.glAccounts.map((gla: any) => (
-                    <option key={gla.glAccountId} value={gla.glAccountId}>
-                      {gla.label}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 

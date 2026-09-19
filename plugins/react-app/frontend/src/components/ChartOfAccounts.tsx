@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Search, RefreshCw, Plus, Edit3, Eye, CheckCircle2, 
   X, AlertCircle, BookOpen, Layers,
@@ -93,6 +93,14 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
     isAssigned: 'Y'
   });
   const [editLoading, setEditLoading] = useState<boolean>(false);
+
+  const parentAccountOptions = useMemo(() => {
+    return (metadata?.accounts || []).map(a => (
+      <option key={a.glAccountId} value={a.glAccountId}>
+        {a.accountCode} - {a.accountName}
+      </option>
+    ));
+  }, [metadata?.accounts]);
 
   // Load Metadata
   useEffect(() => {
@@ -603,11 +611,7 @@ export const ChartOfAccounts: React.FC<ChartOfAccountsProps> = ({ onSelectTransa
                   className="ds-select"
                 >
                   <option value="">-- {translations.common.none} --</option>
-                  {metadata?.accounts?.map(a => (
-                    <option key={a.glAccountId} value={a.glAccountId}>
-                      {a.accountCode} - {a.accountName}
-                    </option>
-                  ))}
+                  {parentAccountOptions}
                 </select>
               </div>
 

@@ -599,7 +599,7 @@ export const CostCenters: React.FC = () => {
 
       {/* CREATE CATEGORY MODAL */}
       {showCreateCategoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card p-6 w-full max-w-md shadow-2xl border border-slate-700">
             <h2 className="text-lg font-bold text-white mb-4">
               {translations.costCenters.newCategory}
@@ -677,7 +677,7 @@ export const CostCenters: React.FC = () => {
 
       {/* ADD ACCOUNT TO CATEGORY MODAL */}
       {showAddAccountModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card p-6 w-full max-w-lg shadow-2xl border border-slate-700">
             <h2 className="text-lg font-bold text-white mb-4">
               {translations.costCenters.addAccount}

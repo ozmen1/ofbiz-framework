@@ -156,7 +156,7 @@ export const BudgetVarianceModal: React.FC<BudgetVarianceModalProps> = ({
   const isWarn = overallPct > 85 && overallPct <= 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 overflow-y-auto animate-fade-in">
       <div className="ds-card border-slate-700/80 w-full max-w-5xl bg-slate-900 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto rounded-2xl">
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-start justify-between bg-slate-900/90 gap-4">
@@ -469,7 +469,7 @@ export const BudgetVarianceModal: React.FC<BudgetVarianceModalProps> = ({
 
       {/* ================= MODAL: CREATE REVISION ================= */}
       {showRevForm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
           <div className="ds-card border-slate-700 w-full max-w-md bg-slate-900 shadow-2xl p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">

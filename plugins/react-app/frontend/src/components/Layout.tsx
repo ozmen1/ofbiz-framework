@@ -180,7 +180,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
       {/* ── Mobile Backdrop Overlay ── */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/80 z-40 lg:hidden transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

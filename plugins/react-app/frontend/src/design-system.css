@@ -8,10 +8,10 @@
 
 /* ─── Kart & Panel ─── */
 .ds-card {
-  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl backdrop-blur-sm;
+  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl;
 }
 .ds-card-elevated {
-  @apply bg-slate-800/70 border border-slate-700/60 rounded-2xl shadow-xl backdrop-blur-sm;
+  @apply bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl;
 }
 
 /* ─── Butonlar ─── */
@@ -85,7 +85,7 @@
 
 /* ─── Modal ─── */
 .ds-overlay {
-  @apply fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto;
+  @apply fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto;
 }
 .ds-modal {
   @apply bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full my-auto;
@@ -159,7 +159,7 @@
 
 /* ─── Eski glass-card ile backward compat & global UI uyumu ─── */
 .glass-card {
-  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl backdrop-blur-sm text-slate-200;
+  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl text-slate-200;
 }
 
 .btn-primary {

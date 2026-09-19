@@ -733,7 +733,7 @@ export const CheckRun: React.FC = () => {
 
       {/* Detail Modal */}
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -900,7 +900,7 @@ export const CheckRun: React.FC = () => {
 
       {/* Print Voucher Modal */}
       {showPrintModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6 space-y-6 bg-slate-900 border border-slate-700">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-700/60 pb-3 no-print">

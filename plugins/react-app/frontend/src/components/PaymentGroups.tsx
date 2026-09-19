@@ -98,7 +98,7 @@ function CreateGroupModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
       <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 my-auto">
         <h2 className="text-xl font-bold text-white mb-4">{translations.paymentGroups.newGroup}</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
@@ -187,7 +187,7 @@ function AddPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3 sm:p-6 overflow-y-auto">
       <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl p-5 sm:p-6 max-h-[85vh] flex flex-col my-auto">
         <h2 className="text-xl font-bold text-white mb-4">{translations.paymentGroups.addPayment}</h2>
         {error && <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">{error}</div>}
@@ -329,7 +329,7 @@ function GroupDetailPanel({
       </div>
 
       {/* Üye Ödemeler Tablosu */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur">
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[700px]">
           <thead>

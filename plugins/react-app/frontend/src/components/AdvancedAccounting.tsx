@@ -2833,7 +2833,7 @@ export const AdvancedAccounting: React.FC = () => {
       {/* BATCH DEPRECIATION RUN MODAL               */}
       {/* ========================================== */}
       {showBatchDepModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
           <div className="ds-card border-slate-700 w-full max-w-xl bg-slate-900 shadow-2xl p-6 space-y-5">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">

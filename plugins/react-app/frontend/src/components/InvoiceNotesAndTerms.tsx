@@ -220,7 +220,7 @@ export default function InvoiceNotesAndTerms({ invoiceId }: { invoiceId: string 
   };
 
   return (
-    <div className="mt-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur">
+    <div className="mt-6 bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
       {/* Sekmeler */}
       <div className="flex border-b border-slate-700/50">
         <button

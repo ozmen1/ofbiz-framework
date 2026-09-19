@@ -396,7 +396,7 @@ export const DepositSlips: React.FC<DepositSlipsProps> = ({ initialFinAccountId 
 
       {/* CREATE DEPOSIT SLIP MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card p-6 w-full max-w-3xl shadow-2xl border border-slate-700 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -561,7 +561,7 @@ export const DepositSlips: React.FC<DepositSlipsProps> = ({ initialFinAccountId 
 
       {/* DETAIL MODAL */}
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="ds-card p-6 w-full max-w-3xl shadow-2xl border border-slate-700 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Landmark, Search, RefreshCw, Plus, ArrowRightLeft, 
   CheckCircle2, Clock, X, AlertCircle, Loader2, 
@@ -140,6 +140,14 @@ export const FinancialAccounts: React.FC = () => {
     reconciledDate: new Date().toISOString().substring(0, 10),
     description: ''
   });
+
+  const glAccountOptions = useMemo(() => {
+    return (metadata?.glAccounts || []).map(g => (
+      <option key={g.glAccountId} value={g.glAccountId}>
+        {g.accountCode} - {g.accountName}
+      </option>
+    ));
+  }, [metadata?.glAccounts]);
 
   // Action loaders
   const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -1513,11 +1521,7 @@ export const FinancialAccounts: React.FC = () => {
                     className="ds-select"
                   >
                     <option value="">-- {translations.common.none} --</option>
-                    {metadata?.glAccounts?.map(g => (
-                      <option key={g.glAccountId} value={g.glAccountId}>
-                        {g.accountCode} - {g.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
               </div>
@@ -1646,11 +1650,7 @@ export const FinancialAccounts: React.FC = () => {
                     className="ds-select"
                   >
                     <option value="">-- {translations.common.none} --</option>
-                    {metadata?.glAccounts?.map(g => (
-                      <option key={g.glAccountId} value={g.glAccountId}>
-                        {g.accountCode} - {g.accountName}
-                      </option>
-                    ))}
+                    {glAccountOptions}
                   </select>
                 </div>
               </div>
@@ -1945,11 +1945,7 @@ export const FinancialAccounts: React.FC = () => {
                   onChange={e => setCreateRecForm({ ...createRecForm, glAccountId: e.target.value })}
                   className="ds-select"
                 >
-                  {metadata?.glAccounts?.map(g => (
-                    <option key={g.glAccountId} value={g.glAccountId}>
-                      {g.accountCode} - {g.accountName}
-                    </option>
-                  ))}
+                  {glAccountOptions}
                 </select>
               </div>
 
@@ -2360,7 +2356,7 @@ export const FinancialAccounts: React.FC = () => {
 
             {/* MODAL: Add Role Child Modal */}
             {showAddRoleModal && (
-              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
                 <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
                   <h3 className="text-sm font-semibold text-white mb-4">
                     {translations.financialAccounts.rolesAndAuth.addRole}
@@ -2441,7 +2437,7 @@ export const FinancialAccounts: React.FC = () => {
 
             {/* MODAL: Add Auth / Hold Child Modal */}
             {showAddAuthModal && (
-              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+              <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80">
                 <div className="ds-card max-w-md w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl">
                   <h3 className="text-sm font-semibold text-white mb-4">
                     {translations.financialAccounts.rolesAndAuth.addAuth}

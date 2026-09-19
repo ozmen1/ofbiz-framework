@@ -1039,7 +1039,7 @@ export const CommissionRun: React.FC = () => {
       {/* MODAL: COMMISSION INVOICE DETAIL                                          */}
       {/* ========================================================================= */}
       {showDetailModal && selectedRun && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="ds-card w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-700">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
