@@ -886,6 +886,157 @@ export interface UpdateFixedAssetPayload {
   serialNumber?: string;
 }
 
+// 2.1 Fixed Asset Lifecycle, Depreciation Engine, Maintenance, Meters & Assignments
+export interface FixedAssetDepreciationScheduleItem {
+  year: number;
+  yearNumber: number;
+  depreciationAmount: number;
+  accumulatedDepreciation: number;
+  netBookValue: number;
+}
+
+export interface FixedAssetGlTransactionItem {
+  acctgTransId: string;
+  transactionDate: string;
+  description: string;
+  isPosted: string;
+  postedDate: string;
+  amount: number;
+  glJournalId: string;
+}
+
+export interface FixedAssetDepreciationResponse {
+  fixedAssetId: string;
+  purchaseCost: number;
+  salvageValue: number;
+  accumulatedDepreciation: number;
+  netBookValue: number;
+  usefulYears: number;
+  depreciationMethod: string;
+  nextSuggestedAmount: number;
+  projectionSchedule: FixedAssetDepreciationScheduleItem[];
+  transactionHistory: FixedAssetGlTransactionItem[];
+}
+
+export interface PostFixedAssetDepreciationPayload {
+  fixedAssetId: string;
+  amount?: number;
+  organizationPartyId?: string;
+  description?: string;
+  debitGlAccountId?: string;
+  creditGlAccountId?: string;
+}
+
+export interface BatchDepreciationResultItem {
+  fixedAssetId: string;
+  fixedAssetName: string;
+  acctgTransId: string;
+  depreciationAmount: number;
+}
+
+export interface BatchDepreciationResponse {
+  processedCount: number;
+  totalBatchDepreciation: number;
+  createdTransactions: BatchDepreciationResultItem[];
+  _EVENT_MESSAGE_?: string;
+}
+
+export interface FixedAssetMaintItem {
+  fixedAssetId: string;
+  maintHistSeqId: string;
+  statusId: string;
+  productMaintTypeId: string;
+  maintenanceDate: string;
+  intervalQuantity?: number | null;
+  intervalUomId?: string;
+  intervalMeterTypeId?: string;
+  purchaseOrderId?: string;
+  comments?: string;
+}
+
+export interface CreateFixedAssetMaintPayload {
+  fixedAssetId: string;
+  productMaintTypeId?: string;
+  statusId?: string;
+  maintenanceDate?: string;
+  intervalQuantity?: number;
+  intervalUomId?: string;
+  intervalMeterTypeId?: string;
+  purchaseOrderId?: string;
+  comments?: string;
+}
+
+export interface FixedAssetMeterItem {
+  fixedAssetId: string;
+  productMeterTypeId: string;
+  readingDate: string;
+  meterValue: number;
+}
+
+export interface CreateFixedAssetMeterPayload {
+  fixedAssetId: string;
+  productMeterTypeId?: string;
+  readingDate?: string;
+  meterValue: number;
+}
+
+export interface FixedAssetAssignmentItem {
+  fixedAssetId: string;
+  partyId: string;
+  partyName: string;
+  roleTypeId: string;
+  fromDate: string;
+  thruDate: string;
+  statusId: string;
+  allocatedCost?: number | null;
+  comments?: string;
+  isActive: boolean;
+}
+
+export interface CreateFixedAssetAssignmentPayload {
+  fixedAssetId: string;
+  partyId: string;
+  roleTypeId?: string;
+  fromDate?: string;
+  thruDate?: string;
+  allocatedCost?: number;
+  comments?: string;
+}
+
+export interface FixedAssetRegistrationItem {
+  fixedAssetId: string;
+  fromDate: string;
+  thruDate: string;
+  registrationDate: string;
+  govAgencyPartyId: string;
+  registrationNumber: string;
+  licenseNumber: string;
+}
+
+export interface FixedAssetIdentItem {
+  fixedAssetId: string;
+  fixedAssetIdentTypeId: string;
+  idValue: string;
+}
+
+export interface FixedAssetRegistrationsResponse {
+  registrations: FixedAssetRegistrationItem[];
+  identifications: FixedAssetIdentItem[];
+}
+
+export interface CreateFixedAssetRegistrationPayload {
+  fixedAssetId: string;
+  fromDate?: string;
+  thruDate?: string;
+  registrationDate?: string;
+  govAgencyPartyId?: string;
+  registrationNumber?: string;
+  licenseNumber?: string;
+  fixedAssetIdentTypeId?: string;
+  idValue?: string;
+}
+
+
 // 3. Budgets
 export interface BudgetItemSummary {
   budgetId: string;
@@ -1724,6 +1875,92 @@ export const api = {
       body: toFormData({ fixedAssetId, depreciationAmount }),
     });
   },
+
+  // Fixed Asset Lifecycle, Depreciation Engine, Maintenance, Meters & Assignments
+  getFixedAssetDepreciation: async (fixedAssetId: string): Promise<FixedAssetDepreciationResponse> => {
+    return requestApi<FixedAssetDepreciationResponse>(`getFixedAssetDepreciation?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  postFixedAssetDepreciation: async (payload: PostFixedAssetDepreciationPayload): Promise<{ acctgTransId: string; depreciationAmount: number; totalDepreciation: number; netBookValue: number; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('postFixedAssetDepreciation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  runBatchDepreciation: async (payload: { organizationPartyId?: string; fixedAssetTypeId?: string } = {}): Promise<BatchDepreciationResponse> => {
+    return requestApi<BatchDepreciationResponse>('runBatchDepreciation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getFixedAssetMaintenances: async (fixedAssetId: string): Promise<{ maintenances: FixedAssetMaintItem[] }> => {
+    return requestApi<{ maintenances: FixedAssetMaintItem[] }>(`getFixedAssetMaintenances?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  createFixedAssetMaint: async (payload: CreateFixedAssetMaintPayload): Promise<{ maintHistSeqId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createFixedAssetMaint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  updateFixedAssetMaintStatus: async (payload: { fixedAssetId: string; maintHistSeqId: string; statusId: string; comments?: string }): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('updateFixedAssetMaintStatus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getFixedAssetMeters: async (fixedAssetId: string): Promise<{ meters: FixedAssetMeterItem[] }> => {
+    return requestApi<{ meters: FixedAssetMeterItem[] }>(`getFixedAssetMeters?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  createFixedAssetMeter: async (payload: CreateFixedAssetMeterPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createFixedAssetMeter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getFixedAssetAssignments: async (fixedAssetId: string): Promise<{ assignments: FixedAssetAssignmentItem[] }> => {
+    return requestApi<{ assignments: FixedAssetAssignmentItem[] }>(`getFixedAssetAssignments?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  createFixedAssetAssignment: async (payload: CreateFixedAssetAssignmentPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createFixedAssetAssignment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  releaseFixedAssetAssignment: async (payload: { fixedAssetId: string; partyId: string; roleTypeId: string; fromDate: string }): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('releaseFixedAssetAssignment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  getFixedAssetRegistrations: async (fixedAssetId: string): Promise<FixedAssetRegistrationsResponse> => {
+    return requestApi<FixedAssetRegistrationsResponse>(`getFixedAssetRegistrations?fixedAssetId=${encodeURIComponent(fixedAssetId)}`);
+  },
+
+  createFixedAssetRegistration: async (payload: CreateFixedAssetRegistrationPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi('createFixedAssetRegistration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
 
   // 58. Get Budgets
   getBudgets: async (filters: Record<string, any> = {}): Promise<BudgetsResponse> => {

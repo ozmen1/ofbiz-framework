@@ -3,7 +3,7 @@ import {
   Layers, Search, RefreshCw, Plus, Eye, Edit3,
   CheckCircle2, Clock, X, AlertCircle, Loader2,
   Briefcase, Landmark, Building2, FileText, Check,
-  BarChart3, TrendingUp
+  BarChart3, TrendingUp, Zap
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import {
@@ -17,6 +17,7 @@ import {
   FixedAssetDetailResponse,
   CreateFixedAssetPayload,
   UpdateFixedAssetPayload,
+  BatchDepreciationResponse,
   BudgetItemSummary,
   BudgetDetailResponse,
   CreateBudgetPayload,
@@ -25,6 +26,7 @@ import {
   AgreementDetailResponse,
   CreateAgreementPayload
 } from '../services/api';
+import { FixedAssetLifecycleModal } from './FixedAssetLifecycleModal';
 
 type AdvancedTab = 'billing-accounts' | 'fixed-assets' | 'budgets' | 'agreements';
 
@@ -87,6 +89,16 @@ export const AdvancedAccounting: React.FC = () => {
   const [editingFa, setEditingFa] = useState<FixedAssetItem | null>(null);
   const [depAssetId, setDepAssetId] = useState<string>('');
   const [depAmountInput, setDepAmountInput] = useState<string>('');
+
+  // Fixed Asset Lifecycle & Batch Depreciation
+  const [selectedLifecycleAsset, setSelectedLifecycleAsset] = useState<FixedAssetItem | null>(null);
+  const [showLifecycleModal, setShowLifecycleModal] = useState<boolean>(false);
+  const [showBatchDepModal, setShowBatchDepModal] = useState<boolean>(false);
+  const [batchSubmitting, setBatchSubmitting] = useState<boolean>(false);
+  const [batchResult, setBatchResult] = useState<BatchDepreciationResponse | null>(null);
+  const [batchOrgId, setBatchOrgId] = useState<string>('Company');
+  const [batchAssetTypeId, setBatchAssetTypeId] = useState<string>('');
+
   const [createFaForm, setCreateFaForm] = useState<CreateFixedAssetPayload>({
     fixedAssetName: '',
     fixedAssetTypeId: 'EQUIPMENT',
@@ -404,6 +416,25 @@ export const AdvancedAccounting: React.FC = () => {
     }
   };
 
+  const handleRunBatchDepreciation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBatchSubmitting(true);
+    setError(null);
+    try {
+      const res = await api.runBatchDepreciation({
+        organizationPartyId: batchOrgId,
+        fixedAssetTypeId: batchAssetTypeId || undefined,
+      });
+      setBatchResult(res);
+      triggerSuccess(res._EVENT_MESSAGE_ || translations.fixedAssetLifecycle.depreciation.batchSuccess);
+      fetchFixedAssets();
+    } catch (e: any) {
+      setError(e.message || 'Batch depreciation run failed');
+    } finally {
+      setBatchSubmitting(false);
+    }
+  };
+
   // ==========================================
   // HANDLERS: BUDGETS
   // ==========================================
@@ -560,13 +591,26 @@ export const AdvancedAccounting: React.FC = () => {
           )}
 
           {activeTab === 'fixed-assets' && (
-            <button
-              onClick={() => setShowCreateFaModal(true)}
-              className="ds-btn-primary"
-            >
-              <Plus size={16} />
-              {t.fixedAssets.newAsset}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setBatchResult(null);
+                  setShowBatchDepModal(true);
+                }}
+                className="ds-btn-secondary text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                title={translations.fixedAssetLifecycle.depreciation.batchTitle}
+              >
+                <Zap size={16} />
+                {translations.fixedAssetLifecycle.depreciation.runBatchBtn}
+              </button>
+              <button
+                onClick={() => setShowCreateFaModal(true)}
+                className="ds-btn-primary"
+              >
+                <Plus size={16} />
+                {t.fixedAssets.newAsset}
+              </button>
+            </div>
           )}
 
           {activeTab === 'budgets' && (
@@ -901,11 +945,21 @@ export const AdvancedAccounting: React.FC = () => {
                         <td className="ds-td-right">
                           <div className="inline-flex items-center gap-1.5">
                             <button
-                              onClick={() => handleOpenFaDetail(fa.fixedAssetId)}
+                              onClick={() => {
+                                setSelectedLifecycleAsset(fa);
+                                setShowLifecycleModal(true);
+                              }}
                               className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700/50 transition-colors"
-                              title={t.fixedAssets.detail}
+                              title={translations.fixedAssetLifecycle.title}
                             >
                               <Eye size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenFaDetail(fa.fixedAssetId)}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/50 transition-colors"
+                              title={t.fixedAssets.detail}
+                            >
+                              <FileText size={15} />
                             </button>
                             <button
                               onClick={() => {
@@ -2274,6 +2328,164 @@ export const AdvancedAccounting: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* ========================================== */}
+      {/* FIXED ASSET LIFECYCLE MODAL                */}
+      {/* ========================================== */}
+      <FixedAssetLifecycleModal
+        asset={selectedLifecycleAsset}
+        isOpen={showLifecycleModal}
+        onClose={() => {
+          setShowLifecycleModal(false);
+          setSelectedLifecycleAsset(null);
+        }}
+        onAssetUpdated={() => {
+          fetchFixedAssets();
+        }}
+      />
+
+      {/* ========================================== */}
+      {/* BATCH DEPRECIATION RUN MODAL               */}
+      {/* ========================================== */}
+      {showBatchDepModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="ds-card border-slate-700 w-full max-w-xl bg-slate-900 shadow-2xl p-6 space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Zap size={20} className="text-amber-400" />
+                {translations.fixedAssetLifecycle.depreciation.batchTitle}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowBatchDepModal(false);
+                  setBatchResult(null);
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {!batchResult ? (
+              <form onSubmit={handleRunBatchDepreciation} className="space-y-4">
+                <p className="text-sm text-slate-300">
+                  {translations.fixedAssetLifecycle.depreciation.batchDescription}
+                </p>
+
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2.5">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{translations.fixedAssetLifecycle.depreciation.batchConfirm}</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="ds-label">{isTr ? 'Şirket / Organizasyon Kodu' : 'Company Org ID'}</label>
+                    <input
+                      type="text"
+                      required
+                      value={batchOrgId}
+                      onChange={e => setBatchOrgId(e.target.value)}
+                      className="ds-input font-mono"
+                      placeholder="Company"
+                    />
+                  </div>
+                  <div>
+                    <label className="ds-label">{t.fixedAssets.type} ({isTr ? 'Tümü için boş bırakın' : 'Leave empty for all'})</label>
+                    <select
+                      value={batchAssetTypeId}
+                      onChange={e => setBatchAssetTypeId(e.target.value)}
+                      className="ds-select"
+                    >
+                      <option value="">{t.fixedAssets.allTypes}</option>
+                      {metadata?.fixedAssetTypes.map(fat => (
+                        <option key={fat.fixedAssetTypeId} value={fat.fixedAssetTypeId}>
+                          {fat.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowBatchDepModal(false)}
+                    className="ds-btn-secondary"
+                  >
+                    {tc.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={batchSubmitting}
+                    className="ds-btn-primary bg-amber-600 hover:bg-amber-500 text-white border-amber-500/50 flex items-center gap-2"
+                  >
+                    {batchSubmitting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Zap size={16} />
+                    )}
+                    {translations.fixedAssetLifecycle.depreciation.runBatchBtn}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm flex items-center gap-3">
+                  <CheckCircle2 size={22} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="font-bold">{translations.fixedAssetLifecycle.depreciation.batchSuccess}</div>
+                    <div className="text-xs text-emerald-400/80">
+                      {batchResult.processedCount} {isTr ? 'adet varlık için toplam ' : 'assets depreciated for a total of '}
+                      <span className="font-bold">{fmt(batchResult.totalBatchDepreciation, 'USD')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {batchResult.createdTransactions?.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                      {isTr ? 'Oluşturulan Yevmiye Fişleri' : 'Created Journal Entries'}
+                    </div>
+                    <div className="max-h-60 overflow-y-auto ds-card overflow-hidden border-slate-800">
+                      <table className="ds-table text-xs">
+                        <thead>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">Asset ID</th>
+                            <th className="ds-th">Varlık Adı</th>
+                            <th className="ds-th">Yevmiye No</th>
+                            <th className="ds-th-right">Tutar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {batchResult.createdTransactions.map((tr, idx) => (
+                            <tr key={idx} className="ds-tbody-row">
+                              <td className="ds-td font-mono">{tr.fixedAssetId}</td>
+                              <td className="ds-td text-white">{tr.fixedAssetName}</td>
+                              <td className="ds-td font-mono text-indigo-400 font-bold">#{tr.acctgTransId}</td>
+                              <td className="ds-td-right font-mono text-rose-400 font-bold">{fmt(tr.depreciationAmount, 'USD')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-3 border-t border-slate-800">
+                  <button
+                    onClick={() => {
+                      setShowBatchDepModal(false);
+                      setBatchResult(null);
+                    }}
+                    className="ds-btn-primary"
+                  >
+                    {tc.close}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
