@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
@@ -11,6 +11,7 @@ interface LayoutProps {
   children: React.ReactNode;
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
+  isPending?: boolean;
 }
 
 function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean {
@@ -23,14 +24,14 @@ function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean 
 }
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
-const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPending }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { locale, setLocale, translations } = useTranslation();
 
   const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
 
-  // Dinamik Sayfa Meta Bilgileri
-  const pageMetaMap: Record<ViewType, { title: string; subtitle: string }> = {
+  // Dinamik Sayfa Meta Bilgileri (Memoized to prevent object re-creation on pointer events)
+  const pageMetaMap: Record<ViewType, { title: string; subtitle: string }> = useMemo(() => ({
     'dashboard':            translations.pages.dashboard,
     'invoices':             translations.pages.invoices,
     'create-invoice':       translations.pages.createInvoice,
@@ -55,12 +56,12 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
     'check-run':            translations.pages.checkRun,
     'commission-run':       translations.pages.commissionRun,
     'test-page':            translations.pages.testPage,
-  };
+  }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
 
-  // Dinamik Menü Grupları
-  const navGroups = [
+  // Dinamik Menü Grupları (Memoized)
+  const navGroups = useMemo(() => [
     {
       label: translations.nav.mainMenu,
       items: [
@@ -106,7 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
         { icon: <Settings size={18} />, label: translations.nav.settings, view: null as any },
       ]
     }
-  ];
+  ], [translations]);
 
   const handleNavClick = (view: ViewType) => {
     onNavigate(view);
@@ -119,7 +120,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
       <button
         type="button"
         onClick={() => setLocale('tr')}
-        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
           locale === 'tr'
             ? 'bg-indigo-600 text-white shadow-sm'
             : 'text-slate-400 hover:text-white'
@@ -132,7 +133,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
       <button
         type="button"
         onClick={() => setLocale('en')}
-        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 ${
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
           locale === 'en'
             ? 'bg-indigo-600 text-white shadow-sm'
             : 'text-slate-400 hover:text-white'
@@ -147,6 +148,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white relative">
+      {/* ── Top Progress Bar during view transition ── */}
+      {isPending && (
+        <div className="fixed top-0 left-0 right-0 h-0.5 z-50 overflow-hidden bg-slate-800 pointer-events-none">
+          <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-400 to-indigo-500 w-full animate-pulse"></div>
+        </div>
+      )}
+
       {/* ── Mobile Backdrop Overlay ── */}
       {isMobileMenuOpen && (
         <div 
@@ -175,14 +183,15 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             </div>
           </div>
           <button 
+            type="button"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Nav Grupları */}
+        {/* Nav Grupları (Rendered as semantic button elements for sub-16ms pointer response) */}
         <nav className="flex-1 px-3 py-4 space-y-5">
           {navGroups.map(group => (
             <div key={group.label}>
@@ -193,19 +202,19 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
                 {group.items.map(item => {
                   const active = isNavActive(item.view, currentView);
                   return (
-                    <a
+                    <button
                       key={item.label}
-                      href="#"
-                      onClick={e => { e.preventDefault(); if (item.view) handleNavClick(item.view); }}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                      type="button"
+                      onClick={() => { if (item.view) handleNavClick(item.view); }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
                         active
                           ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
                       }`}
                     >
                       <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
-                      {item.label}
-                    </a>
+                      <span className="truncate">{item.label}</span>
+                    </button>
                   );
                 })}
               </div>
@@ -223,11 +232,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
             <LanguageToggle />
           </div>
 
-          <a href="#"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+          <button
+            type="button"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all text-left cursor-pointer"
+          >
             <LogOut size={18} className="text-slate-600" />
-            {translations.nav.logout}
-          </a>
+            <span>{translations.nav.logout}</span>
+          </button>
         </div>
       </aside>
 
@@ -238,8 +249,9 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
           <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Button for Mobile */}
             <button
+              type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors shrink-0"
+              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors shrink-0 cursor-pointer"
               aria-label={locale === 'tr' ? 'Menüyü Aç' : 'Open Menu'}
             >
               <Menu size={22} />
@@ -263,13 +275,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
 
             {/* Quick Action Button */}
             {isPaymentView ? (
-              <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
+              <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
                 <Plus size={16} /> 
                 <span className="hidden sm:inline">{translations.nav.newPayment}</span>
                 <span className="sm:hidden">{translations.nav.newPayment.split(' ')[1] || 'Payment'}</span>
               </button>
             ) : (
-              <button className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
+              <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
                 <Plus size={16} /> 
                 <span className="hidden sm:inline">{translations.nav.newInvoice}</span>
                 <span className="sm:hidden">{translations.nav.newInvoice.split(' ')[1] || 'Invoice'}</span>

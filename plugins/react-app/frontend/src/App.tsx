@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense, useTransition, useCallback } from 'react'
 import Layout from './components/Layout'
 import ViewLoader from './components/ViewLoader'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -63,18 +63,21 @@ function App() {
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
   const [activeJournalTransId, setActiveJournalTransId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const handleNavigate = (view: ViewType, id?: string) => {
-    setCurrentView(view);
-    if (view === 'invoice-detail' && id !== undefined) {
-      setActiveInvoiceId(id);
-    } else if (view === 'payment-detail' && id !== undefined) {
-      setActivePaymentId(id);
-    } else if (view === 'journal-entries' && id !== undefined) {
-      setActiveJournalTransId(id);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const handleNavigate = useCallback((view: ViewType, id?: string) => {
+    startTransition(() => {
+      setCurrentView(view);
+      if (view === 'invoice-detail' && id !== undefined) {
+        setActiveInvoiceId(id);
+      } else if (view === 'payment-detail' && id !== undefined) {
+        setActivePaymentId(id);
+      } else if (view === 'journal-entries' && id !== undefined) {
+        setActiveJournalTransId(id);
+      }
+    });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -200,7 +203,7 @@ function App() {
   return (
     <I18nProvider>
       <ErrorBoundary onReset={() => handleNavigate('dashboard')}>
-        <Layout currentView={currentView} onNavigate={handleNavigate}>
+        <Layout currentView={currentView} onNavigate={handleNavigate} isPending={isPending}>
           <Suspense fallback={<ViewLoader />}>
             {renderCurrentView()}
           </Suspense>

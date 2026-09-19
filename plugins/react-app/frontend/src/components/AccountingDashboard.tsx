@@ -44,17 +44,31 @@ const AccountingDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="ds-spinner"></div>
+      <div className="space-y-5 animate-pulse">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="ds-stat-card border-l-4 border-l-slate-700 h-28 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div className="h-3.5 w-20 bg-slate-700/60 rounded"></div>
+                <div className="h-5 w-5 bg-slate-700/60 rounded-full"></div>
+              </div>
+              <div className="h-7 w-24 bg-slate-700/80 rounded"></div>
+            </div>
+          ))}
+        </div>
+        <div className="ds-card p-6 min-h-[360px] flex flex-col items-center justify-center space-y-3">
+          <div className="ds-spinner"></div>
+          <p className="text-xs text-slate-500 font-medium">{locale === 'tr' ? 'Veriler yükleniyor...' : 'Loading data...'}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
       className="space-y-5"
     >
       {/* Stats Grid */}

@@ -660,7 +660,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* TAB 1: TAX RATES */}
       {activeTab === 'rates' && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl min-h-[360px]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
@@ -675,7 +675,15 @@ export const TaxAndGlMapping: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/40 text-slate-300">
-                {filteredRates.length === 0 ? (
+                {loading ? (
+                  [1, 2, 3, 4, 5].map((idx) => (
+                    <tr key={idx} className="animate-pulse">
+                      <td colSpan={7} className="py-4 px-4">
+                        <div className="h-4 bg-slate-700/40 rounded w-full"></div>
+                      </td>
+                    </tr>
+                  ))
+                ) : filteredRates.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
                       {translations.taxAndGlMapping.rates.noRates}
@@ -731,7 +739,7 @@ export const TaxAndGlMapping: React.FC = () => {
 
       {/* TAB 2: TAX AUTHORITIES */}
       {activeTab === 'authorities' && (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl">
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden backdrop-blur-xl min-h-[360px]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
@@ -746,7 +754,15 @@ export const TaxAndGlMapping: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/40 text-slate-300">
-                {filteredAuthorities.length === 0 ? (
+                {loading ? (
+                  [1, 2, 3, 4, 5].map((idx) => (
+                    <tr key={idx} className="animate-pulse">
+                      <td colSpan={7} className="py-4 px-4">
+                        <div className="h-4 bg-slate-700/40 rounded w-full"></div>
+                      </td>
+                    </tr>
+                  ))
+                ) : filteredAuthorities.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
                       {translations.taxAndGlMapping.authorities.noAuthorities}
@@ -855,7 +871,15 @@ export const TaxAndGlMapping: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/40 text-slate-300">
-                {filteredInvoiceMaps.length === 0 ? (
+                {loading ? (
+                  [1, 2, 3, 4, 5].map((idx) => (
+                    <tr key={idx} className="animate-pulse">
+                      <td colSpan={5} className="py-4 px-4">
+                        <div className="h-4 bg-slate-700/40 rounded w-full"></div>
+                      </td>
+                    </tr>
+                  ))
+                ) : filteredInvoiceMaps.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-slate-400">
                       {translations.taxAndGlMapping.invoiceMappings.noMappings}
@@ -927,7 +951,15 @@ export const TaxAndGlMapping: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/40 text-slate-300">
-                  {filteredPaymentMaps.length === 0 ? (
+                  {loading ? (
+                    [1, 2, 3, 4, 5].map((idx) => (
+                      <tr key={idx} className="animate-pulse">
+                        <td colSpan={3} className="py-3 px-3">
+                          <div className="h-4 bg-slate-700/40 rounded w-full"></div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredPaymentMaps.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="py-8 text-center text-slate-400">
                         {translations.taxAndGlMapping.paymentDefaults.noDefaults}

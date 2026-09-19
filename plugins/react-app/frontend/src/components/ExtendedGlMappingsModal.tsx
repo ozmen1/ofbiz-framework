@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Plus,
@@ -337,8 +338,8 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm isolate">
       <div className="ds-card max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-700/60 bg-slate-900">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
@@ -1296,6 +1297,7 @@ export const ExtendedGlMappingsModal: React.FC<ExtendedGlMappingsModalProps> = (
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
