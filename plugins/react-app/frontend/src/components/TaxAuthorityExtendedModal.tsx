@@ -62,7 +62,6 @@ export const TaxAuthorityExtendedModal: React.FC<TaxAuthorityExtendedModalProps>
   const [categoriesList, setCategoriesList] = useState<TaxAuthorityCategoryItem[]>([]);
   const [glAccountsList, setGlAccountsList] = useState<TaxAuthorityGlAccountItem[]>([]);
 
-  // Sub modals
   const [showAddPartyModal, setShowAddPartyModal] = useState(false);
   const [showAddCatModal, setShowAddCatModal] = useState(false);
 
@@ -146,6 +145,7 @@ export const TaxAuthorityExtendedModal: React.FC<TaxAuthorityExtendedModalProps>
       else if (activeTab === 'parties') fetchParties();
       else if (activeTab === 'categories') fetchCategories();
       else if (activeTab === 'glAccounts') fetchGlAccounts();
+
     }
   }, [isOpen, authority, activeTab, fetchReport, fetchParties, fetchCategories, fetchGlAccounts]);
 
@@ -775,11 +775,11 @@ export const TaxAuthorityExtendedModal: React.FC<TaxAuthorityExtendedModalProps>
             </div>
             <form onSubmit={handleCreateParty} className="space-y-3 text-xs">
               <div>
-                <label className="ds-label">{t.parties.partyId} *</label>
+                <label className="ds-label">{t.parties.partyId} (Cari / Taraf) *</label>
                 <input
                   type="text"
                   required
-                  placeholder="DemoCustomer, 10000, etc."
+                  placeholder="DemoCustomer, Company, etc."
                   value={partyForm.partyId}
                   onChange={(e) => setPartyForm({ ...partyForm, partyId: e.target.value })}
                   className="ds-input"
