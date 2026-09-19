@@ -19,6 +19,7 @@ import { FiscalPeriods } from './components/FiscalPeriods'
 import { FxManagement } from './components/FxManagement'
 import { CostCenters } from './components/CostCenters'
 import { DepositSlips } from './components/DepositSlips'
+import { AccountingPreferences } from './components/AccountingPreferences'
 import TestPage from './components/TestPage'
 import { I18nProvider } from './i18n'
 import './index.css'
@@ -46,6 +47,7 @@ export type ViewType =
   | 'fiscal-periods'
   | 'fx-rates'
   | 'cost-centers'
+  | 'accounting-preferences'
   | 'test-page';
 
 
@@ -156,6 +158,9 @@ function App() {
 
       {/* Payment Groups & Batches (Faz 7) */}
       {currentView === 'payment-groups' && <PaymentGroups />}
+
+      {/* Accounting Preferences & GL Journals (Faz 2) */}
+      {currentView === 'accounting-preferences' && <AccountingPreferences />}
 
       {currentView === 'test-page' && <TestPage />}
       </Layout>

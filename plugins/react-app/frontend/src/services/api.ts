@@ -2133,6 +2133,53 @@ export const api = {
   getDepositSlipMetadata: async (): Promise<DepositSlipMetadataResponse> => {
     return requestApi<DepositSlipMetadataResponse>('getDepositSlipMetadata');
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Aşama 2: Şirket Muhasebe Tercihleri & GL Yevmiye Defterleri (Accounting Preferences & GlJournals)
+  // ═════════════════════════════════════════════════════════════════
+  getAccountingPreferences: async (organizationPartyId?: string): Promise<AccountingPreferencesResponse> => {
+    const q = organizationPartyId ? `?organizationPartyId=${encodeURIComponent(organizationPartyId)}` : '';
+    return requestApi<AccountingPreferencesResponse>(`getAccountingPreferences${q}`);
+  },
+  saveAccountingPreferences: async (payload: Partial<AccountingPreference>): Promise<{ success: boolean; partyId: string }> => {
+    return requestApi<{ success: boolean; partyId: string }>('saveAccountingPreferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  getGlJournals: async (organizationPartyId?: string): Promise<{ journals: GlJournalItem[]; organizationPartyId: string }> => {
+    const q = organizationPartyId ? `?organizationPartyId=${encodeURIComponent(organizationPartyId)}` : '';
+    return requestApi<{ journals: GlJournalItem[]; organizationPartyId: string }>(`getGlJournals${q}`);
+  },
+  createGlJournal: async (payload: { glJournalId?: string; glJournalName: string; organizationPartyId: string }): Promise<{ success: boolean; glJournalId: string; glJournalName: string }> => {
+    return requestApi<{ success: boolean; glJournalId: string; glJournalName: string }>('createGlJournal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  updateGlJournal: async (payload: { glJournalId: string; glJournalName: string }): Promise<{ success: boolean; glJournalId: string }> => {
+    return requestApi<{ success: boolean; glJournalId: string }>('updateGlJournal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+  deleteGlJournal: async (glJournalId: string): Promise<{ success: boolean; glJournalId: string }> => {
+    return requestApi<{ success: boolean; glJournalId: string }>('deleteGlJournal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glJournalId }),
+    });
+  },
+  postGlJournal: async (glJournalId: string): Promise<{ success: boolean; glJournalId: string }> => {
+    return requestApi<{ success: boolean; glJournalId: string }>('postGlJournal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glJournalId }),
+    });
+  },
 };
 
 // ==========================================
@@ -2450,6 +2497,63 @@ export interface DepositSlipMetadataResponse {
     description: string;
   }[];
 }
+
+// ═════════════════════════════════════════════════════════════════
+// TYPES: ACCOUNTING PREFERENCES & GL JOURNALS
+// ═════════════════════════════════════════════════════════════════
+export interface AccountingPreference {
+  partyId: string;
+  partyName?: string;
+  fiscalYearStartMonth?: number | null;
+  fiscalYearStartDay?: number | null;
+  taxFormId?: string | null;
+  taxFormDesc?: string | null;
+  cogsMethodId?: string | null;
+  cogsMethodDesc?: string | null;
+  baseCurrencyUomId: string;
+  baseCurrencyDesc?: string | null;
+  invoiceSeqCustMethId?: string | null;
+  invoiceSeqCustMethDesc?: string | null;
+  invoiceIdPrefix?: string | null;
+  lastInvoiceNumber?: number | null;
+  lastInvoiceRestartDate?: string | null;
+  useInvoiceIdForReturns?: string | null;
+  quoteSeqCustMethId?: string | null;
+  quoteIdPrefix?: string | null;
+  lastQuoteNumber?: number | null;
+  orderSeqCustMethId?: string | null;
+  orderIdPrefix?: string | null;
+  lastOrderNumber?: number | null;
+  refundPaymentMethodId?: string | null;
+  errorGlJournalId?: string | null;
+  errorGlJournalName?: string | null;
+  enableAccounting?: string | null;
+}
+
+export interface GlJournalItem {
+  glJournalId: string;
+  glJournalName: string;
+  organizationPartyId: string;
+  isPosted: string;
+  postedDate?: string | null;
+  transCount: number;
+  debitTotal: number;
+  creditTotal: number;
+  debitCreditDifference: number;
+}
+
+export interface AccountingPreferencesResponse {
+  preferences: AccountingPreference;
+  organizations: { partyId: string; groupName: string }[];
+  metadata: {
+    currencies: { uomId: string; description: string; abbreviation: string }[];
+    taxForms: { enumId: string; description: string }[];
+    cogsMethods: { enumId: string; description: string }[];
+    customMethods: { customMethodId: string; customMethodTypeId: string; description: string }[];
+    journals: { glJournalId: string; glJournalName: string }[];
+  };
+}
+
 
 
 

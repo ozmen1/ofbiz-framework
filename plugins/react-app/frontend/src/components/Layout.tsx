@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X, Globe, Calendar, TrendingUp, Target, Building2
+  Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -50,6 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
     'tax-and-gl-mapping':   translations.pages.taxAndGlMapping,
     'fx-rates':             translations.pages.fxRates,
     'cost-centers':         translations.pages.costCenters,
+    'accounting-preferences': translations.pages.accountingPreferences,
     'test-page':            translations.pages.testPage,
   };
 
@@ -89,6 +90,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
         { icon: <Percent    size={18} />, label: translations.nav.taxAndGl,         view: 'tax-and-gl-mapping'  as ViewType },
         { icon: <TrendingUp size={18} />, label: translations.nav.fxRates,          view: 'fx-rates'            as ViewType },
         { icon: <Target     size={18} />, label: translations.nav.costCenters,      view: 'cost-centers'        as ViewType },
+        { icon: <SlidersHorizontal size={18} />, label: translations.nav.accountingPreferences, view: 'accounting-preferences' as ViewType },
       ]
     },
     {

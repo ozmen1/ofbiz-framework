@@ -72,6 +72,7 @@ export interface Translations {
     fxRates: string;
     costCenters: string;
     depositSlips: string;
+    accountingPreferences: string;
     apiTest: string;
     settings: string;
     logout: string;
@@ -98,6 +99,7 @@ export interface Translations {
     fxRates: { title: string; subtitle: string };
     costCenters: { title: string; subtitle: string };
     depositSlips: { title: string; subtitle: string };
+    accountingPreferences: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
   };
   dashboard: {
@@ -869,6 +871,79 @@ export interface Translations {
       successCreated: string;
       successCancelled: string;
       selectAtLeastOne: string;
+    };
+  };
+  accountingPreferences: {
+    title: string;
+    subtitle: string;
+    orgSelector: string;
+    saveChanges: string;
+    tabs: {
+      general: string;
+      sequencing: string;
+      journals: string;
+    };
+    stats: {
+      baseCurrency: string;
+      fiscalYearStart: string;
+      totalJournals: string;
+      invoiceSequence: string;
+    };
+    general: {
+      sectionTitle: string;
+      sectionSubtitle: string;
+      baseCurrency: string;
+      baseCurrencyHint: string;
+      fiscalStartMonth: string;
+      fiscalStartDay: string;
+      taxForm: string;
+      cogsMethod: string;
+      errorJournal: string;
+      errorJournalHint: string;
+      enableAccounting: string;
+      enableAccountingHint: string;
+    };
+    sequencing: {
+      sectionTitle: string;
+      sectionSubtitle: string;
+      invoicePrefix: string;
+      lastInvoiceNo: string;
+      invoiceSeqMethod: string;
+      useInvoiceIdForReturns: string;
+      quotePrefix: string;
+      lastQuoteNo: string;
+      quoteSeqMethod: string;
+      orderPrefix: string;
+      lastOrderNo: string;
+      orderSeqMethod: string;
+    };
+    journals: {
+      sectionTitle: string;
+      sectionSubtitle: string;
+      newJournal: string;
+      editJournal: string;
+      deleteJournal: string;
+      postJournal: string;
+      journalId: string;
+      journalName: string;
+      isPosted: string;
+      postedDate: string;
+      transCount: string;
+      debitTotal: string;
+      creditTotal: string;
+      balanceDiff: string;
+      noJournals: string;
+      confirmDelete: string;
+      confirmPost: string;
+      draft: string;
+      posted: string;
+    };
+    messages: {
+      successSaved: string;
+      successCreatedJournal: string;
+      successUpdatedJournal: string;
+      successDeletedJournal: string;
+      successPostedJournal: string;
     };
   };
 }
