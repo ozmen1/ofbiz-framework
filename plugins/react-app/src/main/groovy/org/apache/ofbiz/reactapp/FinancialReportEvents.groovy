@@ -563,3 +563,482 @@ String getAgingSummary() {
         return "error"
     }
 }
+
+/**
+ * 5. Cash Flow Statement (Nakit Akış Tablosu)
+ */
+String getCashFlowStatement() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String orgPartyId = parameters.organizationPartyId ?: "Company"
+
+    try {
+        Timestamp fromDate = null
+        Timestamp thruDate = null
+
+        if (UtilValidate.isNotEmpty(parameters.year)) {
+            String y = parameters.year.trim()
+            fromDate = Timestamp.valueOf(y + "-01-01 00:00:00.0")
+            thruDate = Timestamp.valueOf(y + "-12-31 23:59:59.9")
+        }
+        if (UtilValidate.isNotEmpty(parameters.fromDate)) {
+            fromDate = parseTimestamp(parameters.fromDate)
+        }
+        if (UtilValidate.isNotEmpty(parameters.thruDate)) {
+            thruDate = parseTimestamp(parameters.thruDate)
+        }
+
+        // Cash and cash equivalent GL accounts
+        List<GenericValue> cashAccounts = EntityQuery.use(delegator).from("GlAccount")
+            .where(EntityCondition.makeCondition([
+                EntityCondition.makeCondition("glAccountClassId", EntityOperator.IN, ["CASH_EQUIVALENT", "CASH_ASSET"]),
+                EntityCondition.makeCondition("glAccountId", EntityOperator.LIKE, "111%")
+            ], EntityOperator.OR))
+            .queryList()
+        Set<String> cashGlIds = new HashSet<>()
+        cashAccounts.each { cashGlIds.add(it.glAccountId) }
+        if (cashGlIds.isEmpty()) {
+            cashGlIds.addAll(["111100", "111000", "112000"])
+        }
+
+        BigDecimal openingCash = BigDecimal.ZERO
+        if (fromDate) {
+            List<GenericValue> priorEntries = EntityQuery.use(delegator).from("AcctgTransAndEntries")
+                .where(EntityCondition.makeCondition([
+                    EntityCondition.makeCondition("organizationPartyId", EntityOperator.EQUALS, orgPartyId),
+                    EntityCondition.makeCondition("glAccountId", EntityOperator.IN, cashGlIds),
+                    EntityCondition.makeCondition("transactionDate", EntityOperator.LESS_THAN, fromDate)
+                ], EntityOperator.AND))
+                .queryList()
+
+            priorEntries.each { pe ->
+                BigDecimal amt = pe.getBigDecimal("amount") ?: BigDecimal.ZERO
+                String flag = pe.getString("debitCreditFlag")
+                if ("D".equals(flag)) {
+                    openingCash = openingCash.add(amt)
+                } else if ("C".equals(flag)) {
+                    openingCash = openingCash.subtract(amt)
+                }
+            }
+        }
+
+        List<EntityCondition> periodConds = [
+            EntityCondition.makeCondition("organizationPartyId", EntityOperator.EQUALS, orgPartyId)
+        ]
+        if (fromDate) periodConds.add(EntityCondition.makeCondition("transactionDate", EntityOperator.GREATER_THAN_EQUAL_TO, fromDate))
+        if (thruDate) periodConds.add(EntityCondition.makeCondition("transactionDate", EntityOperator.LESS_THAN_EQUAL_TO, thruDate))
+
+        List<GenericValue> periodEntries = EntityQuery.use(delegator).from("AcctgTransAndEntries")
+            .where(EntityCondition.makeCondition(periodConds, EntityOperator.AND))
+            .queryList()
+
+        List operatingItems = []
+        List investingItems = []
+        List financingItems = []
+
+        BigDecimal netCashFromOperating = BigDecimal.ZERO
+        BigDecimal netCashFromInvesting = BigDecimal.ZERO
+        BigDecimal netCashFromFinancing = BigDecimal.ZERO
+
+        Map<String, BigDecimal> glNetMap = [:]
+        periodEntries.each { pe ->
+            String glId = pe.glAccountId
+            BigDecimal amt = pe.getBigDecimal("amount") ?: BigDecimal.ZERO
+            String flag = pe.getString("debitCreditFlag")
+            BigDecimal cur = glNetMap[glId] ?: BigDecimal.ZERO
+            if ("D".equals(flag)) {
+                glNetMap[glId] = cur.add(amt)
+            } else {
+                glNetMap[glId] = cur.subtract(amt)
+            }
+        }
+
+        glNetMap.each { glId, netAmt ->
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+            String accClass = acc.glAccountClassId ?: ""
+            String accName = acc.accountName ?: glId
+
+            if (cashGlIds.contains(glId)) return
+
+            if (accClass.contains("REVENUE") || accClass.contains("INCOME")) {
+                BigDecimal cashImpact = netAmt.negate()
+                operatingItems.add([title: accName, code: acc.accountCode ?: glId, amount: cashImpact.doubleValue()])
+                netCashFromOperating = netCashFromOperating.add(cashImpact)
+            } else if (accClass.contains("EXPENSE")) {
+                BigDecimal cashImpact = netAmt.negate()
+                operatingItems.add([title: accName, code: acc.accountCode ?: glId, amount: cashImpact.doubleValue()])
+                netCashFromOperating = netCashFromOperating.add(cashImpact)
+            } else if (accClass.contains("CURRENT_ASSET") || accClass.contains("CURRENT_LIABILITY")) {
+                BigDecimal cashImpact = accClass.contains("CURRENT_ASSET") ? netAmt.negate() : netAmt
+                operatingItems.add([title: accName, code: acc.accountCode ?: glId, amount: cashImpact.doubleValue()])
+                netCashFromOperating = netCashFromOperating.add(cashImpact)
+            } else if (accClass.contains("LONGTERM_ASSET") || accClass.contains("FIXED_ASSET") || accClass.contains("INVENTORY_ASSET")) {
+                BigDecimal cashImpact = netAmt.negate()
+                investingItems.add([title: accName, code: acc.accountCode ?: glId, amount: cashImpact.doubleValue()])
+                netCashFromInvesting = netCashFromInvesting.add(cashImpact)
+            } else if (accClass.contains("EQUITY") || accClass.contains("LONGTERM_LIABILITY")) {
+                BigDecimal cashImpact = netAmt
+                financingItems.add([title: accName, code: acc.accountCode ?: glId, amount: cashImpact.doubleValue()])
+                netCashFromFinancing = netCashFromFinancing.add(cashImpact)
+            }
+        }
+
+        BigDecimal netCashChange = netCashFromOperating.add(netCashFromInvesting).add(netCashFromFinancing)
+        BigDecimal closingCash = openingCash.add(netCashChange)
+
+        Map result = [
+            organizationPartyId: orgPartyId,
+            fromDate: fromDate ? fromDate.toString().substring(0, 10) : null,
+            thruDate: thruDate ? thruDate.toString().substring(0, 10) : null,
+            operatingActivities: [
+                items: operatingItems,
+                netCash: netCashFromOperating.doubleValue()
+            ],
+            investingActivities: [
+                items: investingItems,
+                netCash: netCashFromInvesting.doubleValue()
+            ],
+            financingActivities: [
+                items: financingItems,
+                netCash: netCashFromFinancing.doubleValue()
+            ],
+            summary: [
+                openingCash: openingCash.doubleValue(),
+                netCashChange: netCashChange.doubleValue(),
+                closingCash: closingCash.doubleValue()
+            ]
+        ]
+
+        request.setAttribute("cashFlowStatement", result)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getCashFlowStatement: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 6. Comparative Balance Sheet (Karşılaştırmalı Bilanço)
+ */
+String getComparativeBalanceSheet() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String orgPartyId = parameters.organizationPartyId ?: "Company"
+
+    try {
+        String year1 = parameters.year1?.trim() ?: "2025"
+        String year2 = parameters.year2?.trim() ?: "2024"
+
+        Timestamp asOfDate1 = Timestamp.valueOf(year1 + "-12-31 23:59:59.9")
+        Timestamp asOfDate2 = Timestamp.valueOf(year2 + "-12-31 23:59:59.9")
+
+        List<GenericValue> entries = EntityQuery.use(delegator).from("AcctgTransEntry")
+            .where("organizationPartyId", orgPartyId)
+            .queryList()
+
+        Map<String, BigDecimal> dMap1 = [:]
+        Map<String, BigDecimal> cMap1 = [:]
+        Map<String, BigDecimal> dMap2 = [:]
+        Map<String, BigDecimal> cMap2 = [:]
+
+        entries.each { entry ->
+            GenericValue trans = entry.getRelatedOne("AcctgTrans", false)
+            if (!trans || !trans.transactionDate) return
+
+            String glId = entry.glAccountId
+            BigDecimal amt = entry.getBigDecimal("amount") ?: BigDecimal.ZERO
+            String flag = entry.getString("debitCreditFlag")
+
+            if (!trans.transactionDate.after(asOfDate1)) {
+                if ("D".equals(flag)) dMap1[glId] = (dMap1[glId] ?: BigDecimal.ZERO).add(amt)
+                else if ("C".equals(flag)) cMap1[glId] = (cMap1[glId] ?: BigDecimal.ZERO).add(amt)
+            }
+            if (!trans.transactionDate.after(asOfDate2)) {
+                if ("D".equals(flag)) dMap2[glId] = (dMap2[glId] ?: BigDecimal.ZERO).add(amt)
+                else if ("C".equals(flag)) cMap2[glId] = (cMap2[glId] ?: BigDecimal.ZERO).add(amt)
+            }
+        }
+
+        Set<String> allGlIds = new HashSet<>()
+        allGlIds.addAll(dMap1.keySet())
+        allGlIds.addAll(cMap1.keySet())
+        allGlIds.addAll(dMap2.keySet())
+        allGlIds.addAll(cMap2.keySet())
+
+        List assetRows = []
+        List liabilityRows = []
+        List equityRows = []
+
+        BigDecimal totalAssets1 = BigDecimal.ZERO
+        BigDecimal totalAssets2 = BigDecimal.ZERO
+        BigDecimal totalLiabilities1 = BigDecimal.ZERO
+        BigDecimal totalLiabilities2 = BigDecimal.ZERO
+        BigDecimal totalEquity1 = BigDecimal.ZERO
+        BigDecimal totalEquity2 = BigDecimal.ZERO
+
+        allGlIds.each { glId ->
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+
+            String classId = acc.glAccountClassId ?: ""
+            BigDecimal bal1 = (dMap1[glId] ?: BigDecimal.ZERO).subtract(cMap1[glId] ?: BigDecimal.ZERO)
+            BigDecimal bal2 = (dMap2[glId] ?: BigDecimal.ZERO).subtract(cMap2[glId] ?: BigDecimal.ZERO)
+
+            if (classId.contains("ASSET")) {
+                BigDecimal diff = bal1.subtract(bal2)
+                double pct = bal2.compareTo(BigDecimal.ZERO) != 0 ? (diff.doubleValue() / bal2.doubleValue() * 100.0) : 0.0
+                assetRows.add([
+                    glAccountId: glId,
+                    accountName: acc.accountName ?: glId,
+                    accountCode: acc.accountCode ?: glId,
+                    balance1: bal1.doubleValue(),
+                    balance2: bal2.doubleValue(),
+                    diffAmount: diff.doubleValue(),
+                    diffPercent: Math.round(pct * 10.0) / 10.0
+                ])
+                totalAssets1 = totalAssets1.add(bal1)
+                totalAssets2 = totalAssets2.add(bal2)
+            } else if (classId.contains("LIABILITY")) {
+                BigDecimal crBal1 = bal1.negate()
+                BigDecimal crBal2 = bal2.negate()
+                BigDecimal diff = crBal1.subtract(crBal2)
+                double pct = crBal2.compareTo(BigDecimal.ZERO) != 0 ? (diff.doubleValue() / crBal2.doubleValue() * 100.0) : 0.0
+                liabilityRows.add([
+                    glAccountId: glId,
+                    accountName: acc.accountName ?: glId,
+                    accountCode: acc.accountCode ?: glId,
+                    balance1: crBal1.doubleValue(),
+                    balance2: crBal2.doubleValue(),
+                    diffAmount: diff.doubleValue(),
+                    diffPercent: Math.round(pct * 10.0) / 10.0
+                ])
+                totalLiabilities1 = totalLiabilities1.add(crBal1)
+                totalLiabilities2 = totalLiabilities2.add(crBal2)
+            } else if (classId.contains("EQUITY")) {
+                BigDecimal crBal1 = bal1.negate()
+                BigDecimal crBal2 = bal2.negate()
+                BigDecimal diff = crBal1.subtract(crBal2)
+                double pct = crBal2.compareTo(BigDecimal.ZERO) != 0 ? (diff.doubleValue() / crBal2.doubleValue() * 100.0) : 0.0
+                equityRows.add([
+                    glAccountId: glId,
+                    accountName: acc.accountName ?: glId,
+                    accountCode: acc.accountCode ?: glId,
+                    balance1: crBal1.doubleValue(),
+                    balance2: crBal2.doubleValue(),
+                    diffAmount: diff.doubleValue(),
+                    diffPercent: Math.round(pct * 10.0) / 10.0
+                ])
+                totalEquity1 = totalEquity1.add(crBal1)
+                totalEquity2 = totalEquity2.add(crBal2)
+            }
+        }
+
+        assetRows.sort { it.accountCode ?: it.glAccountId }
+        liabilityRows.sort { it.accountCode ?: it.glAccountId }
+        equityRows.sort { it.accountCode ?: it.glAccountId }
+
+        Map result = [
+            period1: year1,
+            period2: year2,
+            assets: [
+                rows: assetRows,
+                total1: totalAssets1.doubleValue(),
+                total2: totalAssets2.doubleValue(),
+                diffAmount: totalAssets1.subtract(totalAssets2).doubleValue(),
+                diffPercent: totalAssets2.compareTo(BigDecimal.ZERO) != 0 ? Math.round((totalAssets1.subtract(totalAssets2).doubleValue() / totalAssets2.doubleValue() * 100.0) * 10.0) / 10.0 : 0.0
+            ],
+            liabilities: [
+                rows: liabilityRows,
+                total1: totalLiabilities1.doubleValue(),
+                total2: totalLiabilities2.doubleValue(),
+                diffAmount: totalLiabilities1.subtract(totalLiabilities2).doubleValue(),
+                diffPercent: totalLiabilities2.compareTo(BigDecimal.ZERO) != 0 ? Math.round((totalLiabilities1.subtract(totalLiabilities2).doubleValue() / totalLiabilities2.doubleValue() * 100.0) * 10.0) / 10.0 : 0.0
+            ],
+            equities: [
+                rows: equityRows,
+                total1: totalEquity1.doubleValue(),
+                total2: totalEquity2.doubleValue(),
+                diffAmount: totalEquity1.subtract(totalEquity2).doubleValue(),
+                diffPercent: totalEquity2.compareTo(BigDecimal.ZERO) != 0 ? Math.round((totalEquity1.subtract(totalEquity2).doubleValue() / totalEquity2.doubleValue() * 100.0) * 10.0) / 10.0 : 0.0
+            ]
+        ]
+
+        request.setAttribute("comparativeBalanceSheet", result)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getComparativeBalanceSheet: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 7. Comparative Income Statement (Karşılaştırmalı Gelir Tablosu)
+ */
+String getComparativeIncomeStatement() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String orgPartyId = parameters.organizationPartyId ?: "Company"
+
+    try {
+        String year1 = parameters.year1?.trim() ?: "2025"
+        String year2 = parameters.year2?.trim() ?: "2024"
+
+        Timestamp fromDate1 = Timestamp.valueOf(year1 + "-01-01 00:00:00.0")
+        Timestamp thruDate1 = Timestamp.valueOf(year1 + "-12-31 23:59:59.9")
+        Timestamp fromDate2 = Timestamp.valueOf(year2 + "-01-01 00:00:00.0")
+        Timestamp thruDate2 = Timestamp.valueOf(year2 + "-12-31 23:59:59.9")
+
+        List<GenericValue> entries1 = EntityQuery.use(delegator).from("AcctgTransAndEntries")
+            .where(EntityCondition.makeCondition([
+                EntityCondition.makeCondition("organizationPartyId", EntityOperator.EQUALS, orgPartyId),
+                EntityCondition.makeCondition("transactionDate", EntityOperator.GREATER_THAN_EQUAL_TO, fromDate1),
+                EntityCondition.makeCondition("transactionDate", EntityOperator.LESS_THAN_EQUAL_TO, thruDate1)
+            ], EntityOperator.AND))
+            .queryList()
+
+        List<GenericValue> entries2 = EntityQuery.use(delegator).from("AcctgTransAndEntries")
+            .where(EntityCondition.makeCondition([
+                EntityCondition.makeCondition("organizationPartyId", EntityOperator.EQUALS, orgPartyId),
+                EntityCondition.makeCondition("transactionDate", EntityOperator.GREATER_THAN_EQUAL_TO, fromDate2),
+                EntityCondition.makeCondition("transactionDate", EntityOperator.LESS_THAN_EQUAL_TO, thruDate2)
+            ], EntityOperator.AND))
+            .queryList()
+
+        Map<String, BigDecimal> revMap1 = [:]
+        Map<String, BigDecimal> expMap1 = [:]
+        Map<String, BigDecimal> revMap2 = [:]
+        Map<String, BigDecimal> expMap2 = [:]
+
+        entries1.each { pe ->
+            String glId = pe.glAccountId
+            BigDecimal amt = pe.getBigDecimal("amount") ?: BigDecimal.ZERO
+            String flag = pe.getString("debitCreditFlag")
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+            String cId = acc.glAccountClassId ?: ""
+            if (cId.contains("REVENUE") || cId.contains("INCOME")) {
+                BigDecimal bal = "C".equals(flag) ? amt : amt.negate()
+                revMap1[glId] = (revMap1[glId] ?: BigDecimal.ZERO).add(bal)
+            } else if (cId.contains("EXPENSE")) {
+                BigDecimal bal = "D".equals(flag) ? amt : amt.negate()
+                expMap1[glId] = (expMap1[glId] ?: BigDecimal.ZERO).add(bal)
+            }
+        }
+
+        entries2.each { pe ->
+            String glId = pe.glAccountId
+            BigDecimal amt = pe.getBigDecimal("amount") ?: BigDecimal.ZERO
+            String flag = pe.getString("debitCreditFlag")
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+            String cId = acc.glAccountClassId ?: ""
+            if (cId.contains("REVENUE") || cId.contains("INCOME")) {
+                BigDecimal bal = "C".equals(flag) ? amt : amt.negate()
+                revMap2[glId] = (revMap2[glId] ?: BigDecimal.ZERO).add(bal)
+            } else if (cId.contains("EXPENSE")) {
+                BigDecimal bal = "D".equals(flag) ? amt : amt.negate()
+                expMap2[glId] = (expMap2[glId] ?: BigDecimal.ZERO).add(bal)
+            }
+        }
+
+        Set<String> allRevIds = new HashSet<>()
+        allRevIds.addAll(revMap1.keySet())
+        allRevIds.addAll(revMap2.keySet())
+
+        Set<String> allExpIds = new HashSet<>()
+        allExpIds.addAll(expMap1.keySet())
+        allExpIds.addAll(expMap2.keySet())
+
+        List revenueRows = []
+        List expenseRows = []
+        BigDecimal totalRev1 = BigDecimal.ZERO
+        BigDecimal totalRev2 = BigDecimal.ZERO
+        BigDecimal totalExp1 = BigDecimal.ZERO
+        BigDecimal totalExp2 = BigDecimal.ZERO
+
+        allRevIds.each { glId ->
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+            BigDecimal r1 = revMap1[glId] ?: BigDecimal.ZERO
+            BigDecimal r2 = revMap2[glId] ?: BigDecimal.ZERO
+            BigDecimal diff = r1.subtract(r2)
+            double pct = r2.compareTo(BigDecimal.ZERO) != 0 ? (diff.doubleValue() / r2.doubleValue() * 100.0) : 0.0
+            revenueRows.add([
+                glAccountId: glId,
+                accountName: acc.accountName ?: glId,
+                accountCode: acc.accountCode ?: glId,
+                amount1: r1.doubleValue(),
+                amount2: r2.doubleValue(),
+                diffAmount: diff.doubleValue(),
+                diffPercent: Math.round(pct * 10.0) / 10.0
+            ])
+            totalRev1 = totalRev1.add(r1)
+            totalRev2 = totalRev2.add(r2)
+        }
+
+        allExpIds.each { glId ->
+            GenericValue acc = EntityQuery.use(delegator).from("GlAccount").where("glAccountId", glId).queryOne()
+            if (!acc) return
+            BigDecimal e1 = expMap1[glId] ?: BigDecimal.ZERO
+            BigDecimal e2 = expMap2[glId] ?: BigDecimal.ZERO
+            BigDecimal diff = e1.subtract(e2)
+            double pct = e2.compareTo(BigDecimal.ZERO) != 0 ? (diff.doubleValue() / e2.doubleValue() * 100.0) : 0.0
+            expenseRows.add([
+                glAccountId: glId,
+                accountName: acc.accountName ?: glId,
+                accountCode: acc.accountCode ?: glId,
+                amount1: e1.doubleValue(),
+                amount2: e2.doubleValue(),
+                diffAmount: diff.doubleValue(),
+                diffPercent: Math.round(pct * 10.0) / 10.0
+            ])
+            totalExp1 = totalExp1.add(e1)
+            totalExp2 = totalExp2.add(e2)
+        }
+
+        BigDecimal netIncome1 = totalRev1.subtract(totalExp1)
+        BigDecimal netIncome2 = totalRev2.subtract(totalExp2)
+        BigDecimal netDiff = netIncome1.subtract(netIncome2)
+        double netPct = netIncome2.compareTo(BigDecimal.ZERO) != 0 ? (netDiff.doubleValue() / netIncome2.doubleValue() * 100.0) : 0.0
+
+        Map result = [
+            period1: year1,
+            period2: year2,
+            revenues: [
+                rows: revenueRows,
+                total1: totalRev1.doubleValue(),
+                total2: totalRev2.doubleValue(),
+                diffAmount: totalRev1.subtract(totalRev2).doubleValue()
+            ],
+            expenses: [
+                rows: expenseRows,
+                total1: totalExp1.doubleValue(),
+                total2: totalExp2.doubleValue(),
+                diffAmount: totalExp1.subtract(totalExp2).doubleValue()
+            ],
+            netIncome: [
+                net1: netIncome1.doubleValue(),
+                net2: netIncome2.doubleValue(),
+                diffAmount: netDiff.doubleValue(),
+                diffPercent: Math.round(netPct * 10.0) / 10.0
+            ]
+        ]
+
+        request.setAttribute("comparativeIncomeStatement", result)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getComparativeIncomeStatement: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+

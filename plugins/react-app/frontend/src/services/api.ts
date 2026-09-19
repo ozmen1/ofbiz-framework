@@ -1950,5 +1950,388 @@ export const api = {
       body: toFormData({ glAccountTypeId, organizationPartyId }),
     });
   },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Faz 1: Mali Dönemler & Kapanış (Custom Time Periods)
+  // ═════════════════════════════════════════════════════════════════
+  getCustomTimePeriods: async (params?: { organizationPartyId?: string; periodTypeId?: string; isClosed?: string; search?: string }): Promise<CustomTimePeriodsResponse> => {
+    const q = new URLSearchParams();
+    if (params?.organizationPartyId) q.append('organizationPartyId', params.organizationPartyId);
+    if (params?.periodTypeId) q.append('periodTypeId', params.periodTypeId);
+    if (params?.isClosed) q.append('isClosed', params.isClosed);
+    if (params?.search) q.append('search', params.search);
+    return requestApi<CustomTimePeriodsResponse>(`getCustomTimePeriods?${q.toString()}`);
+  },
+  createCustomTimePeriod: async (payload: CreateCustomTimePeriodPayload): Promise<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }>('createCustomTimePeriod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload as any),
+    });
+  },
+  updateCustomTimePeriod: async (payload: UpdateCustomTimePeriodPayload): Promise<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }>('updateCustomTimePeriod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload as any),
+    });
+  },
+  closeCustomTimePeriod: async (customTimePeriodId: string, forceCascade?: boolean): Promise<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }>('closeCustomTimePeriod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ customTimePeriodId, forceCascade: forceCascade ? 'Y' : 'N' }),
+    });
+  },
+  reopenCustomTimePeriod: async (customTimePeriodId: string): Promise<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ customTimePeriodId: string; _EVENT_MESSAGE_?: string }>('reopenCustomTimePeriod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ customTimePeriodId }),
+    });
+  },
+  deleteCustomTimePeriod: async (customTimePeriodId: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteCustomTimePeriod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ customTimePeriodId }),
+    });
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Faz 2: Döviz Kurları & FX Çevrimleri (Foreign Exchange / FX Rates)
+  // ═════════════════════════════════════════════════════════════════
+  getFxConversions: async (params?: { uomId?: string; uomIdTo?: string; activeOnly?: string }): Promise<FxConversionsResponse> => {
+    const q = new URLSearchParams();
+    if (params?.uomId) q.append('uomId', params.uomId);
+    if (params?.uomIdTo) q.append('uomIdTo', params.uomIdTo);
+    if (params?.activeOnly) q.append('activeOnly', params.activeOnly);
+    return requestApi<FxConversionsResponse>(`getFxConversions?${q.toString()}`);
+  },
+  createFxConversion: async (payload: CreateFxConversionPayload): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('createFxConversion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload as any),
+    });
+  },
+  deleteFxConversion: async (uomId: string, uomIdTo: string, fromDate: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('deleteFxConversion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ uomId, uomIdTo, fromDate }),
+    });
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Faz 3: Nakit Akış & Karşılaştırmalı Raporlar
+  // ═════════════════════════════════════════════════════════════════
+  getCashFlowStatement: async (params?: { organizationPartyId?: string; year?: string; fromDate?: string; thruDate?: string }): Promise<CashFlowStatementResponse> => {
+    const q = new URLSearchParams();
+    if (params?.organizationPartyId) q.append('organizationPartyId', params.organizationPartyId);
+    if (params?.year) q.append('year', params.year);
+    if (params?.fromDate) q.append('fromDate', params.fromDate);
+    if (params?.thruDate) q.append('thruDate', params.thruDate);
+    return requestApi<CashFlowStatementResponse>(`getCashFlowStatement?${q.toString()}`);
+  },
+  getComparativeBalanceSheet: async (params?: { organizationPartyId?: string; year1?: string; year2?: string }): Promise<ComparativeBalanceSheetResponse> => {
+    const q = new URLSearchParams();
+    if (params?.organizationPartyId) q.append('organizationPartyId', params.organizationPartyId);
+    if (params?.year1) q.append('year1', params.year1);
+    if (params?.year2) q.append('year2', params.year2);
+    return requestApi<ComparativeBalanceSheetResponse>(`getComparativeBalanceSheet?${q.toString()}`);
+  },
+  getComparativeIncomeStatement: async (params?: { organizationPartyId?: string; year1?: string; year2?: string }): Promise<ComparativeIncomeStatementResponse> => {
+    const q = new URLSearchParams();
+    if (params?.organizationPartyId) q.append('organizationPartyId', params.organizationPartyId);
+    if (params?.year1) q.append('year1', params.year1);
+    if (params?.year2) q.append('year2', params.year2);
+    return requestApi<ComparativeIncomeStatementResponse>(`getComparativeIncomeStatement?${q.toString()}`);
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // Faz 4: Masraf / Maliyet Merkezleri (Cost Centers)
+  // ═════════════════════════════════════════════════════════════════
+  getGlAccountCategories: async (params?: { glAccountCategoryTypeId?: string; search?: string }): Promise<{ categories: GlAccountCategoryItem[]; types: { glAccountCategoryTypeId: string; description: string }[] }> => {
+    const q = new URLSearchParams();
+    if (params?.glAccountCategoryTypeId) q.append('glAccountCategoryTypeId', params.glAccountCategoryTypeId);
+    if (params?.search) q.append('search', params.search);
+    return requestApi<{ categories: GlAccountCategoryItem[]; types: { glAccountCategoryTypeId: string; description: string }[] }>(`getGlAccountCategories?${q.toString()}`);
+  },
+  getGlAccountCategoryMembers: async (glAccountCategoryId: string): Promise<{ members: GlAccountCategoryMemberItem[] }> => {
+    return requestApi<{ members: GlAccountCategoryMemberItem[] }>(`getGlAccountCategoryMembers?glAccountCategoryId=${encodeURIComponent(glAccountCategoryId)}`);
+  },
+  createGlAccountCategory: async (payload: { description: string; glAccountCategoryTypeId?: string; glAccountCategoryId?: string }): Promise<{ glAccountCategoryId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ glAccountCategoryId: string; _EVENT_MESSAGE_?: string }>('createGlAccountCategory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload as any),
+    });
+  },
+  addGlAccountToCategory: async (payload: { glAccountCategoryId: string; glAccountId: string; amountPercentage?: number; fromDate?: string; thruDate?: string }): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('addGlAccountToCategory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload as any),
+    });
+  },
+  removeGlAccountFromCategory: async (glAccountCategoryId: string, glAccountId: string, fromDate: string): Promise<{ _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ _EVENT_MESSAGE_?: string }>('removeGlAccountFromCategory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData({ glAccountCategoryId, glAccountId, fromDate }),
+    });
+  },
+  getCostCenterBalances: async (params?: { organizationPartyId?: string; year?: string; fromDate?: string; thruDate?: string }): Promise<{ costCenters: CostCenterBalanceReport[] }> => {
+    const q = new URLSearchParams();
+    if (params?.organizationPartyId) q.append('organizationPartyId', params.organizationPartyId);
+    if (params?.year) q.append('year', params.year);
+    if (params?.fromDate) q.append('fromDate', params.fromDate);
+    if (params?.thruDate) q.append('thruDate', params.thruDate);
+    return requestApi<{ costCenters: CostCenterBalanceReport[] }>(`getCostCenterBalances?${q.toString()}`);
+  },
 };
+
+// ==========================================
+// TYPES: FISCAL PERIODS, FX, COST CENTERS & REPORTS
+// ==========================================
+export interface CustomTimePeriodItem {
+  customTimePeriodId: string;
+  parentPeriodId?: string | null;
+  parentPeriodName?: string | null;
+  periodTypeId: string;
+  periodTypeDescription: string;
+  periodNum?: number | null;
+  periodName: string;
+  fromDate: string;
+  thruDate: string;
+  isClosed: 'Y' | 'N';
+  organizationPartyId: string;
+}
+
+export interface PeriodTypeItem {
+  periodTypeId: string;
+  description: string;
+  periodLength?: number | null;
+}
+
+export interface CustomTimePeriodsResponse {
+  customTimePeriods: CustomTimePeriodItem[];
+  periodTypes: PeriodTypeItem[];
+  organizations: { partyId: string; name: string }[];
+}
+
+export interface CreateCustomTimePeriodPayload {
+  organizationPartyId?: string;
+  parentPeriodId?: string;
+  periodTypeId: string;
+  periodNum?: number | string;
+  periodName: string;
+  fromDate: string;
+  thruDate: string;
+  isClosed?: 'Y' | 'N';
+}
+
+export interface UpdateCustomTimePeriodPayload {
+  customTimePeriodId: string;
+  parentPeriodId?: string;
+  periodTypeId?: string;
+  periodNum?: number | string;
+  periodName?: string;
+  fromDate?: string;
+  thruDate?: string;
+  isClosed?: 'Y' | 'N';
+}
+
+export interface FxConversionItem {
+  uomId: string;
+  uomDescription: string;
+  uomIdTo: string;
+  uomToDescription: string;
+  fromDate: string;
+  thruDate?: string | null;
+  conversionFactor: number;
+  purposeEnumId?: string | null;
+  purposeDescription?: string | null;
+  isActive: boolean;
+}
+
+export interface CurrencyItem {
+  uomId: string;
+  description: string;
+  abbreviation?: string;
+}
+
+export interface PurposeItem {
+  enumId: string;
+  description: string;
+}
+
+export interface FxConversionsResponse {
+  conversions: FxConversionItem[];
+  currencies: CurrencyItem[];
+  purposes: PurposeItem[];
+}
+
+export interface CreateFxConversionPayload {
+  uomId: string;
+  uomIdTo: string;
+  conversionFactor: number | string;
+  fromDate?: string;
+  thruDate?: string;
+  purposeEnumId?: string;
+}
+
+export interface CashFlowStatementResponse {
+  cashFlowStatement: {
+    organizationPartyId: string;
+    fromDate?: string | null;
+    thruDate?: string | null;
+    operatingActivities: {
+      items: { title: string; code: string; amount: number }[];
+      netCash: number;
+    };
+    investingActivities: {
+      items: { title: string; code: string; amount: number }[];
+      netCash: number;
+    };
+    financingActivities: {
+      items: { title: string; code: string; amount: number }[];
+      netCash: number;
+    };
+    summary: {
+      openingCash: number;
+      netCashChange: number;
+      closingCash: number;
+    };
+  };
+}
+
+export interface ComparativeBalanceSheetResponse {
+  comparativeBalanceSheet: {
+    period1: string;
+    period2: string;
+    assets: {
+      rows: {
+        glAccountId: string;
+        accountName: string;
+        accountCode: string;
+        balance1: number;
+        balance2: number;
+        diffAmount: number;
+        diffPercent: number;
+      }[];
+      total1: number;
+      total2: number;
+      diffAmount: number;
+      diffPercent: number;
+    };
+    liabilities: {
+      rows: {
+        glAccountId: string;
+        accountName: string;
+        accountCode: string;
+        balance1: number;
+        balance2: number;
+        diffAmount: number;
+        diffPercent: number;
+      }[];
+      total1: number;
+      total2: number;
+      diffAmount: number;
+      diffPercent: number;
+    };
+    equities: {
+      rows: {
+        glAccountId: string;
+        accountName: string;
+        accountCode: string;
+        balance1: number;
+        balance2: number;
+        diffAmount: number;
+        diffPercent: number;
+      }[];
+      total1: number;
+      total2: number;
+      diffAmount: number;
+      diffPercent: number;
+    };
+  };
+}
+
+export interface ComparativeIncomeStatementResponse {
+  comparativeIncomeStatement: {
+    period1: string;
+    period2: string;
+    revenues: {
+      rows: {
+        glAccountId: string;
+        accountName: string;
+        accountCode: string;
+        amount1: number;
+        amount2: number;
+        diffAmount: number;
+        diffPercent: number;
+      }[];
+      total1: number;
+      total2: number;
+      diffAmount: number;
+    };
+    expenses: {
+      rows: {
+        glAccountId: string;
+        accountName: string;
+        accountCode: string;
+        amount1: number;
+        amount2: number;
+        diffAmount: number;
+        diffPercent: number;
+      }[];
+      total1: number;
+      total2: number;
+      diffAmount: number;
+    };
+    netIncome: {
+      net1: number;
+      net2: number;
+      diffAmount: number;
+      diffPercent: number;
+    };
+  };
+}
+
+export interface GlAccountCategoryItem {
+  glAccountCategoryId: string;
+  glAccountCategoryTypeId: string;
+  description: string;
+  memberCount: number;
+}
+
+export interface GlAccountCategoryMemberItem {
+  glAccountId: string;
+  accountName: string;
+  accountCode: string;
+  glAccountCategoryId: string;
+  fromDate?: string | null;
+  thruDate?: string | null;
+  amountPercentage: number;
+}
+
+export interface CostCenterBalanceReport {
+  glAccountCategoryId: string;
+  description: string;
+  totalDebit: number;
+  totalCredit: number;
+  netBalance: number;
+  accounts: {
+    glAccountId: string;
+    accountName: string;
+    accountCode: string;
+    amountPercentage: number;
+    debit: number;
+    credit: number;
+    balance: number;
+  }[];
+}
+
 

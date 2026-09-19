@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, PieChart, Settings, LogOut,
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
-  Menu, X, Globe
+  Menu, X, Globe, Calendar, TrendingUp, Target
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -43,9 +43,12 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
     'chart-of-accounts':    translations.pages.chartOfAccounts,
     'journal-entries':      translations.pages.journalEntries,
     'create-journal-entry': translations.pages.createJournalEntry,
+    'fiscal-periods':       translations.pages.fiscalPeriods,
     'reports':              translations.pages.reports,
     'advanced-accounting':  translations.pages.advancedAccounting,
     'tax-and-gl-mapping':   translations.pages.taxAndGlMapping,
+    'fx-rates':             translations.pages.fxRates,
+    'cost-centers':         translations.pages.costCenters,
     'test-page':            translations.pages.testPage,
   };
 
@@ -73,14 +76,17 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) =>
       items: [
         { icon: <BookOpen   size={18} />, label: translations.nav.chartOfAccounts, view: 'chart-of-accounts'  as ViewType },
         { icon: <ScrollText size={18} />, label: translations.nav.journalEntries,   view: 'journal-entries'    as ViewType },
+        { icon: <Calendar   size={18} />, label: translations.nav.fiscalPeriods,    view: 'fiscal-periods'     as ViewType },
         { icon: <PieChart   size={18} />, label: translations.nav.reports,          view: 'reports'            as ViewType },
       ]
     },
     {
       label: translations.nav.advancedAccounting,
       items: [
-        { icon: <Layers   size={18} />, label: translations.nav.assetsAndBudget, view: 'advanced-accounting' as ViewType },
-        { icon: <Percent  size={18} />, label: translations.nav.taxAndGl,         view: 'tax-and-gl-mapping'  as ViewType },
+        { icon: <Layers     size={18} />, label: translations.nav.assetsAndBudget, view: 'advanced-accounting' as ViewType },
+        { icon: <Percent    size={18} />, label: translations.nav.taxAndGl,         view: 'tax-and-gl-mapping'  as ViewType },
+        { icon: <TrendingUp size={18} />, label: translations.nav.fxRates,          view: 'fx-rates'            as ViewType },
+        { icon: <Target     size={18} />, label: translations.nav.costCenters,      view: 'cost-centers'        as ViewType },
       ]
     },
     {

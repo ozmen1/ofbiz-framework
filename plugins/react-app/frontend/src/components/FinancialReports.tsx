@@ -10,11 +10,14 @@ import {
   BalanceSheetResponse, 
   IncomeStatementResponse, 
   AgingResponse, 
-  ReportMetadataResponse 
+  ReportMetadataResponse,
+  CashFlowStatementResponse,
+  ComparativeBalanceSheetResponse,
+  ComparativeIncomeStatementResponse
 } from '../services/api';
 import { useTranslation } from '../i18n';
 
-type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'aging';
+type ReportTab = 'trial-balance' | 'balance-sheet' | 'income-statement' | 'cash-flow' | 'comparative-bs' | 'comparative-is' | 'aging';
 
 export const FinancialReports: React.FC = () => {
   const { translations, locale } = useTranslation();
@@ -30,6 +33,8 @@ export const FinancialReports: React.FC = () => {
   const [organizationPartyId, setOrganizationPartyId] = useState<string>('Company');
   const [selectedYear, setSelectedYear] = useState<string>(''); // empty means All Time
   const [agingType, setAgingType] = useState<'AR' | 'AP'>('AR');
+  const [compYear1, setCompYear1] = useState<string>('2025');
+  const [compYear2, setCompYear2] = useState<string>('2024');
 
   // Metadata
   const [metadata, setMetadata] = useState<ReportMetadataResponse['metadata']>({
@@ -42,6 +47,9 @@ export const FinancialReports: React.FC = () => {
   const [trialBalanceData, setTrialBalanceData] = useState<TrialBalanceResponse | null>(null);
   const [balanceSheetData, setBalanceSheetData] = useState<BalanceSheetResponse['balanceSheet'] | null>(null);
   const [incomeStatementData, setIncomeStatementData] = useState<IncomeStatementResponse['incomeStatement'] | null>(null);
+  const [cashFlowData, setCashFlowData] = useState<CashFlowStatementResponse['cashFlowStatement'] | null>(null);
+  const [compBsData, setCompBsData] = useState<ComparativeBalanceSheetResponse['comparativeBalanceSheet'] | null>(null);
+  const [compIsData, setCompIsData] = useState<ComparativeIncomeStatementResponse['comparativeIncomeStatement'] | null>(null);
   const [agingData, setAgingData] = useState<AgingResponse['agingSummary'] | null>(null);
 
   // Trial balance search
@@ -105,6 +113,36 @@ export const FinancialReports: React.FC = () => {
           setError(err.message || (locale === 'tr' ? 'Gelir tablosu verileri alınamadı.' : 'Could not load income statement data.'));
           setLoading(false);
         });
+    } else if (activeTab === 'cash-flow') {
+      api.getCashFlowStatement(filterPayload)
+        .then(res => {
+          setCashFlowData(res.cashFlowStatement);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(err.message || (locale === 'tr' ? 'Nakit akış verileri alınamadı.' : 'Could not load cash flow data.'));
+          setLoading(false);
+        });
+    } else if (activeTab === 'comparative-bs') {
+      api.getComparativeBalanceSheet({ organizationPartyId: organizationPartyId || 'Company', year1: compYear1, year2: compYear2 })
+        .then(res => {
+          setCompBsData(res.comparativeBalanceSheet);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(err.message || (locale === 'tr' ? 'Karşılaştırmalı bilanço alınamadı.' : 'Could not load comparative balance sheet.'));
+          setLoading(false);
+        });
+    } else if (activeTab === 'comparative-is') {
+      api.getComparativeIncomeStatement({ organizationPartyId: organizationPartyId || 'Company', year1: compYear1, year2: compYear2 })
+        .then(res => {
+          setCompIsData(res.comparativeIncomeStatement);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError(err.message || (locale === 'tr' ? 'Karşılaştırmalı gelir tablosu alınamadı.' : 'Could not load comparative income statement.'));
+          setLoading(false);
+        });
     } else if (activeTab === 'aging') {
       api.getAgingSummary(agingType)
         .then(res => {
@@ -116,7 +154,7 @@ export const FinancialReports: React.FC = () => {
           setLoading(false);
         });
     }
-  }, [activeTab, organizationPartyId, selectedYear, agingType, locale]);
+  }, [activeTab, organizationPartyId, selectedYear, agingType, compYear1, compYear2, locale]);
 
   useEffect(() => {
     loadReport();
@@ -167,7 +205,7 @@ export const FinancialReports: React.FC = () => {
       <div className="ds-card p-5">
         <div className="flex justify-between items-center flex-wrap gap-4">
           {/* Navigation Tabs */}
-          <div className="ds-tab-bar">
+          <div className="ds-tab-bar overflow-x-auto flex-nowrap">
             <button
               onClick={() => setActiveTab('trial-balance')}
               className={activeTab === 'trial-balance' ? 'ds-tab ds-tab-active' : 'ds-tab'}
@@ -185,6 +223,24 @@ export const FinancialReports: React.FC = () => {
               className={activeTab === 'income-statement' ? 'ds-tab ds-tab-active' : 'ds-tab'}
             >
               <TrendingUp size={16} /> {r.incomeStatement}
+            </button>
+            <button
+              onClick={() => setActiveTab('cash-flow')}
+              className={activeTab === 'cash-flow' ? 'ds-tab ds-tab-active' : 'ds-tab'}
+            >
+              <RefreshCw size={16} /> {r.cashFlow}
+            </button>
+            <button
+              onClick={() => setActiveTab('comparative-bs')}
+              className={activeTab === 'comparative-bs' ? 'ds-tab ds-tab-active' : 'ds-tab'}
+            >
+              <Layers size={16} /> {r.comparativeBalanceSheet}
+            </button>
+            <button
+              onClick={() => setActiveTab('comparative-is')}
+              className={activeTab === 'comparative-is' ? 'ds-tab ds-tab-active' : 'ds-tab'}
+            >
+              <TrendingUp size={16} /> {r.comparativeIncomeStatement}
             </button>
             <button
               onClick={() => setActiveTab('aging')}
@@ -207,8 +263,30 @@ export const FinancialReports: React.FC = () => {
               ))}
             </select>
 
-            {/* Year / Period (Not for aging) */}
-            {activeTab !== 'aging' && (
+            {/* Comparative Year 1 & 2 Selectors */}
+            {(activeTab === 'comparative-bs' || activeTab === 'comparative-is') ? (
+              <div className="flex items-center gap-2">
+                <select
+                  value={compYear1}
+                  onChange={(e) => setCompYear1(e.target.value)}
+                  className="ds-select text-sm"
+                >
+                  {metadata.years.map(y => (
+                    <option key={`p1-${y}`} value={y}>{y}</option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-400">vs</span>
+                <select
+                  value={compYear2}
+                  onChange={(e) => setCompYear2(e.target.value)}
+                  className="ds-select text-sm"
+                >
+                  {metadata.years.map(y => (
+                    <option key={`p2-${y}`} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            ) : activeTab !== 'aging' ? (
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
@@ -219,7 +297,7 @@ export const FinancialReports: React.FC = () => {
                   <option key={y} value={y}>{y} {r.fiscalYear}</option>
                 ))}
               </select>
-            )}
+            ) : null}
 
             {/* Aging Type Toggle */}
             {activeTab === 'aging' && (
@@ -748,6 +826,358 @@ export const FinancialReports: React.FC = () => {
                           </tr>
                         ))
                       )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* TAB 5: CASH FLOW STATEMENT                                      */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {activeTab === 'cash-flow' && cashFlowData && (
+            <div className="flex flex-col gap-6">
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="ds-stat-card border-l-4 border-l-blue-500">
+                  <span className="ds-stat-label">{r.openingCash}</span>
+                  <div className="ds-stat-value text-blue-400">
+                    {formatCurrency(cashFlowData.summary.openingCash)}
+                  </div>
+                </div>
+                <div className={`ds-stat-card border-l-4 ${cashFlowData.summary.netCashChange >= 0 ? 'border-l-emerald-500' : 'border-l-rose-500'}`}>
+                  <span className="ds-stat-label">{r.netCashChange}</span>
+                  <div className={`ds-stat-value ${cashFlowData.summary.netCashChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatCurrency(cashFlowData.summary.netCashChange)}
+                  </div>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-purple-500">
+                  <span className="ds-stat-label">{r.closingCash}</span>
+                  <div className="ds-stat-value text-purple-400">
+                    {formatCurrency(cashFlowData.summary.closingCash)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Operating Activities */}
+              <div className="ds-card p-5 space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    {r.operatingActivities}
+                  </h3>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {formatCurrency(cashFlowData.operatingActivities.netCash)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th text-right">{common.amount}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cashFlowData.operatingActivities.items.map((item, i) => (
+                        <tr key={`op-${i}`} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-slate-400 text-xs">{item.code}</td>
+                          <td className="ds-td text-white">{item.title}</td>
+                          <td className={`ds-td text-right font-mono font-medium ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrency(item.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Investing Activities */}
+              <div className="ds-card p-5 space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    {r.investingActivities}
+                  </h3>
+                  <span className="font-mono font-bold text-blue-400">
+                    {formatCurrency(cashFlowData.investingActivities.netCash)}
+                  </span>
+                </div>
+                {cashFlowData.investingActivities.items.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2">{locale === 'tr' ? 'Bu dönemde yatırım hareketi bulunamadı.' : 'No investing activities recorded.'}</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">{coa.accountCode}</th>
+                          <th className="ds-th">{coa.accountName}</th>
+                          <th className="ds-th text-right">{common.amount}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashFlowData.investingActivities.items.map((item, i) => (
+                          <tr key={`inv-${i}`} className="ds-tbody-row">
+                            <td className="ds-td font-mono text-slate-400 text-xs">{item.code}</td>
+                            <td className="ds-td text-white">{item.title}</td>
+                            <td className={`ds-td text-right font-mono font-medium ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {formatCurrency(item.amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Financing Activities */}
+              <div className="ds-card p-5 space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    {r.financingActivities}
+                  </h3>
+                  <span className="font-mono font-bold text-purple-400">
+                    {formatCurrency(cashFlowData.financingActivities.netCash)}
+                  </span>
+                </div>
+                {cashFlowData.financingActivities.items.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2">{locale === 'tr' ? 'Bu dönemde finansman hareketi bulunamadı.' : 'No financing activities recorded.'}</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">{coa.accountCode}</th>
+                          <th className="ds-th">{coa.accountName}</th>
+                          <th className="ds-th text-right">{common.amount}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashFlowData.financingActivities.items.map((item, i) => (
+                          <tr key={`fin-${i}`} className="ds-tbody-row">
+                            <td className="ds-td font-mono text-slate-400 text-xs">{item.code}</td>
+                            <td className="ds-td text-white">{item.title}</td>
+                            <td className={`ds-td text-right font-mono font-medium ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {formatCurrency(item.amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* TAB 6: COMPARATIVE BALANCE SHEET                                */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {activeTab === 'comparative-bs' && compBsData && (
+            <div className="flex flex-col gap-6">
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                  <span className="ds-stat-label">{r.totalAssets} ({compBsData.period1} vs {compBsData.period2})</span>
+                  <div className="ds-stat-value text-emerald-400">
+                    {formatCurrency(compBsData.assets.diffAmount)}
+                    <span className="text-xs font-normal text-slate-400 ml-2">({compBsData.assets.diffPercent}%)</span>
+                  </div>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-amber-500">
+                  <span className="ds-stat-label">{r.totalLiabilities} ({compBsData.period1} vs {compBsData.period2})</span>
+                  <div className="ds-stat-value text-amber-400">
+                    {formatCurrency(compBsData.liabilities.diffAmount)}
+                    <span className="text-xs font-normal text-slate-400 ml-2">({compBsData.liabilities.diffPercent}%)</span>
+                  </div>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-blue-500">
+                  <span className="ds-stat-label">{r.totalEquity} ({compBsData.period1} vs {compBsData.period2})</span>
+                  <div className="ds-stat-value text-blue-400">
+                    {formatCurrency(compBsData.equities.diffAmount)}
+                    <span className="text-xs font-normal text-slate-400 ml-2">({compBsData.equities.diffPercent}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assets Comparison Table */}
+              <div className="ds-card p-5 space-y-3">
+                <h3 className="text-base font-bold text-white border-b border-slate-700/60 pb-2">
+                  {r.assets}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th text-right">{compBsData.period1}</th>
+                        <th className="ds-th text-right">{compBsData.period2}</th>
+                        <th className="ds-th text-right">{r.difference}</th>
+                        <th className="ds-th text-right">{r.percentChange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {compBsData.assets.rows.map((row) => (
+                        <tr key={row.glAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-slate-400 text-xs">{row.accountCode}</td>
+                          <td className="ds-td text-white">{row.accountName}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.balance1)}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.balance2)}</td>
+                          <td className={`ds-td text-right font-mono font-medium ${row.diffAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrency(row.diffAmount)}
+                          </td>
+                          <td className={`ds-td text-right font-mono text-xs ${row.diffPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {row.diffPercent > 0 ? `+${row.diffPercent}%` : `${row.diffPercent}%`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Liabilities Comparison Table */}
+              <div className="ds-card p-5 space-y-3">
+                <h3 className="text-base font-bold text-white border-b border-slate-700/60 pb-2">
+                  {r.liabilities}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th text-right">{compBsData.period1}</th>
+                        <th className="ds-th text-right">{compBsData.period2}</th>
+                        <th className="ds-th text-right">{r.difference}</th>
+                        <th className="ds-th text-right">{r.percentChange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {compBsData.liabilities.rows.map((row) => (
+                        <tr key={row.glAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-slate-400 text-xs">{row.accountCode}</td>
+                          <td className="ds-td text-white">{row.accountName}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.balance1)}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.balance2)}</td>
+                          <td className={`ds-td text-right font-mono font-medium ${row.diffAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrency(row.diffAmount)}
+                          </td>
+                          <td className={`ds-td text-right font-mono text-xs ${row.diffPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {row.diffPercent > 0 ? `+${row.diffPercent}%` : `${row.diffPercent}%`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* TAB 7: COMPARATIVE INCOME STATEMENT                             */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {activeTab === 'comparative-is' && compIsData && (
+            <div className="flex flex-col gap-6">
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="ds-stat-card border-l-4 border-l-emerald-500">
+                  <span className="ds-stat-label">{r.revenue} ({compIsData.period1} vs {compIsData.period2})</span>
+                  <div className="ds-stat-value text-emerald-400">
+                    {formatCurrency(compIsData.revenues.diffAmount)}
+                  </div>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-rose-500">
+                  <span className="ds-stat-label">{r.expenses} ({compIsData.period1} vs {compIsData.period2})</span>
+                  <div className="ds-stat-value text-rose-400">
+                    {formatCurrency(compIsData.expenses.diffAmount)}
+                  </div>
+                </div>
+                <div className="ds-stat-card border-l-4 border-l-purple-500">
+                  <span className="ds-stat-label">{r.netIncome} ({compIsData.period1} vs {compIsData.period2})</span>
+                  <div className="ds-stat-value text-purple-400">
+                    {formatCurrency(compIsData.netIncome.diffAmount)}
+                    <span className="text-xs font-normal text-slate-400 ml-2">({compIsData.netIncome.diffPercent}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenues Comparison */}
+              <div className="ds-card p-5 space-y-3">
+                <h3 className="text-base font-bold text-white border-b border-slate-700/60 pb-2">
+                  {r.revenue}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th text-right">{compIsData.period1}</th>
+                        <th className="ds-th text-right">{compIsData.period2}</th>
+                        <th className="ds-th text-right">{r.difference}</th>
+                        <th className="ds-th text-right">{r.percentChange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {compIsData.revenues.rows.map((row) => (
+                        <tr key={row.glAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-slate-400 text-xs">{row.accountCode}</td>
+                          <td className="ds-td text-white">{row.accountName}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.amount1)}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.amount2)}</td>
+                          <td className={`ds-td text-right font-mono font-medium ${row.diffAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrency(row.diffAmount)}
+                          </td>
+                          <td className={`ds-td text-right font-mono text-xs ${row.diffPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {row.diffPercent > 0 ? `+${row.diffPercent}%` : `${row.diffPercent}%`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Expenses Comparison */}
+              <div className="ds-card p-5 space-y-3">
+                <h3 className="text-base font-bold text-white border-b border-slate-700/60 pb-2">
+                  {r.expenses}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">{coa.accountCode}</th>
+                        <th className="ds-th">{coa.accountName}</th>
+                        <th className="ds-th text-right">{compIsData.period1}</th>
+                        <th className="ds-th text-right">{compIsData.period2}</th>
+                        <th className="ds-th text-right">{r.difference}</th>
+                        <th className="ds-th text-right">{r.percentChange}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {compIsData.expenses.rows.map((row) => (
+                        <tr key={row.glAccountId} className="ds-tbody-row">
+                          <td className="ds-td font-mono text-slate-400 text-xs">{row.accountCode}</td>
+                          <td className="ds-td text-white">{row.accountName}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.amount1)}</td>
+                          <td className="ds-td text-right font-mono">{formatCurrency(row.amount2)}</td>
+                          <td className={`ds-td text-right font-mono font-medium ${row.diffAmount >= 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {formatCurrency(row.diffAmount)}
+                          </td>
+                          <td className={`ds-td text-right font-mono text-xs ${row.diffPercent >= 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {row.diffPercent > 0 ? `+${row.diffPercent}%` : `${row.diffPercent}%`}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

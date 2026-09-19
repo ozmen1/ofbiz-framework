@@ -15,6 +15,9 @@ import CreateJournalEntry from './components/CreateJournalEntry'
 import FinancialAccounts from './components/FinancialAccounts'
 import AdvancedAccounting from './components/AdvancedAccounting'
 import { TaxAndGlMapping } from './components/TaxAndGlMapping'
+import { FiscalPeriods } from './components/FiscalPeriods'
+import { FxManagement } from './components/FxManagement'
+import { CostCenters } from './components/CostCenters'
 import TestPage from './components/TestPage'
 import { I18nProvider } from './i18n'
 import './index.css'
@@ -38,6 +41,9 @@ export type ViewType =
   | 'chart-of-accounts'
   | 'journal-entries'
   | 'create-journal-entry'
+  | 'fiscal-periods'
+  | 'fx-rates'
+  | 'cost-centers'
   | 'test-page';
 
 
@@ -127,6 +133,15 @@ function App() {
 
       {/* Reports View */}
       {currentView === 'reports' && <FinancialReports />}
+
+      {/* Fiscal Periods & Year-End Closing */}
+      {currentView === 'fiscal-periods' && <FiscalPeriods />}
+
+      {/* FX Rates & Currency Matrix */}
+      {currentView === 'fx-rates' && <FxManagement />}
+
+      {/* Cost Centers & Gl Category Allocations */}
+      {currentView === 'cost-centers' && <CostCenters />}
 
       {/* Advanced Accounting (Billing Accounts, Fixed Assets, Budgets, Agreements) */}
       {currentView === 'advanced-accounting' && <AdvancedAccounting />}

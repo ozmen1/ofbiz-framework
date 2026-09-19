@@ -730,6 +730,130 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Mali Dönemler & Dönem Sonu Kapanışı (Custom Time Periods)           -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getCustomTimePeriods">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="getCustomTimePeriods"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createCustomTimePeriod">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="createCustomTimePeriod"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateCustomTimePeriod">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="updateCustomTimePeriod"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="closeCustomTimePeriod">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="closeCustomTimePeriod"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="reopenCustomTimePeriod">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="reopenCustomTimePeriod"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteCustomTimePeriod">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FiscalPeriodEvents.groovy" invoke="deleteCustomTimePeriod"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Döviz Kurları & FX Çevrimleri (Foreign Exchange / FX Rates)         -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getFxConversions">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FxEvents.groovy" invoke="getFxConversions"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createFxConversion">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FxEvents.groovy" invoke="createFxConversion"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="deleteFxConversion">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FxEvents.groovy" invoke="deleteFxConversion"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Nakit Akış & Karşılaştırmalı Raporlar (Cash Flow & Comparative)     -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getCashFlowStatement">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FinancialReportEvents.groovy" invoke="getCashFlowStatement"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getComparativeBalanceSheet">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FinancialReportEvents.groovy" invoke="getComparativeBalanceSheet"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getComparativeIncomeStatement">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FinancialReportEvents.groovy" invoke="getComparativeIncomeStatement"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Masraf / Maliyet Merkezleri & GL Kategorileri (Cost Centers)        -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getGlAccountCategories">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="getGlAccountCategories"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getGlAccountCategoryMembers">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="getGlAccountCategoryMembers"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createGlAccountCategory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="createGlAccountCategory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="addGlAccountToCategory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="addGlAccountToCategory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="removeGlAccountFromCategory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="removeGlAccountFromCategory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getCostCenterBalances">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/CostCenterEvents.groovy" invoke="getCostCenterBalances"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>
