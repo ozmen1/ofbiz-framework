@@ -4,7 +4,7 @@ import {
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
   Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
-  ShoppingCart, Factory, Warehouse, Calculator, Sparkles
+  ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -104,6 +104,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'orders':                 translations.pages.orders,
     'manufacturing':          translations.pages.manufacturing,
     'inventory':              translations.pages.inventory,
+    'parties':                translations.pages.parties,
   }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
@@ -238,6 +239,29 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
               {translations.nav.modules}
             </p>
+
+            {/* ── MODÜL: CARİ & TARAF YÖNETİMİ (Party Master Data - Aktif) ── */}
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => handleNavClick('parties')}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  currentView === 'parties'
+                    ? 'text-indigo-300 bg-indigo-500/15 border border-indigo-500/30'
+                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                    <Users size={16} />
+                  </div>
+                  <span>{translations.nav.parties}</span>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  {translations.nav.activeModule}
+                </span>
+              </button>
+            </div>
 
             {/* ── MODÜL 1: MUHASEBE & FİNANS (Genişletilebilir Akordiyon) ── */}
             <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">

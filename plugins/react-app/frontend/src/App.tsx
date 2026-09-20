@@ -32,6 +32,7 @@ const CheckRun = lazy(() => import('./components/CheckRun').then(m => ({ default
 const CommissionRun = lazy(() => import('./components/CommissionRun').then(m => ({ default: m.CommissionRun })))
 const TestPage = lazy(() => import('./components/TestPage'))
 const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
+const PartyManagement = lazy(() => import('./components/PartyManagement').then(m => ({ default: m.PartyManagement })))
 
 export type ViewType = 
   | 'dashboard' 
@@ -60,7 +61,8 @@ export type ViewType =
   | 'test-page'
   | 'orders'
   | 'manufacturing'
-  | 'inventory';
+  | 'inventory'
+  | 'parties';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -198,6 +200,9 @@ function App() {
 
       case 'test-page':
         return <TestPage />;
+
+      case 'parties':
+        return <PartyManagement />;
 
       case 'orders':
         return <ModulePlaceholder moduleKey="orders" onNavigate={handleNavigate} />;

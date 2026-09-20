@@ -4251,4 +4251,332 @@ export interface DeleteProductCategoryGlAccountPayload {
   glAccountTypeId: string;
 }
 
+// ═════════════════════════════════════════════════════════════════
+// PARTY MANAGEMENT (CARİ YÖNETİMİ) INTERFACES & API FUNCTIONS
+// ═════════════════════════════════════════════════════════════════
 
+export interface PartyListItem {
+  partyId: string;
+  partyTypeId: 'PERSON' | 'PARTY_GROUP' | string;
+  name: string;
+  groupName?: string;
+  firstName?: string;
+  lastName?: string;
+  statusId: string;
+  roles: string[];
+  primaryPhone?: string;
+  primaryEmail?: string;
+  city?: string;
+  countryGeoId?: string;
+  identifications?: {
+    partyIdentificationTypeId: string;
+    idValue: string;
+  }[];
+}
+
+export interface PartyMetrics {
+  totalParties: number;
+  totalGroups: number;
+  totalPersons: number;
+  activeCustomers: number;
+  activeSuppliers: number;
+}
+
+export interface PartyListResponse {
+  partyList: PartyListItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  metrics: PartyMetrics;
+}
+
+export interface PartyPostalAddress {
+  contactMechId: string;
+  toName?: string;
+  attnName?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  postalCode: string;
+  countryGeoId: string;
+  stateProvinceGeoId?: string;
+  purposeTypeId: string;
+}
+
+export interface PartyTelecomNumber {
+  contactMechId: string;
+  countryCode?: string;
+  areaCode?: string;
+  contactNumber: string;
+  fullNumber: string;
+  purposeTypeId: string;
+}
+
+export interface PartyEmailAddress {
+  contactMechId: string;
+  emailAddress: string;
+  purposeTypeId: string;
+}
+
+export interface PartyIdentification {
+  partyIdentificationTypeId: string;
+  typeDescription: string;
+  idValue: string;
+}
+
+export interface PartyRelationship {
+  partyIdFrom: string;
+  partyIdTo: string;
+  partyNameFrom: string;
+  partyNameTo: string;
+  roleTypeIdFrom: string;
+  roleTypeIdTo: string;
+  partyRelationshipTypeId: string;
+  fromDate: string;
+  comments?: string;
+}
+
+export interface PartyDetail {
+  partyId: string;
+  partyTypeId: string;
+  displayName: string;
+  statusId: string;
+  createdDate: string;
+  description?: string;
+  preferredCurrencyUomId: string;
+  person?: {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    personalTitle?: string;
+    gender?: string;
+    birthDate?: string;
+  } | null;
+  group?: {
+    groupName: string;
+    groupNameLocal?: string;
+    officeSiteName?: string;
+    annualRevenue?: number | null;
+    numEmployees?: number | null;
+    comments?: string;
+  } | null;
+  roles: {
+    roleTypeId: string;
+    description: string;
+  }[];
+  postalAddresses: PartyPostalAddress[];
+  telecomNumbers: PartyTelecomNumber[];
+  emailAddresses: PartyEmailAddress[];
+  identifications: PartyIdentification[];
+  relationships: PartyRelationship[];
+  financialSummary: {
+    invoiceCount: number;
+    paymentCount: number;
+  };
+}
+
+export interface PartyMetadataResponse {
+  partyTypes: { partyTypeId: string; description: string }[];
+  roleTypes: { roleTypeId: string; description: string; isKey: boolean }[];
+  identificationTypes: { partyIdentificationTypeId: string; description: string }[];
+  contactMechPurposeTypes: { contactMechPurposeTypeId: string; description: string }[];
+  countries: { geoId: string; geoName: string; geoCode: string }[];
+}
+
+export interface CreatePartyPayload {
+  partyTypeId: 'PERSON' | 'PARTY_GROUP';
+  partyId?: string;
+  statusId?: string;
+  firstName?: string;
+  lastName?: string;
+  personalTitle?: string;
+  gender?: string;
+  birthDate?: string;
+  groupName?: string;
+  groupNameLocal?: string;
+  officeSiteName?: string;
+  comments?: string;
+  roleTypeId?: string;
+  roleTypeIds?: string[];
+  emailAddress?: string;
+  contactNumber?: string;
+  countryCode?: string;
+  areaCode?: string;
+  address1?: string;
+  address2?: string;
+  city?: string;
+  postalCode?: string;
+  countryGeoId?: string;
+  idValue?: string;
+  partyIdentificationTypeId?: string;
+}
+
+export interface UpdatePartyPayload {
+  partyId: string;
+  firstName?: string;
+  lastName?: string;
+  personalTitle?: string;
+  gender?: string;
+  birthDate?: string;
+  groupName?: string;
+  groupNameLocal?: string;
+  officeSiteName?: string;
+  comments?: string;
+  statusId?: string;
+}
+
+export async function fetchPartyMetadata(): Promise<PartyMetadataResponse> {
+  return requestApi<PartyMetadataResponse>('getPartyMetadata');
+}
+
+export async function fetchParties(params: {
+  search?: string;
+  partyTypeId?: string;
+  roleTypeId?: string;
+  statusId?: string;
+  viewIndex?: number;
+  viewSize?: number;
+}): Promise<PartyListResponse> {
+  const queryParams = new URLSearchParams();
+  if (params.search) queryParams.set('search', params.search);
+  if (params.partyTypeId) queryParams.set('partyTypeId', params.partyTypeId);
+  if (params.roleTypeId) queryParams.set('roleTypeId', params.roleTypeId);
+  if (params.statusId) queryParams.set('statusId', params.statusId);
+  if (params.viewIndex !== undefined) queryParams.set('viewIndex', params.viewIndex.toString());
+  if (params.viewSize !== undefined) queryParams.set('viewSize', params.viewSize.toString());
+
+  const endpoint = `getParties${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  return requestApi<PartyListResponse>(endpoint);
+}
+
+export async function fetchPartyDetail(partyId: string): Promise<{ partyDetail: PartyDetail }> {
+  return requestApi<{ partyDetail: PartyDetail }>(`getPartyDetail?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function createParty(payload: CreatePartyPayload): Promise<{ partyId: string; message: string }> {
+  return requestApi<{ partyId: string; message: string }>('createParty', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateParty(payload: UpdatePartyPayload): Promise<{ partyId: string; message: string }> {
+  return requestApi<{ partyId: string; message: string }>('updateParty', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function setPartyStatus(partyId: string, statusId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('setPartyStatus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, statusId })
+  });
+}
+
+export async function addPartyRole(partyId: string, roleTypeId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('addPartyRole', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, roleTypeId })
+  });
+}
+
+export async function deletePartyRole(partyId: string, roleTypeId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyRole', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, roleTypeId })
+  });
+}
+
+export async function createPartyPostalAddress(payload: {
+  partyId: string;
+  toName?: string;
+  attnName?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  postalCode: string;
+  countryGeoId: string;
+  stateProvinceGeoId?: string;
+  contactMechPurposeTypeId?: string;
+}): Promise<{ contactMechId: string; message: string }> {
+  return requestApi<{ contactMechId: string; message: string }>('createPartyPostalAddress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createPartyTelecomNumber(payload: {
+  partyId: string;
+  countryCode?: string;
+  areaCode?: string;
+  contactNumber: string;
+  contactMechPurposeTypeId?: string;
+}): Promise<{ contactMechId: string; message: string }> {
+  return requestApi<{ contactMechId: string; message: string }>('createPartyTelecomNumber', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createPartyEmailAddress(payload: {
+  partyId: string;
+  emailAddress: string;
+  contactMechPurposeTypeId?: string;
+}): Promise<{ contactMechId: string; message: string }> {
+  return requestApi<{ contactMechId: string; message: string }>('createPartyEmailAddress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyContactMech(partyId: string, contactMechId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyContactMech', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, contactMechId })
+  });
+}
+
+export async function createPartyIdentification(payload: {
+  partyId: string;
+  partyIdentificationTypeId: string;
+  idValue: string;
+}): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('createPartyIdentification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyIdentification(partyId: string, partyIdentificationTypeId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyIdentification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, partyIdentificationTypeId })
+  });
+}
+
+export async function createPartyRelationship(payload: {
+  partyIdFrom: string;
+  partyIdTo: string;
+  roleTypeIdFrom?: string;
+  roleTypeIdTo?: string;
+  partyRelationshipTypeId?: string;
+  comments?: string;
+}): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('createPartyRelationship', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
