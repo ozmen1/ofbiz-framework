@@ -95,13 +95,49 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
    - Satır içi stillerden (`style={{}}`), eski `glass-card` veya dağınık CSS değişkenlerinden kaçınılmalıdır.
    - Standart DS sınıfları kullanılmalıdır: `.ds-card`, `.ds-stat-card`, `.ds-table`, `.ds-thead-row`, `.ds-th`, `.ds-tbody-row`, `.ds-td`, `.ds-btn-primary`, `.ds-btn-secondary`, `.ds-btn-danger`, `.ds-input`, `.ds-select`, `.ds-label`, `.ds-badge`, `.ds-overlay`, `.ds-modal`, `.ds-spinner`, `.ds-empty`.
    - **Tablo Sarmalama:** Her `<table>` mutlaka `<div className="overflow-x-auto">` içine alınmalıdır.
-   - **Modallar:** Mobilde taşmaları önlemek için `.ds-overlay` (`overflow-y-auto p-3 sm:p-6`) ve `.ds-modal` (`max-h-[85vh] sm:max-h-[90vh] my-auto`) kullanılmalıdır.
+   - **Tarih Girdisi Genişliği:** `type="date"` input alanlarında tarayıcı yerel takvim ikonu ile tarih metninin (`DD.MM.YYYY`) çakışmasını önlemek için minimum `min-w-[140px]` (`w-36`+) genişlik tanımlanmalıdır.
+   - **Duyarlı Izgaralar (Responsive Grid):** Çoklu istatistik veya döviz/yaşlandırma kutularında doğrudan sabit `grid-cols-6` verilmemeli, `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6` gibi responsive kırılımlar kullanılmalıdır.
 
-5. **60 FPS Akıcılık, Modal Optimizasyonu ve Performans Kuralları (KRİTİK):**
+5. **60 FPS Akıcılık, Modal Mimarisi ve Performans Kuralları (KRİTİK):**
    - **Backdrop-Blur ve GPU Compositor Kilitlenmesi Yasağı:**
      - Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
      - *Neden:* İç içe kartlar ve arka plan katmanları varken `backdrop-filter: blur()` uygulanması, tarayıcı GPU'sunda piksel başına katlanan Gauss hesaplama yükü bindirir ($O(N \times \text{layers})$). Modal açılışında, fare hareketlerinde ve animasyonlarda şiddetli donmaya (FPS düşüşü, INP > 1000ms) yol açar.
      - *Standart:* Overlay'lerde daima donanımsal olarak hafif, saf yarı saydam renk kullanın: `bg-black/80` veya doğrudan `.ds-overlay` sınıfı. `.ds-card` ve modal gövdelerinde gereksiz `backdrop-blur-*` eklemeyin.
+
+   - **Modal Opaklığı ve Sayfa Karışmasını Önleme (Anti-Bleed - `.ds-card` Tuzağı):**
+     - Modal kök container'ında **ASLA `.ds-card` KULLANMAYIN**.
+     - *Neden:* `.ds-card` sınıfı varsayılan olarak `@apply bg-slate-800/50` (yani %50 yarı saydam) tanımlıdır. Modal ana gövdesinde kullanıldığında modal yarı saydam olur ve arkasındaki sayfa içerikleri, tablolar ve butonlar modal metinlerinin altından sızarak okunamaz hale gelir.
+     - *Standart:* Modal ana penceresi daima **%100 opak** zemin rengine sahip olmalıdır: `bg-slate-900` veya `bg-slate-950` ile `border border-slate-700/80 shadow-2xl rounded-2xl`.
+
+   - **Body Scroll Kilidi (Body Scroll Lock / Scroll Chaining Önleme):**
+     - Modal açıldığında, kullanıcının fare tekerleğiyle kaydırmasının arkadaki sayfayı (`document.body`) hareket ettirmesini engellemek için scroll kilidi zorunludur:
+       ```tsx
+       useEffect(() => {
+         const originalOverflow = document.body.style.overflow;
+         document.body.style.overflow = 'hidden';
+         return () => {
+           document.body.style.overflow = originalOverflow;
+         };
+       }, []);
+       ```
+
+   - **Z-Index Katman Hiyerarşisi:**
+     - Arayüz katmanları aşağıdaki z-index hiyerarşisine tam olarak uymalıdır:
+       - Yapışkan Tablo Başlıkları (`sticky th`): `z-10`
+       - Yan Çekmeceler (Slide-over Drawer): `z-50`
+       - Modallar (Ayrıntı/İşlem Pencereleri): `z-[80]`
+       - Onay / Alert Dialogları: `z-[90]`
+       - Toast Bildirimleri: `z-[100]`
+     - *Neden:* Modallar bir çekmecenin (drawer) içinden de açılabilir. Modal `z-50` olduğunda çekmeceyle çakışır veya yapışkan başlıkların arkasında kalabilir. Bu nedenle modallar mutlaka `z-[80]` olmalıdır.
+
+   - **Tek Birleşik Dikey Kaydırma (İç İçe Scroll Trap Yasağı):**
+     - Modal gövdesi (`overflow-y-auto flex-1`) dikey kaydırma sağlarken, modal içine konulan tablolara ayrıca `max-h-[50vh] overflow-y-auto` verilmemelidir.
+     - *Neden:* İç içe dikey kaydırma kullanıcı fare tekerleğini iç alana hapsettiği için (scroll trap) modalın geri kalanı kaydırılamaz ve çift dikey kaydırma çubuğu oluşur.
+     - *Standart:* Tablolarda yalnızca yatay taşmayı önlemek için `<div className="overflow-x-auto">` kullanın. Dikey kaydırmayı modalın ana gövdesi akıcı biçimde yönetsin.
+
+   - **Opak Yapışkan Tablo Başlıkları (Sticky Headers):**
+     - Tablo yapışkan başlıkları (`sticky top-0`) mutlaka `%100 opak` zemin rengine (`bg-slate-900` veya `bg-slate-800`) sahip olmalıdır. Şeffaf veya yarı saydam başlıklar, altından geçen satırların başlık metinlerine karışmasına sebep olur.
+
    - **Büyük `<select>` Seçeneklerinin Memoize Edilmesi (`useMemo`):**
      - Muhasebe hesapları (GL Accounts), ürünler veya cariler gibi 50'den fazla kayıt içeren dropdown seçeneklerini **mutlaka `useMemo` ile sarmalayın**:
        ```tsx
@@ -114,10 +150,12 @@ Eğer bir yapay zeka asistanı olarak bu projede çalışıyorsan, şu kurallar�
        ), [glAccounts]);
        ```
      - *Neden:* Formdaki bir harf değişiminde (keystroke) yüzlerce `<option>` DOM düğümünün sıfırdan oluşturulmasını engeller, klavye girdi gecikmesini (INP) sıfıra indirir.
+
    - **Bayrak İkonlarında SVG Kullanımı (Platform Bağımsızlığı):**
      - Dil seçiminde veya ülke göstergelerinde **ASLA Unicode emoji bayrakları (`🇹🇷`, `🇬🇧`) KULLANMAYIN**.
      - *Neden:* Linux ve birçok Chromium tabanlı sistemde işletim sistemi seviyesinde bayrak font glifleri bulunmadığından emojiler bozuk harf kodları ("TR", "GB") olarak render edilir.
      - *Standart:* Harici kütüphane gerektirmeyen saf inline SVG bileşenleri (`TrFlag`, `GbFlag`) kullanın.
+
    - **Koşullu Modal Render (Unmount on Close):**
      - Modalları CSS `hidden` ile gizlemek yerine daima `{isOpen && <MyModal ... />}` şeklinde DOM'dan kaldırarak render edin.
 

@@ -33,6 +33,11 @@ Projeye katkı sağlayan her agent aşağıdaki 6 kuralı eksiksiz uygulamakla y
 
 ### 2. 60 FPS Akıcılık, Modal & GPU Performans Kuralları
 * **Backdrop-Blur Yasağı:** Modal ve drawer overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**. Katlanan Gauss bulanıklığı GPU compositor thread'ini kilitler, modal açılışında donmaya ve INP değerinin >1000ms olmasına yol açar. Her zaman `bg-black/80` veya `.ds-overlay` kullanın.
+* **Modal Opaklığı & Arkadaki Ekranın Karışmasını Önleme (Anti-Bleed):** Modal ana container'ında **ASLA `.ds-card` (`bg-slate-800/50`) GİBİ YARI SAYDAM SINIFLAR KULLANMAYIN**. Modal gövdesi daima %100 opak olmalıdır (`bg-slate-900` veya `bg-slate-950`). Yarı saydamlık arkadaki sayfa metinlerinin modal içine karışmasına neden olur.
+* **Body Scroll Kilidi (Scroll Lock):** Modal açıldığında arka planın kaymasını engellemek için `document.body.style.overflow = 'hidden'` yapılmalı ve modal unmount olduğunda eski haline getirilmelidir.
+* **Z-Index Katman Hiyerarşisi:** Modallar kesinlikle `z-[80]` z-index değerine sahip olmalıdır. Böylece çekmecelerin (`drawer` - `z-50`), yapışkan tablo başlıklarının (`z-10`) ve diğer bileşenlerin üstünde temizce yükselir.
+* **Tek Birleşik Dikey Kaydırma (İç İçe Scroll Yasağı):** Zaten `overflow-y-auto` olan modal gövdesi içine asla dikey kaydırmalı (`max-h-* overflow-y-auto`) alt tablolar/konteynerlar yerleştirmeyin; kaydırma kilitlenir. Tablolarda sadece yatay kaydırma (`overflow-x-auto`) kullanın, dikey kaydırmayı modalın ana gövdesine bırakın.
+* **Opak Yapışkan Tablo Başlıkları (Sticky Headers):** Tablolarda `sticky top-0` kullanılan `<th>` başlıkları %100 opak zemin rengine (`bg-slate-900` vb.) sahip olmalıdır; altından geçen satırların metinleri asla başlığa sızmamalıdır.
 * **Büyük Dropdown `<select>` Memoization (`useMemo`):** 50'den fazla öğe içeren seçim listeleri (`glAccounts`, `products`, `parties`) mutlaka `useMemo` ile sarmalanmalıdır. Form tuş vuruşlarında binlerce DOM düğümünün baştan render edilmesi önlenmelidir.
 * **Platform Bağımsız SVG Bayraklar:** Dil seçiminde Unicode emoji bayrakları (`🇹🇷`, `🇬🇧`) kullanmayın (Linux/Chromium ortamlarında bozulur). Saf inline SVG bileşenleri (`TrFlag`, `GbFlag`) kullanın.
 * **Koşullu Render:** Modalları DOM'da `hidden` olarak tutmayın; `{isOpen && <ModalComponent ... />}` ile kapatıldığında unmount edin.

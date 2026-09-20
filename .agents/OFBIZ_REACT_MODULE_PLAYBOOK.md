@@ -368,7 +368,19 @@ Tüm ekranlarda tek bir görsel kimlik ve kullanıcı deneyimi sunulması için 
    Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
    - *Teknik Sebep:* Chromium ve WebKit tabanlı tarayıcılarda iç içe binen `backdrop-filter: blur()` katmanları, her animasyon karesinde piksel başına katlanarak hesaplanan Gauss bulanıklığı oluşturur ($O(N \times \text{layers})$). Bu durum GPU compositor thread'ini kilitler, modal açılışında ciddi donmaya ve Interaction to Next Paint (INP) değerinin 1000ms üzerine çıkmasına yol açar.
    - *Kural:* Overlay'lerde her zaman donanım dostu saf yarı saydam renk kullanın: `bg-black/80` veya doğrudan `.ds-overlay` sınıfı. Kartlarda (`.ds-card`) ve modal pencerelerinde gereksiz blur efektlerinden kaçının.
-2. **Büyük Dropdown `<select>` Seçeneklerinin Memoization'ı (`useMemo`):**
+2. **Modal Opaklığı & Arkadaki Ekranın Karışmasını Önleme (Anti-Bleed - `.ds-card` Tuzağı):**
+   Modal ana gövdesinde **ASLA `.ds-card` KULLANMAYIN**.
+   - *Teknik Sebep:* `.ds-card` varsayılan olarak `bg-slate-800/50` (%50 yarı saydam) tanımlıdır. Modalda kullanıldığında arkadaki tablonun satırları ve butonları modal yazılarının altından sızarak okunamaz bir görsel karmaşaya yol açar.
+   - *Kural:* Modal kök pencereleri daima %100 opak olmalıdır: `bg-slate-900` veya `bg-slate-950` ile `border border-slate-700/80 shadow-2xl rounded-2xl`.
+3. **Body Scroll Kilidi (Body Scroll Lock):**
+   Modal açıldığında fare tekerleğinin arkadaki sayfayı kaydırmasını (`scroll chaining`) önlemek için `document.body.style.overflow = 'hidden'` uygulanmalı ve unmount anında temizlenmelidir.
+4. **Z-Index Katman Hiyerarşisi:**
+   Modallar `z-[80]` z-index değerine sahip olmalıdır. Böylece yan çekmecelerin (`drawer` - `z-50`) içinden tetiklendiğinde veya yapışkan tablo başlıklarının (`z-10`) üzerinde çakışmadan temiz biçimde açılır.
+5. **Tek Birleşik Dikey Kaydırma (İç İçe Scroll Trap Yasağı):**
+   Gövdesi `overflow-y-auto` olan bir modal içine ayrıca dikey kaydırmalı (`max-h-[50vh] overflow-y-auto`) tablo veya kart gömmeyin; kaydırma kilitlenir. Tablolarda sadece yatay kaydırma (`overflow-x-auto`) kullanın, dikey akışı modal ana gövdesine bırakın.
+6. **Opak Yapışkan Tablo Başlıkları (Sticky Headers):**
+   Tablolarda `sticky top-0` başlıkları %100 opak zemin rengine (`bg-slate-900` veya `bg-slate-800`) sahip olmalıdır; alttan kayan veriler başlığa sızmamalıdır.
+7. **Büyük Dropdown `<select>` Seçeneklerinin Memoization'ı (`useMemo`):**
    GL hesapları (460+ hesap), ürün veya cari seçim menüleri gibi 50'den fazla öğe içeren seçim listeleri **mutlaka `useMemo` içine alınmalıdır**:
    ```tsx
    const glAccountOptions = useMemo(() => (
@@ -380,9 +392,9 @@ Tüm ekranlarda tek bir görsel kimlik ve kullanıcı deneyimi sunulması için 
    ), [glAccounts]);
    ```
    - *Teknik Sebep:* Memoize edilmeyen seçenekler, form içindeki her tuş vuruşunda (keystroke) yüzlerce DOM düğümünün baştan render edilmesine ve klavye gecikmesine yol açar.
-3. **Platform Bağımsız SVG Bayrak İkonları:**
+8. **Platform Bağımsız SVG Bayrak İkonları:**
    Dil seçim butonlarında veya ülke göstergelerinde Unicode bayrak emojileri (`🇹🇷`, `🇬🇧`) **KULLANILMAMALIDIR**. Linux dağıtımlarında ve birçok tarayıcıda yerel bayrak font glifleri olmadığından bu karakterler "TR", "GB" şeklinde bozulur. Projedeki standart `TrFlag` ve `GbFlag` gibi saf SVG bileşenleri kullanılmalıdır.
-4. **Koşullu Render ile Temiz Modal Yaşam Döngüsü:**
+9. **Koşullu Render ile Temiz Modal Yaşam Döngüsü:**
    Modalları DOM'da `hidden` olarak gizlemek yerine `{isOpen && <MyModal ... />}` şeklinde DOM'dan kaldırarak (unmount on close) bellek ve render yükünü sıfırlayın.
 
 ---
@@ -409,7 +421,7 @@ Yeni bir modül geliştirirken bu adımları sırayla işaretleyin:
 5. [ ] **URL Whitelist:** `framework/webapp/config/url.properties` içine endpoint'ler eklendi.
 6. [ ] **Frontend API:** `api.ts` içine TypeScript interface'leri ve API çağrı fonksiyonları eklendi.
 7. [ ] **Çoklu Dil (i18n):** `src/i18n/types.ts`, `locales/tr.ts` ve `locales/en.ts` dosyalarına modül sözlükleri eklendi; sabit (hardcoded) metin bırakılmadı; para/tarih biçimlendirmesinde `locale` kullanıldı; bayraklar için SVG kullanıldı.
-8. [ ] **Tasarım Sistemi & 60 FPS Performans:** `src/design-system.css` token sınıfları kullanıldı; tüm tablolar `<div className="overflow-x-auto">` ile sarıldı; modallarda `backdrop-blur` kullanılmadı (`bg-black/80`), büyük select listeleri `useMemo` ile memoize edildi.
+8. [ ] **Tasarım Sistemi & 60 FPS Performans:** `src/design-system.css` token sınıfları kullanıldı; tüm tablolar `<div className="overflow-x-auto">` ile sarıldı; modallarda `backdrop-blur` kullanılmadı (`bg-black/80`), modal gövdesi %100 opak (`bg-slate-900`), body scroll lock uygulandı, `z-[80]` verildi, iç içe dikey scroll yapılmadı, büyük select listeleri `useMemo` ile memoize edildi.
 9. [ ] **Frontend UI & Entegrasyon:** `src/components/<Modul>.tsx` bileşeni oluşturuldu, `App.tsx` ve `Layout.tsx` rotalarına ve menüye bağlandı.
 10. [ ] **Derleme:** `cd plugins/react-app/frontend && npm run build` hatasız çalıştırıldı (TypeScript `noUnusedLocals` ve controller kopyası doğrulandı).
 11. [ ] **Canlı Doğrulama:** `curl` ile JSON yanıtı ve PostgreSQL üzerinden veritabanı kayıtları doğrulandı.

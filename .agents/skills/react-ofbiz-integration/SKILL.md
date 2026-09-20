@@ -181,6 +181,17 @@ Her modül sayfası şu temel tasarım ilkelerine kesinlikle uymalıdır:
   - Modal ve çekmece (drawer) overlay arka planlarında (`fixed inset-0`) **ASLA `backdrop-blur-*` KULLANMAYIN**.
   - İç içe binen `backdrop-filter: blur()` katmanları, Chromium/WebKit tarayıcılarda her animasyon karesinde piksel başına katlanarak hesaplanan Gauss bulanıklığı oluşturur ($O(N \times \text{layers})$). Bu durum GPU kompozisyonunu kilitler, modal açılışını geciktirir ve kullanıcı etkileşim süresini (INP) 1000ms üzerine fırlatır.
   - Overlay'lerde donanım dostu saf yarı saydam renk kullanın: `bg-black/80` veya `.ds-overlay`. Kartlarda (`.ds-card`) gereksiz blur kullanmayın.
+* **Modal Opaklığı & Arkadaki Ekranın Karışmasını Önleme (Anti-Bleed):**
+  - Modal ana penceresinde **ASLA `.ds-card` (`bg-slate-800/50`) GİBİ YARI SAYDAM SINIFLAR KULLANMAYIN**.
+  - Modal gövdesi daima %100 opak olmalıdır (`bg-slate-900` veya `bg-slate-950`). Yarı saydamlık alttaki sayfa metinlerinin modal içine karışmasına sebep olur.
+* **Body Scroll Kilidi (Scroll Lock):**
+  - Modal açıldığında arka plan kaymasını önlemek için `document.body.style.overflow = 'hidden'` yapılmalı, kapanışta geri yüklenmelidir.
+* **Z-Index Katman Hiyerarşisi:**
+  - Modallar daima `z-[80]` z-index değerine sahip olmalıdır. Çekmeceler (`drawer` - `z-50`) ve yapışkan tablo başlıklarının (`z-10`) üzerinde temiz bir katman oluşturmalıdır.
+* **Tek Birleşik Dikey Kaydırma (İç İçe Scroll Yasağı):**
+  - `overflow-y-auto` olan modal gövdesi içine ayrıca dikey kaydırmalı (`max-h-[..] overflow-y-auto`) tablo/konteyner eklemeyin; kaydırma kilitlenir. Tablolarda yalnızca yatay kaydırma (`overflow-x-auto`) kullanın.
+* **Opak Yapışkan Tablo Başlıkları (Sticky Headers):**
+  - Tablolarda `sticky top-0` başlık hücreleri altından geçen satırların görünmemesi için %100 opak zemin rengine (`bg-slate-900`) sahip olmalıdır.
 * **Büyük Dropdown `<select>` Seçeneklerinin Memoization'ı (`useMemo`):**
   - GL hesapları, cari ve ürünler gibi 50'den fazla öğe içeren seçim listelerini mutlaka `useMemo` ile sarmalayın:
     ```tsx
