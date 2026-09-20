@@ -111,6 +111,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'inventory':              translations.pages.inventory,
     'parties':                translations.pages.parties,
     'users':                  translations.pages.users,
+    'system-admin':           translations.pages.systemAdmin,
   }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
@@ -600,10 +601,15 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
               <button
                 type="button"
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 border border-transparent text-left cursor-not-allowed opacity-75"
+                onClick={() => handleNavClick('system-admin')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
+                  currentView === 'system-admin'
+                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                }`}
               >
-                <Settings size={18} className="text-slate-600" />
-                <span className="truncate">{translations.nav.settings}</span>
+                <Settings size={18} className={currentView === 'system-admin' ? 'text-indigo-400' : 'text-slate-500'} />
+                <span className="truncate">{translations.nav.systemAdmin}</span>
               </button>
             </div>
           </div>

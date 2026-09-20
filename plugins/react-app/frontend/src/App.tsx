@@ -36,6 +36,7 @@ const TestPage = lazy(() => import('./components/TestPage'))
 const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
 const PartyManagement = lazy(() => import('./components/PartyManagement').then(m => ({ default: m.PartyManagement })))
 const UserManagement = lazy(() => import('./components/UserManagement'))
+const SystemAdministration = lazy(() => import('./components/SystemAdministration'))
 
 export type ViewType = 
   | 'dashboard' 
@@ -66,7 +67,8 @@ export type ViewType =
   | 'manufacturing'
   | 'inventory'
   | 'parties'
-  | 'users';
+  | 'users'
+  | 'system-admin';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -219,6 +221,9 @@ function AppContent() {
 
       case 'users':
         return <UserManagement />;
+
+      case 'system-admin':
+        return <SystemAdministration />;
 
       case 'orders':
         return <ModulePlaceholder moduleKey="orders" onNavigate={handleNavigate} />;

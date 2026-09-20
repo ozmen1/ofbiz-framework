@@ -5228,4 +5228,179 @@ export async function fetchUserAdminMetadata(): Promise<UserAdminMetadataRespons
   return requestApi<UserAdminMetadataResponse>('getUserAdminMetadata');
 }
 
+// ==========================================
+// Phase 3: System, Cache & Job Scheduler Management Models
+// ==========================================
+
+export interface CacheItem {
+  cacheName: string;
+  cacheSize: number;
+  hitCount: number;
+  missCountTot: number;
+  missCountNotFound?: number;
+  missCountExpired?: number;
+  removeHitCount?: number;
+  maxInMemory: number;
+  expireTime: number;
+  useSoftReference: boolean;
+  cacheMemory: number;
+}
+
+export interface MemoryInfo {
+  totalMemory: number;
+  freeMemory: number;
+  usedMemory: number;
+  maxMemory: number;
+  totalCacheMemory?: number;
+}
+
+export interface CacheStatusResponse {
+  cacheList: CacheItem[];
+  memoryInfo: MemoryInfo;
+  totalCount: number;
+}
+
+export interface JobItem {
+  jobId: string;
+  jobName: string;
+  serviceName: string;
+  statusId: string;
+  runTime?: string | null;
+  startDateTime?: string | null;
+  finishDateTime?: string | null;
+  cancelDateTime?: string | null;
+  currentRetryCount: number;
+  maxRetry: number;
+  poolId?: string;
+  authUserLoginId?: string;
+  jobResult?: string;
+}
+
+export interface JobStats {
+  pending: number;
+  running: number;
+  finished: number;
+  failed: number;
+}
+
+export interface ScheduledJobsResponse {
+  jobs: JobItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+  stats: JobStats;
+}
+
+export interface SystemDiagnosticsResponse {
+  diagnostics: {
+    jvm: {
+      vmName: string;
+      vmVendor: string;
+      vmVersion: string;
+      startTime: string;
+      uptimeMs: number;
+      uptimeFormatted: string;
+    };
+    os: {
+      name: string;
+      version: string;
+      arch: string;
+      availableProcessors: number;
+      systemLoadAverage: number;
+    };
+    memory: {
+      heapUsed: number;
+      heapCommitted: number;
+      heapMax: number;
+      nonHeapUsed: number;
+      nonHeapCommitted: number;
+      totalMemory: number;
+      freeMemory: number;
+      usedMemory: number;
+      maxMemory: number;
+    };
+    threads: {
+      threadCount: number;
+      peakThreadCount: number;
+      daemonThreadCount: number;
+      totalStartedThreadCount: number;
+    };
+    ofbiz: {
+      delegatorName: string;
+      frameworkVersion: string;
+      currentTime: string;
+    };
+  };
+}
+
+export async function fetchCacheStatus(searchQuery?: string): Promise<CacheStatusResponse> {
+  const query = searchQuery ? `?searchQuery=${encodeURIComponent(searchQuery)}` : '';
+  return requestApi<CacheStatusResponse>(`getCacheStatus${query}`);
+}
+
+export async function clearCacheByName(cacheName: string): Promise<{ success: boolean; message?: string }> {
+  return requestApi<{ success: boolean; message?: string }>('clearCache', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cacheName })
+  });
+}
+
+export async function clearAllCaches(): Promise<{ success: boolean; message?: string }> {
+  return requestApi<{ success: boolean; message?: string }>('clearAllCaches', {
+    method: 'POST'
+  });
+}
+
+export async function forceGarbageCollection(): Promise<{ message: string; memoryInfo: MemoryInfo }> {
+  return requestApi<{ message: string; memoryInfo: MemoryInfo }>('forceGarbageCollection', {
+    method: 'POST'
+  });
+}
+
+export async function fetchScheduledJobs(params: {
+  statusId?: string;
+  searchQuery?: string;
+  viewIndex?: number;
+  viewSize?: number;
+}): Promise<ScheduledJobsResponse> {
+  const queryParams = new URLSearchParams();
+  if (params.statusId && params.statusId !== 'ALL') queryParams.append('statusId', params.statusId);
+  if (params.searchQuery) queryParams.append('searchQuery', params.searchQuery);
+  if (params.viewIndex !== undefined) queryParams.append('viewIndex', params.viewIndex.toString());
+  if (params.viewSize !== undefined) queryParams.append('viewSize', params.viewSize.toString());
+
+  const qs = queryParams.toString();
+  return requestApi<ScheduledJobsResponse>(`getScheduledJobs${qs ? `?${qs}` : ''}`);
+}
+
+export async function cancelJob(jobId: string): Promise<{ success: boolean; message?: string }> {
+  return requestApi<{ success: boolean; message?: string }>('cancelScheduledJob', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId })
+  });
+}
+
+export async function resetJob(jobId: string): Promise<{ success: boolean; message?: string }> {
+  return requestApi<{ success: boolean; message?: string }>('resetScheduledJob', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId })
+  });
+}
+
+export async function triggerServiceNow(serviceName: string): Promise<{ success: boolean; message?: string }> {
+  return requestApi<{ success: boolean; message?: string }>('runServiceNow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ serviceName })
+  });
+}
+
+export async function fetchSystemDiagnostics(): Promise<SystemDiagnosticsResponse> {
+  return requestApi<SystemDiagnosticsResponse>('getSystemDiagnostics');
+}
+
+
 
