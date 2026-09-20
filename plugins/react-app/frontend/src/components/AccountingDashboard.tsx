@@ -573,8 +573,9 @@ export const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ onNavi
   );
 };
 
-const JobStatusBadge = ({ status }: { status: string }) => {
-  switch (status) {
+const JobStatusBadge = ({ status }: { status?: string | null }) => {
+  const s = status ? String(status) : '';
+  switch (s) {
     case 'SERVICE_RUNNING':
       return (
         <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
@@ -604,18 +605,19 @@ const JobStatusBadge = ({ status }: { status: string }) => {
     default:
       return (
         <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 font-mono">
-          {status.replace('SERVICE_', '')}
+          {s ? s.replace('SERVICE_', '') : '—'}
         </span>
       );
   }
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status }: { status?: string | null }) => {
   const { translations } = useTranslation();
   const inv = translations.invoices;
+  const s = status ? String(status) : '';
 
   const getBadgeClass = (): string => {
-    switch (status) {
+    switch (s) {
       case 'INVOICE_PAID':         return 'ds-badge ds-badge-green';
       case 'INVOICE_IN_PROCESS':   return 'ds-badge ds-badge-yellow';
       case 'INVOICE_READY':        return 'ds-badge ds-badge-indigo';
@@ -626,13 +628,13 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   const getLabel = (): string => {
-    switch (status) {
+    switch (s) {
       case 'INVOICE_PAID':         return inv.statusPaid;
       case 'INVOICE_IN_PROCESS':   return inv.statusInProcess;
       case 'INVOICE_READY':        return inv.statusReady;
       case 'INVOICE_APPROVED':     return inv.statusApproved;
       case 'INVOICE_CANCELLED':    return inv.statusCancelled;
-      default:                     return status.replace('INVOICE_', '');
+      default:                     return s ? s.replace('INVOICE_', '') : '—';
     }
   };
 
