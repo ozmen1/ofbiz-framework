@@ -493,8 +493,8 @@ export const UserManagement: React.FC = () => {
                   onClick={() => setStatusFilter(f.key)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     statusFilter === f.key
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
+                      : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
                   {f.label}

@@ -174,7 +174,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white relative">
+    <div className="flex min-h-screen bg-slate-950 text-slate-200 relative">
       {/* ── Top Progress Bar during view transition ── */}
       {isPending && (
         <div className="fixed top-0 left-0 right-0 h-0.5 z-50 overflow-hidden bg-slate-800 pointer-events-none">
@@ -205,14 +205,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               <Sparkles size={20} className="text-white" />
             </div>
             <div>
-              <span className="text-sm font-bold text-white tracking-tight">{translations.nav.appName}</span>
+              <span className="text-sm font-bold text-slate-200 tracking-tight">{translations.nav.appName}</span>
               <p className="text-xs text-slate-500">{translations.nav.appSubtitle}</p>
             </div>
           </div>
           <button 
             type="button"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -222,7 +222,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
         <nav className="flex-1 px-3 py-4 space-y-6">
           {/* 1. Genel Bakış / Dashboard */}
           <div>
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 mb-1.5">
               {translations.nav.mainMenu}
             </p>
             <button
@@ -230,8 +230,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               onClick={() => handleNavClick('dashboard')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
                 currentView === 'dashboard'
-                  ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                  ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-500/30 font-medium shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
               }`}
             >
               <LayoutDashboard size={18} className={currentView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'} />
@@ -241,7 +241,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
           {/* 2. Kurumsal Modüller (ERP Modules) */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 mb-1">
               {translations.nav.modules}
             </p>
 
@@ -252,8 +252,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 onClick={() => handleNavClick('parties')}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   currentView === 'parties'
-                    ? 'text-indigo-300 bg-indigo-500/15 border border-indigo-500/30'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                    ? 'text-indigo-300 bg-indigo-950/50 border border-indigo-500/30'
+                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -262,7 +262,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   </div>
                   <span>{translations.nav.parties}</span>
                 </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
                   {translations.nav.activeModule}
                 </span>
               </button>
@@ -276,8 +276,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 onClick={() => toggleModule('accounting')}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   isAccountingView(currentView)
-                    ? 'text-indigo-300 bg-indigo-500/10'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                    ? 'text-indigo-300 bg-indigo-950/40'
+                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -287,7 +287,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   <span>{translations.nav.accounting}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
                     {translations.nav.activeModule}
                   </span>
                   {expandedModules.accounting ? (
@@ -325,8 +325,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                             onClick={() => handleNavClick(item.view)}
                             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
                               active
-                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                                ? 'bg-indigo-950/50 text-indigo-300 font-medium border-l-2 border-indigo-400 pl-2'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
                             }`}
                           >
                             <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
@@ -357,8 +357,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                             onClick={() => handleNavClick(item.view)}
                             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
                               active
-                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                                ? 'bg-indigo-950/50 text-indigo-300 font-medium border-l-2 border-indigo-400 pl-2'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
                             }`}
                           >
                             <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
@@ -390,8 +390,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                             onClick={() => handleNavClick(item.view)}
                             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
                               active
-                                ? 'bg-indigo-500/20 text-indigo-300 font-medium border border-indigo-500/30'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                                ? 'bg-indigo-950/50 text-indigo-300 font-medium border-l-2 border-indigo-400 pl-2'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
                             }`}
                           >
                             <span className={active ? 'text-indigo-400' : 'text-slate-500'}>{item.icon}</span>
@@ -567,7 +567,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
           {/* 3. Sistem & Araçlar */}
           <div>
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-3 mb-1.5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 mb-1.5">
               {translations.nav.system}
             </p>
             <div className="space-y-0.5">
@@ -576,8 +576,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 onClick={() => handleNavClick('users')}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
                   currentView === 'users'
-                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-500/30 font-medium shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
                 }`}
               >
                 <Shield size={18} className={currentView === 'users' ? 'text-indigo-400' : 'text-slate-500'} />
@@ -589,8 +589,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 onClick={() => handleNavClick('test-page')}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
                   currentView === 'test-page'
-                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-500/30 font-medium shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
                 }`}
               >
                 <Beaker size={18} className={currentView === 'test-page' ? 'text-indigo-400' : 'text-slate-500'} />
@@ -602,8 +602,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 onClick={() => handleNavClick('system-admin')}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
                   currentView === 'system-admin'
-                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-indigo-950/50 text-indigo-300 border border-indigo-500/30 font-medium shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
                 }`}
               >
                 <Settings size={18} className={currentView === 'system-admin' ? 'text-indigo-400' : 'text-slate-500'} />
@@ -623,7 +623,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                     {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-white truncate">{user.displayName}</p>
+                    <p className="text-xs font-semibold text-slate-200 truncate">{user.displayName}</p>
                     <p className="text-[11px] text-slate-400 font-mono truncate">{user.userLoginId}</p>
                   </div>
                 </div>
@@ -683,17 +683,17 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/60 transition-colors shrink-0 cursor-pointer"
+              className="lg:hidden p-2 text-slate-400 hover:text-slate-200 rounded-xl hover:bg-slate-800/60 transition-colors shrink-0 cursor-pointer"
               aria-label={locale === 'tr' ? 'Menüyü Aç' : 'Open Menu'}
             >
               <Menu size={22} />
             </button>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight truncate">
+              <h2 className="text-base sm:text-lg font-bold text-slate-200 leading-tight truncate">
                 {meta?.title || ''}
               </h2>
               {meta?.subtitle && (
-                <p className="text-xs text-slate-500 mt-0.5 truncate hidden sm:block">{meta.subtitle}</p>
+                <p className="text-xs text-slate-400 mt-0.5 truncate hidden sm:block">{meta.subtitle}</p>
               )}
             </div>
           </div>
@@ -712,7 +712,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-white leading-none">{user.displayName}</p>
+                  <p className="text-xs font-semibold text-slate-200 leading-none">{user.displayName}</p>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5 leading-none">{user.userLoginId}</p>
                 </div>
               </div>

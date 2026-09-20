@@ -650,7 +650,7 @@ export const SystemAdministration: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowTriggerModal(true)}
-              className="w-full md:w-auto px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/25 transition-all cursor-pointer"
+              className="w-full md:w-auto px-4 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-indigo-100 border border-indigo-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
               <Play size={14} />
               <span>{t.triggerService}</span>
@@ -970,7 +970,7 @@ export const SystemAdministration: React.FC = () => {
                 type="button"
                 onClick={handleClearAllCaches}
                 disabled={isClearingAll}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-rose-600/85 hover:bg-rose-600 text-rose-100 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isClearingAll ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                 <span>{common.confirm}</span>
@@ -1037,7 +1037,7 @@ export const SystemAdministration: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isTriggering || !triggerServiceName.trim()}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-600/25 transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-indigo-100 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {isTriggering ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                   <span>{t.triggerService}</span>
