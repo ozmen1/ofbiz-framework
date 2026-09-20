@@ -1874,4 +1874,34 @@ export interface Translations {
     exportCsv: string;
     exportSuccess: string;
   };
+  auth: {
+    loginTitle: string;
+    loginSubtitle: string;
+    username: string;
+    usernamePlaceholder: string;
+    password: string;
+    passwordPlaceholder: string;
+    loginButton: string;
+    loggingIn: string;
+    logoutConfirmTitle: string;
+    logoutConfirmMessage: string;
+    logoutSuccess: string;
+    invalidCredentials: string;
+    emptyFieldsError: string;
+    demoCredentialsTitle: string;
+    demoCredentialsHint: string;
+    changePassword: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+    savePassword: string;
+    savingPassword: string;
+    passwordChangedSuccess: string;
+    passwordMismatch: string;
+    userProfile: string;
+    adminBadge: string;
+    userBadge: string;
+    securityGroups: string;
+    sessionActive: string;
+  };
 }

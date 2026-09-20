@@ -1773,6 +1773,7 @@ export interface CreateTaxRatePayload {
 async function requestApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `/react-app/control/${endpoint}`;
   const response = await fetch(url, {
+    credentials: options?.credentials || 'same-origin',
     ...options,
     headers: {
       'Accept': 'application/json',
@@ -1796,6 +1797,12 @@ async function requestApi<T>(endpoint: string, options?: RequestInit): Promise<T
 
   if (data._ERROR_MESSAGE_) {
     throw new Error(data._ERROR_MESSAGE_);
+  }
+  if (data._ERROR_MESSAGE_LIST_) {
+    const list = Array.isArray(data._ERROR_MESSAGE_LIST_)
+      ? data._ERROR_MESSAGE_LIST_.join('\n')
+      : String(data._ERROR_MESSAGE_LIST_);
+    throw new Error(list);
   }
 
   return data as T;
@@ -4950,3 +4957,88 @@ export async function updatePartyUserLoginStatus(userLoginId: string, enabled: '
     body: JSON.stringify({ userLoginId, enabled })
   });
 }
+
+// ==========================================
+// Phase 1: Authentication & User Profile API
+// ==========================================
+
+export interface UserSecurityGroup {
+  groupId: string;
+  description: string;
+  fromDate?: string;
+}
+
+export interface UserLoginProfile {
+  userLoginId: string;
+  partyId: string;
+  displayName: string;
+  enabled: string;
+  requirePasswordChange: string;
+  lastLocale?: string;
+  lastTimeZone?: string;
+  securityGroups: UserSecurityGroup[];
+  permissions: string[];
+  isAdmin: boolean;
+}
+
+export interface AuthCheckResponse {
+  authenticated: boolean;
+  user: UserLoginProfile | null;
+  message?: string;
+}
+
+export interface LoginPayload {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  authenticated: boolean;
+  user: UserLoginProfile;
+  message?: string;
+}
+
+export interface UpdatePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordVerify: string;
+}
+
+/**
+ * Logs in with username and password
+ */
+export async function apiLogin(payload: LoginPayload): Promise<LoginResponse> {
+  return requestApi<LoginResponse>('apiLogin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+/**
+ * Logs out the current user session
+ */
+export async function apiLogout(): Promise<{ authenticated: boolean; message: string }> {
+  return requestApi<{ authenticated: boolean; message: string }>('apiLogout', {
+    method: 'POST'
+  });
+}
+
+/**
+ * Checks if the current session is authenticated
+ */
+export async function checkAuth(): Promise<AuthCheckResponse> {
+  return requestApi<AuthCheckResponse>('checkAuth');
+}
+
+/**
+ * Updates the logged-in user's password
+ */
+export async function updateMyPassword(payload: UpdatePasswordPayload): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('updateMyPassword', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+

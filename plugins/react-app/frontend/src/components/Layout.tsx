@@ -4,10 +4,13 @@ import {
   Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
   Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
-  ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users
+  ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
+  Key, User, Shield
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
+import { useAuth } from '../context/AuthContext';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -57,6 +60,8 @@ function isNavActive(itemView: ViewType | null, currentView: ViewType): boolean 
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPending }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { locale, setLocale, translations } = useTranslation();
+  const { user, logout } = useAuth();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // Accordion state for expandable modules
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
@@ -590,8 +595,47 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
           </div>
         </nav>
 
-        {/* Dil Seçici (Mobil Drawer İçin) ve Logout */}
-        <div className="px-3 py-4 border-t border-slate-800 space-y-3">
+        {/* Kullanıcı Profili ve Oturum Kapat */}
+        <div className="px-3 py-4 border-t border-slate-800 space-y-3 bg-slate-950/40">
+          {user && (
+            <div className="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
+                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{user.displayName}</p>
+                    <p className="text-[11px] text-slate-400 font-mono truncate">{user.userLoginId}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(true)}
+                  title={translations.auth.changePassword}
+                  className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 rounded-lg transition-colors cursor-pointer shrink-0"
+                >
+                  <Key size={14} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-700/40">
+                {user.isAdmin ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    <Shield size={10} />
+                    <span>{translations.auth.adminBadge}</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700/50 text-slate-300">
+                    <User size={10} />
+                    <span>{user.securityGroups[0]?.groupId || translations.auth.userBadge}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Dil Seçici (Mobil Drawer İçin) */}
           <div className="flex items-center justify-between px-2 text-xs text-slate-400">
             <span className="flex items-center gap-1.5">
               <Globe size={14} className="text-indigo-400" />
@@ -600,11 +644,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
             <LanguageToggle />
           </div>
 
+          {/* Oturumu Kapat */}
           <button
             type="button"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all text-left cursor-pointer"
+            onClick={() => logout()}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-rose-400/90 hover:text-rose-300 hover:bg-rose-500/10 transition-all text-left cursor-pointer"
           >
-            <LogOut size={18} className="text-slate-600" />
+            <LogOut size={18} className="text-rose-400" />
             <span>{translations.nav.logout}</span>
           </button>
         </div>
@@ -641,6 +687,19 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               <LanguageToggle />
             </div>
 
+            {/* Masaüstü Kullanıcı Bilgi Çipi */}
+            {user && (
+              <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-800">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold text-white leading-none">{user.displayName}</p>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 leading-none">{user.userLoginId}</p>
+                </div>
+              </div>
+            )}
+
             {/* Quick Action Button for Accounting */}
             {isPaymentView ? (
               <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
@@ -663,6 +722,15 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
           {children}
         </div>
       </main>
+
+      {/* Şifre Değiştirme Modalı */}
+      {isChangePasswordOpen && user && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordOpen}
+          onClose={() => setIsChangePasswordOpen(false)}
+          username={user.userLoginId}
+        />
+      )}
     </div>
   );
 };

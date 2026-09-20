@@ -2,7 +2,9 @@ import { useState, lazy, Suspense, useTransition, useCallback } from 'react'
 import Layout from './components/Layout'
 import ViewLoader from './components/ViewLoader'
 import ErrorBoundary from './components/ErrorBoundary'
+import LoginPage from './components/LoginPage'
 import { I18nProvider } from './i18n'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import './index.css'
 import './design-system.css'
 
@@ -64,7 +66,8 @@ export type ViewType =
   | 'inventory'
   | 'parties';
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
@@ -84,6 +87,14 @@ function App() {
     });
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
+
+  if (isLoading) {
+    return <ViewLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -219,16 +230,25 @@ function App() {
   };
 
   return (
+    <ErrorBoundary onReset={() => handleNavigate('dashboard')}>
+      <Layout currentView={currentView} onNavigate={handleNavigate} isPending={isPending}>
+        <Suspense fallback={<ViewLoader />}>
+          {renderCurrentView()}
+        </Suspense>
+      </Layout>
+    </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
     <I18nProvider>
-      <ErrorBoundary onReset={() => handleNavigate('dashboard')}>
-        <Layout currentView={currentView} onNavigate={handleNavigate} isPending={isPending}>
-          <Suspense fallback={<ViewLoader />}>
-            {renderCurrentView()}
-          </Suspense>
-        </Layout>
-      </ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </I18nProvider>
   );
 }
 
 export default App
+
