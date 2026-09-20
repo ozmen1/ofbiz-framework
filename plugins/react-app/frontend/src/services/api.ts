@@ -5042,3 +5042,190 @@ export async function updateMyPassword(payload: UpdatePasswordPayload): Promise<
   });
 }
 
+// =========================================================================
+// Phase 2: User & Security Group RBAC Management API
+// =========================================================================
+
+export interface UserLoginAdminItem {
+  userLoginId: string;
+  partyId: string;
+  displayName: string;
+  enabled: string;
+  isLocked: boolean;
+  disabledDateTime?: string;
+  successiveFailedLogins: number;
+  requirePasswordChange: string;
+  hasLoggedOut: string;
+  lastLocale?: string;
+  lastTimeZone?: string;
+  securityGroups: { groupId: string; fromDate?: string }[];
+}
+
+export interface UserLoginsListResponse {
+  userLogins: UserLoginAdminItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export interface UserDetailSecurityGroup {
+  groupId: string;
+  description: string;
+  fromDate?: string;
+  thruDate?: string;
+  isActive: boolean;
+}
+
+export interface UserLoginDetail {
+  userLoginId: string;
+  partyId: string;
+  displayName: string;
+  enabled: string;
+  isLocked: boolean;
+  disabledDateTime?: string;
+  successiveFailedLogins: number;
+  requirePasswordChange: string;
+  hasLoggedOut: string;
+  lastLocale?: string;
+  lastTimeZone?: string;
+  securityGroups: UserDetailSecurityGroup[];
+  permissions: string[];
+}
+
+export interface UserLoginDetailResponse {
+  userDetail: UserLoginDetail;
+}
+
+export interface CreateUserAdminPayload {
+  userLoginId: string;
+  currentPassword: string;
+  partyId?: string;
+  groupId?: string;
+  requirePasswordChange?: 'Y' | 'N';
+}
+
+export interface SecurityGroupAdminItem {
+  groupId: string;
+  description: string;
+  permissionCount: number;
+  userCount: number;
+}
+
+export interface SecurityGroupPermissionItem {
+  permissionId: string;
+  description: string;
+  fromDate?: string;
+}
+
+export interface SecurityGroupDetailResponse {
+  groupInfo: { groupId: string; description: string };
+  assignedPermissions: SecurityGroupPermissionItem[];
+  availablePermissions: { permissionId: string; description: string }[];
+}
+
+export interface UserAdminMetadataResponse {
+  metadata: {
+    securityGroups: { groupId: string; description: string }[];
+    parties: { partyId: string; name: string }[];
+  };
+}
+
+export interface FetchUserLoginsParams {
+  search?: string;
+  statusId?: 'ALL' | 'ACTIVE' | 'DISABLED' | 'LOCKED';
+  groupId?: string;
+  viewIndex?: number;
+  viewSize?: number;
+}
+
+export async function fetchUserLogins(params?: FetchUserLoginsParams): Promise<UserLoginsListResponse> {
+  const q = new URLSearchParams();
+  if (params?.search) q.set('search', params.search);
+  if (params?.statusId) q.set('statusId', params.statusId);
+  if (params?.groupId) q.set('groupId', params.groupId);
+  if (params?.viewIndex !== undefined) q.set('viewIndex', params.viewIndex.toString());
+  if (params?.viewSize !== undefined) q.set('viewSize', params.viewSize.toString());
+  return requestApi<UserLoginsListResponse>(`getUserLogins${q.toString() ? '?' + q.toString() : ''}`);
+}
+
+export async function fetchUserLoginDetail(userLoginId: string): Promise<UserLoginDetailResponse> {
+  return requestApi<UserLoginDetailResponse>(`getUserLoginDetail?userLoginId=${encodeURIComponent(userLoginId)}`);
+}
+
+export async function createUserLoginAdmin(payload: CreateUserAdminPayload): Promise<{ message: string; userLoginId: string }> {
+  return requestApi<{ message: string; userLoginId: string }>('createUserLoginAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateUserLoginStatusAdmin(payload: { userLoginId: string; enabled?: 'Y' | 'N'; unlock?: 'Y' | 'N' }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('updateUserLoginStatusAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function adminResetUserPassword(payload: { userLoginId: string; newPassword: string; newPasswordVerify: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('adminResetUserPassword', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function addUserSecurityGroup(payload: { userLoginId: string; groupId: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('addUserSecurityGroup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function removeUserSecurityGroup(payload: { userLoginId: string; groupId: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('removeUserSecurityGroup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchSecurityGroups(): Promise<{ securityGroups: SecurityGroupAdminItem[] }> {
+  return requestApi<{ securityGroups: SecurityGroupAdminItem[] }>('getSecurityGroups');
+}
+
+export async function fetchSecurityGroupPermissions(groupId: string): Promise<SecurityGroupDetailResponse> {
+  return requestApi<SecurityGroupDetailResponse>(`getSecurityGroupPermissions?groupId=${encodeURIComponent(groupId)}`);
+}
+
+export async function addPermissionToSecurityGroup(payload: { groupId: string; permissionId: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('addPermissionToSecurityGroup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function removePermissionFromSecurityGroup(payload: { groupId: string; permissionId: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('removePermissionFromSecurityGroup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createSecurityGroupAdmin(payload: { groupId: string; description: string }): Promise<{ message: string; groupId: string }> {
+  return requestApi<{ message: string; groupId: string }>('createSecurityGroupAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchUserAdminMetadata(): Promise<UserAdminMetadataResponse> {
+  return requestApi<UserAdminMetadataResponse>('getUserAdminMetadata');
+}
+
+

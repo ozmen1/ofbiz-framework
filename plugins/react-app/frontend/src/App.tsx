@@ -35,6 +35,7 @@ const CommissionRun = lazy(() => import('./components/CommissionRun').then(m => 
 const TestPage = lazy(() => import('./components/TestPage'))
 const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
 const PartyManagement = lazy(() => import('./components/PartyManagement').then(m => ({ default: m.PartyManagement })))
+const UserManagement = lazy(() => import('./components/UserManagement'))
 
 export type ViewType = 
   | 'dashboard' 
@@ -64,7 +65,8 @@ export type ViewType =
   | 'orders'
   | 'manufacturing'
   | 'inventory'
-  | 'parties';
+  | 'parties'
+  | 'users';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -214,6 +216,9 @@ function AppContent() {
 
       case 'parties':
         return <PartyManagement />;
+
+      case 'users':
+        return <UserManagement />;
 
       case 'orders':
         return <ModulePlaceholder moduleKey="orders" onNavigate={handleNavigate} />;

@@ -110,6 +110,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'manufacturing':          translations.pages.manufacturing,
     'inventory':              translations.pages.inventory,
     'parties':                translations.pages.parties,
+    'users':                  translations.pages.users,
   }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
@@ -571,6 +572,19 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               {translations.nav.system}
             </p>
             <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => handleNavClick('users')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left cursor-pointer ${
+                  currentView === 'users'
+                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-medium'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                }`}
+              >
+                <Shield size={18} className={currentView === 'users' ? 'text-indigo-400' : 'text-slate-500'} />
+                <span className="truncate">{translations.nav.users}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => handleNavClick('test-page')}

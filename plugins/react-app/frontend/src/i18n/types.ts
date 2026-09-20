@@ -100,6 +100,7 @@ export interface Translations {
     newInvoice: string;
     newPayment: string;
     parties: string;
+    users: string;
   };
   pages: {
     dashboard: { title: string; subtitle: string };
@@ -130,6 +131,7 @@ export interface Translations {
     manufacturing: { title: string; subtitle: string };
     inventory: { title: string; subtitle: string };
     parties: { title: string; subtitle: string };
+    users: { title: string; subtitle: string };
   };
   dashboard: {
     totalRevenue: string;
@@ -1903,5 +1905,55 @@ export interface Translations {
     userBadge: string;
     securityGroups: string;
     sessionActive: string;
+  };
+  users: {
+    title: string;
+    subtitle: string;
+    tabUsers: string;
+    tabSecurityGroups: string;
+    createUser: string;
+    createGroup: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterActive: string;
+    filterDisabled: string;
+    filterLocked: string;
+    userLoginId: string;
+    displayName: string;
+    status: string;
+    securityGroups: string;
+    failedLogins: string;
+    locked: string;
+    unlocked: string;
+    unlockAccount: string;
+    deactivateAccount: string;
+    activateAccount: string;
+    resetPassword: string;
+    addSecurityGroup: string;
+    removeSecurityGroup: string;
+    noUsersFound: string;
+    userDetail: string;
+    accountSecurity: string;
+    lastLogin: string;
+    permissionsTitle: string;
+    groupPermissions: string;
+    assignedPermissions: string;
+    availablePermissions: string;
+    addPermission: string;
+    removePermission: string;
+    groupCode: string;
+    groupDescription: string;
+    permissionCount: string;
+    userCount: string;
+    requirePasswordChange: string;
+    partyLink: string;
+    selectParty: string;
+    selectGroup: string;
+    password: string;
+    passwordVerify: string;
+    createdSuccess: string;
+    updatedSuccess: string;
+    resetPasswordSuccess: string;
+    groupCreatedSuccess: string;
   };
 }
