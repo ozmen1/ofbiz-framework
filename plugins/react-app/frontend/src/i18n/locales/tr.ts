@@ -49,6 +49,9 @@ export const tr: Translations = {
     page: 'Sayfa',
     select: 'Seçiniz',
     none: 'Yok',
+    theme: 'Tema',
+    lightMode: 'Gündüz Modu',
+    darkMode: 'Gece Modu',
   },
   nav: {
     appName: 'OFBiz ERP',

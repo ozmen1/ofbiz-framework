@@ -49,6 +49,9 @@ export const en: Translations = {
     page: 'Page',
     select: 'Select',
     none: 'None',
+    theme: 'Theme',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
   },
   nav: {
     appName: 'OFBiz ERP',

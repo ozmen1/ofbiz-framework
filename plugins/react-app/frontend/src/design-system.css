@@ -2,41 +2,42 @@
  * OFBiz React App — Unified Design System
  * Tüm sayfalar bu Tailwind utility class'larını ve CSS variables'larını kullanır.
  *
- * Palette: slate-950 (bg) → slate-800 (card) → slate-700 (elevated) → slate-600 (border)
- * Accent:  indigo-500/600 (primary) | emerald-500 (success) | red-500 (danger) | amber-500 (warning)
+ * Dark Palette:  slate-950 (bg) → slate-900/800 (card) → slate-700 (border)
+ * Light Palette: slate-100 (bg) → white (card) → slate-200 (border)
+ * Accent:        indigo-600 (primary) | emerald-500 (success) | rose-500 (danger) | amber-500 (warning)
  */
 
 /* ─── Kart & Panel ─── */
 .ds-card {
-  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl;
+  @apply bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-sm dark:shadow-none transition-colors;
 }
 .ds-card-elevated {
-  @apply bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl;
+  @apply bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-md dark:shadow-xl transition-colors;
 }
 
 /* ─── Butonlar ─── */
 .ds-btn-primary {
-  @apply flex items-center gap-2 px-4 py-2 bg-indigo-600/90 hover:bg-indigo-600 text-indigo-100 rounded-xl text-sm font-medium border border-indigo-500/40 shadow-sm shadow-indigo-950/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium border border-indigo-500/40 shadow-sm shadow-indigo-950/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
 }
 .ds-btn-secondary {
-  @apply flex items-center gap-2 px-4 py-2 bg-slate-800/90 hover:bg-slate-700/80 text-slate-300 hover:text-slate-100 rounded-xl text-sm font-medium border border-slate-700/80 transition-all cursor-pointer;
+  @apply flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/90 dark:hover:bg-slate-700/80 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 rounded-xl text-sm font-medium border border-slate-300 dark:border-slate-700/80 transition-all cursor-pointer;
 }
 .ds-btn-danger {
-  @apply flex items-center gap-2 px-3 py-1.5 text-rose-300 border border-rose-500/30 rounded-xl hover:bg-rose-500/10 transition-colors text-sm;
+  @apply flex items-center gap-2 px-3 py-1.5 text-rose-600 dark:text-rose-300 border border-rose-500/30 rounded-xl hover:bg-rose-500/10 transition-colors text-sm;
 }
 .ds-btn-ghost {
-  @apply px-3 py-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 rounded-lg transition-colors text-sm;
+  @apply px-3 py-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors text-sm;
 }
 
 /* ─── Form Elemanları ─── */
 .ds-input {
-  @apply bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all w-full;
+  @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all w-full;
 }
 .ds-select {
-  @apply bg-slate-700/60 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full;
+  @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full;
 }
 .ds-label {
-  @apply block text-xs font-medium text-slate-400 mb-1;
+  @apply block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1;
 }
 
 /* ─── Tablo ─── */
@@ -44,7 +45,7 @@
   @apply w-full text-sm min-w-[640px];
 }
 .ds-thead-row {
-  @apply bg-slate-700/40 text-slate-400 text-xs uppercase;
+  @apply bg-slate-100/90 dark:bg-slate-700/40 text-slate-600 dark:text-slate-400 text-xs uppercase;
 }
 .ds-th {
   @apply px-3 sm:px-4 py-2.5 sm:py-3 text-left font-medium tracking-wide whitespace-nowrap;
@@ -53,58 +54,58 @@
   @apply px-3 sm:px-4 py-2.5 sm:py-3 text-right font-medium tracking-wide whitespace-nowrap;
 }
 .ds-tbody-row {
-  @apply border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors;
+  @apply border-b border-slate-200/80 dark:border-slate-700/30 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors;
 }
 .ds-td {
-  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-slate-300 text-xs sm:text-sm;
+  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-slate-700 dark:text-slate-300 text-xs sm:text-sm;
 }
 .ds-td-primary {
-  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-white font-medium text-xs sm:text-sm;
+  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-slate-900 dark:text-white font-medium text-xs sm:text-sm;
 }
 .ds-td-muted {
-  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-xs sm:text-sm;
+  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-slate-500 dark:text-slate-400 text-xs sm:text-sm;
 }
 .ds-td-mono {
-  @apply px-3 sm:px-4 py-2.5 sm:py-3 font-mono text-indigo-400 text-xs sm:text-sm;
+  @apply px-3 sm:px-4 py-2.5 sm:py-3 font-mono text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm;
 }
 .ds-td-right {
-  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-white text-xs sm:text-sm whitespace-nowrap;
+  @apply px-3 sm:px-4 py-2.5 sm:py-3 text-right font-semibold text-slate-900 dark:text-white text-xs sm:text-sm whitespace-nowrap;
 }
 
 /* ─── Badge'ler ─── */
 .ds-badge {
   @apply text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap inline-flex items-center;
 }
-.ds-badge-blue   { @apply bg-blue-500/20 text-blue-300; }
-.ds-badge-green  { @apply bg-emerald-500/20 text-emerald-300; }
-.ds-badge-red    { @apply bg-red-500/20 text-red-300; }
-.ds-badge-yellow { @apply bg-yellow-500/20 text-yellow-300; }
-.ds-badge-purple { @apply bg-purple-500/20 text-purple-300; }
-.ds-badge-slate  { @apply bg-slate-600/40 text-slate-300; }
-.ds-badge-indigo { @apply bg-indigo-500/20 text-indigo-300; }
+.ds-badge-blue   { @apply bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20; }
+.ds-badge-green  { @apply bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20; }
+.ds-badge-red    { @apply bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20; }
+.ds-badge-yellow { @apply bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border border-yellow-500/20; }
+.ds-badge-purple { @apply bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/20; }
+.ds-badge-slate  { @apply bg-slate-200 dark:bg-slate-600/40 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600/30; }
+.ds-badge-indigo { @apply bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20; }
 
 /* ─── Modal ─── */
 .ds-overlay {
   @apply fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto;
 }
 .ds-modal {
-  @apply bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full my-auto;
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full my-auto;
 }
 
 /* ─── Sayfa Başlığı ─── */
 .ds-page-header {
-  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-slate-800/40 border border-slate-700/50 p-4 sm:p-5 rounded-2xl mb-5;
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-white/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 p-4 sm:p-5 rounded-2xl mb-5 shadow-sm dark:shadow-none;
 }
 .ds-page-title {
-  @apply text-xl sm:text-2xl font-bold text-white flex items-center gap-2;
+  @apply text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2;
 }
 .ds-page-subtitle {
-  @apply text-xs sm:text-sm text-slate-400 mt-1;
+  @apply text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1;
 }
 
 /* ─── Sekme Navigasyon ─── */
 .ds-tab-bar {
-  @apply flex border-b border-slate-800 mb-5 overflow-x-auto flex-nowrap gap-1 pb-1;
+  @apply flex border-b border-slate-200 dark:border-slate-800 mb-5 overflow-x-auto flex-nowrap gap-1 pb-1;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -112,35 +113,34 @@
   display: none;
 }
 .ds-tab {
-  @apply px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2;
+  @apply px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2;
 }
 .ds-tab-active {
-  @apply border-indigo-400 text-indigo-300 font-semibold bg-indigo-500/10 rounded-t-lg;
+  @apply border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-300 font-semibold bg-indigo-50/70 dark:bg-indigo-500/10 rounded-t-lg;
 }
 .ds-pill-tab-bar {
-  @apply flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 p-1 rounded-xl;
+  @apply flex items-center gap-1.5 bg-slate-200/80 dark:bg-slate-900/90 border border-slate-300/80 dark:border-slate-800 p-1 rounded-xl;
 }
 .ds-pill-tab {
-  @apply flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-all cursor-pointer;
+  @apply flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all cursor-pointer;
 }
 .ds-pill-tab-active {
-  @apply bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30 shadow-sm;
+  @apply bg-white dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold border border-slate-300/60 dark:border-indigo-500/30 shadow-sm;
 }
 
 /* ─── İstatistik Kartı ─── */
 .ds-stat-card {
-  @apply bg-slate-800/40 border border-slate-700/50 rounded-2xl p-3.5 sm:p-4;
+  @apply bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-3.5 sm:p-4 shadow-sm dark:shadow-none transition-colors;
 }
 .ds-stat-label {
-  @apply text-xs text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1.5;
+  @apply text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1.5;
 }
 .ds-stat-value {
-  @apply text-xl sm:text-2xl font-bold text-white truncate;
+  @apply text-xl sm:text-2xl font-bold text-slate-900 dark:text-white truncate;
 }
 .ds-stat-sub {
   @apply text-xs text-slate-500 mt-1 truncate;
 }
-
 
 /* ─── Yükleniyor Spinner ─── */
 .ds-spinner {
@@ -152,45 +152,44 @@
 
 /* ─── Bildirim Bantları ─── */
 .ds-alert-error {
-  @apply p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm;
+  @apply p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl text-sm;
 }
 .ds-alert-success {
-  @apply p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-sm;
+  @apply p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm;
 }
 .ds-alert-info {
-  @apply p-3 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-xl text-sm;
+  @apply p-3 bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-300 rounded-xl text-sm;
 }
 
 /* ─── Boş Durum ─── */
 .ds-empty {
-  @apply text-center py-12 text-slate-500;
+  @apply text-center py-12 text-slate-400 dark:text-slate-500;
 }
 
-/* ─── Eski glass-card ile backward compat & global UI uyumu ─── */
+/* ─── Geriye dönük uyumluluk sınıfları ─── */
 .glass-card {
-  @apply bg-slate-800/50 border border-slate-700/50 rounded-2xl text-slate-200;
+  @apply bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl text-slate-800 dark:text-slate-200;
 }
 
 .btn-primary {
-  @apply flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none;
+  @apply flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none;
 }
 
 .btn-secondary {
-  @apply flex items-center justify-center gap-2 px-4 py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium border border-slate-600/50 transition-all cursor-pointer;
+  @apply flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium border border-slate-300 dark:border-slate-600/50 transition-all cursor-pointer;
 }
 
 .table-row-hover:hover {
-  @apply bg-slate-700/20;
+  @apply bg-slate-100/60 dark:bg-slate-700/20;
 }
 
 .glass-card input[type="text"],
 .glass-card input[type="number"],
 .glass-card input[type="date"],
 .glass-card textarea {
-  @apply bg-slate-700/60 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none;
+  @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none;
 }
 
 .glass-card select {
-  @apply bg-slate-700/60 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none;
+  @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none;
 }
-

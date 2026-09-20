@@ -49,6 +49,9 @@ export interface Translations {
     page: string;
     select: string;
     none: string;
+    theme: string;
+    lightMode: string;
+    darkMode: string;
   };
   nav: {
     appName: string;

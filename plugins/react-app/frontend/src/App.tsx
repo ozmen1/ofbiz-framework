@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './components/LoginPage'
 import { I18nProvider } from './i18n'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 import './design-system.css'
 
@@ -252,11 +253,13 @@ function AppContent() {
 
 function App() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </I18nProvider>
+    <ThemeProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 }
 
