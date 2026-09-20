@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   LayoutDashboard, FileText, CreditCard, Settings, LogOut,
-  Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2, Plus,
+  Beaker, BookOpen, ScrollText, Landmark, Layers, Percent, Layers2,
   Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
   ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
@@ -78,8 +78,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     }));
   };
 
-  const isPaymentView = currentView === 'payments' || currentView === 'create-payment' || currentView === 'payment-detail';
-
   // Dinamik Sayfa Meta Bilgileri (Memoized to prevent object re-creation on pointer events)
   const pageMetaMap: Record<ViewType, { title: string; subtitle: string }> = useMemo(() => ({
     'dashboard':              translations.pages.dashboard,
@@ -145,14 +143,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
   // Dil Değiştirici Buton Bileşeni
   const LanguageToggle = ({ className = '' }: { className?: string }) => (
-    <div className={`flex items-center bg-slate-800/90 border border-slate-700/70 rounded-xl p-0.5 shadow-inner ${className}`}>
+    <div className={`flex items-center bg-slate-900/90 border border-slate-800 rounded-xl p-0.5 shadow-inner ${className}`}>
       <button
         type="button"
         onClick={() => setLocale('tr')}
         className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
           locale === 'tr'
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-white'
+            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs'
+            : 'text-slate-400 hover:text-slate-200'
         }`}
         title="Türkçe"
       >
@@ -164,8 +162,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
         onClick={() => setLocale('en')}
         className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
           locale === 'en'
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-white'
+            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs'
+            : 'text-slate-400 hover:text-slate-200'
         }`}
         title="English"
       >
@@ -255,7 +253,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   currentView === 'parties'
                     ? 'text-indigo-300 bg-indigo-500/15 border border-indigo-500/30'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -279,7 +277,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   isAccountingView(currentView)
                     ? 'text-indigo-300 bg-indigo-500/10'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -418,7 +416,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   currentView === 'orders'
                     ? 'text-amber-300 bg-amber-500/10'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -471,7 +469,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   currentView === 'manufacturing'
                     ? 'text-emerald-300 bg-emerald-500/10'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -524,7 +522,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   currentView === 'inventory'
                     ? 'text-cyan-300 bg-cyan-500/10'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -719,21 +717,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 </div>
               </div>
             )}
-
-            {/* Quick Action Button for Accounting */}
-            {isPaymentView ? (
-              <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-payment')}>
-                <Plus size={16} /> 
-                <span className="hidden sm:inline">{translations.nav.newPayment}</span>
-                <span className="sm:hidden">{translations.nav.newPayment.split(' ')[1] || 'Payment'}</span>
-              </button>
-            ) : isAccountingView(currentView) ? (
-              <button type="button" className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4" onClick={() => onNavigate('create-invoice')}>
-                <Plus size={16} /> 
-                <span className="hidden sm:inline">{translations.nav.newInvoice}</span>
-                <span className="sm:hidden">{translations.nav.newInvoice.split(' ')[1] || 'Invoice'}</span>
-              </button>
-            ) : null}
           </div>
         </header>
 

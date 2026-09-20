@@ -392,17 +392,13 @@ export const UserManagement: React.FC = () => {
 
       {/* Main Top Tab Navigation */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-4">
-        <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <div className="ds-pill-tab-bar">
           <button
             type="button"
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'users'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`ds-pill-tab ${activeTab === 'users' ? 'ds-pill-tab-active' : ''}`}
           >
-            <Users size={16} />
+            <Users size={15} />
             <span>{t.tabUsers}</span>
             <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
               {totalCount}
@@ -412,13 +408,9 @@ export const UserManagement: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('securityGroups')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'securityGroups'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`ds-pill-tab ${activeTab === 'securityGroups' ? 'ds-pill-tab-active' : ''}`}
           >
-            <Shield size={16} />
+            <Shield size={15} />
             <span>{t.tabSecurityGroups}</span>
             <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
               {securityGroups.length || metadata.securityGroups.length}

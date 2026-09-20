@@ -315,15 +315,11 @@ export const SystemAdministration: React.FC = () => {
 
       {/* Main Top Navigation Tabs */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
+        <div className="ds-pill-tab-bar">
           <button
             type="button"
             onClick={() => setActiveTab('cache')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'cache'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`ds-pill-tab ${activeTab === 'cache' ? 'ds-pill-tab-active' : ''}`}
           >
             <Database size={15} />
             <span>{t.tabCache}</span>
@@ -332,11 +328,7 @@ export const SystemAdministration: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('jobs')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'jobs'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`ds-pill-tab ${activeTab === 'jobs' ? 'ds-pill-tab-active' : ''}`}
           >
             <Clock size={15} />
             <span>{t.tabJobs}</span>
@@ -345,11 +337,7 @@ export const SystemAdministration: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('diagnostics')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'diagnostics'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`ds-pill-tab ${activeTab === 'diagnostics' ? 'ds-pill-tab-active' : ''}`}
           >
             <Cpu size={15} />
             <span>{t.tabDiagnostics}</span>

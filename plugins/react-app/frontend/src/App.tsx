@@ -103,7 +103,7 @@ function AppContent() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <AccountingDashboard />;
+        return <AccountingDashboard onNavigate={handleNavigate} />;
 
       case 'invoices':
         return <InvoiceList onViewInvoice={(id) => handleNavigate('invoice-detail', id)} />;
