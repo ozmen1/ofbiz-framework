@@ -9,6 +9,8 @@ import org.apache.ofbiz.service.ServiceUtil
 import org.apache.ofbiz.base.util.UtilDateTime
 import org.apache.ofbiz.base.util.UtilValidate
 import org.apache.ofbiz.base.util.Debug
+import org.apache.ofbiz.accounting.invoice.InvoiceWorker
+import org.apache.ofbiz.order.order.OrderReadHelper
 import java.sql.Timestamp
 import java.math.BigDecimal
 
@@ -1296,3 +1298,1331 @@ String createPartyRelationship() {
         return "error"
     }
 }
+
+/**
+ * Helper to ensure common classification groups exist for segmentation
+ */
+void ensureDefaultClassificationGroups(def delegator) {
+    try {
+        List defaultGroups = [
+            [partyClassificationGroupId: "VIP_CUSTOMER", partyClassificationTypeId: "ORGANIZATION_CLASSIF", description: "VIP / Stratejik Müşteri"],
+            [partyClassificationGroupId: "WHOLESALE", partyClassificationTypeId: "TRADE_WHOLE_CLASSIFI", description: "Toptan / Distribütör"],
+            [partyClassificationGroupId: "RETAIL", partyClassificationTypeId: "TRADE_RETAIL_CLASSIF", description: "Perakende Müşteri"],
+            [partyClassificationGroupId: "KEY_SUPPLIER", partyClassificationTypeId: "ORGANIZATION_CLASSIF", description: "Stratejik Tedarikçi"],
+            [partyClassificationGroupId: "HIGH_RISK", partyClassificationTypeId: "VALUE_RATING", description: "Yüksek Risk Grubu"],
+            [partyClassificationGroupId: "LOW_RISK", partyClassificationTypeId: "VALUE_RATING", description: "Düşük Risk / Güvenilir"]
+        ]
+        for (Map grp : defaultGroups) {
+            GenericValue existing = EntityQuery.use(delegator)
+                .from("PartyClassificationGroup")
+                .where("partyClassificationGroupId", grp.partyClassificationGroupId)
+                .queryOne()
+            if (!existing) {
+                GenericValue newGrp = delegator.makeValue("PartyClassificationGroup", grp)
+                newGrp.create()
+            }
+        }
+    } catch (Exception e) {
+        Debug.logWarning("Could not seed default classification groups: " + e.getMessage(), MODULE)
+    }
+}
+
+/**
+ * 16. getPartyFinancialProfile
+ * Returns credit limit, billing accounts, open receivables/payables, risk metrics, payment terms, tax auth, classifications, notes.
+ */
+String getPartyFinancialProfile() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId parametresi zorunludur.")
+            return "error"
+        }
+
+        // 1. Seed common classification groups if missing
+        ensureDefaultClassificationGroups(delegator)
+
+        // 2. Billing Accounts & Credit Limit
+        List billingAccountRoles = EntityQuery.use(delegator)
+            .from("BillingAccountRole")
+            .where("partyId", partyId)
+            .filterByDate()
+            .queryList()
+
+        List billingAccounts = []
+        BigDecimal totalCreditLimit = BigDecimal.ZERO
+        BigDecimal totalAccountBalance = BigDecimal.ZERO
+
+        for (GenericValue bar : billingAccountRoles) {
+            GenericValue ba = EntityQuery.use(delegator)
+                .from("BillingAccount")
+                .where("billingAccountId", bar.getString("billingAccountId"))
+                .queryOne()
+            if (ba) {
+                BigDecimal limit = ba.getBigDecimal("accountLimit") ?: BigDecimal.ZERO
+                BigDecimal available = limit
+                try {
+                    available = OrderReadHelper.getBillingAccountBalance(ba) ?: limit
+                } catch (Exception e) {
+                    available = limit
+                }
+                BigDecimal balance = limit.subtract(available)
+                if (balance.compareTo(BigDecimal.ZERO) < 0) balance = BigDecimal.ZERO
+
+                totalCreditLimit = totalCreditLimit.add(limit)
+                totalAccountBalance = totalAccountBalance.add(balance)
+
+                billingAccounts.add([
+                    billingAccountId: ba.getString("billingAccountId"),
+                    accountLimit: limit,
+                    accountBalance: balance,
+                    availableBalance: available,
+                    accountCurrencyUomId: ba.getString("accountCurrencyUomId") ?: "TRY",
+                    description: ba.getString("description") ?: "",
+                    fromDate: ba.getTimestamp("fromDate")?.toString(),
+                    thruDate: ba.getTimestamp("thruDate")?.toString(),
+                    roleTypeId: bar.getString("roleTypeId")
+                ])
+            }
+        }
+
+        // 3. Outstanding Invoices & Receivables / Payables
+        List salesInvoices = EntityQuery.use(delegator)
+            .from("Invoice")
+            .where(
+                EntityCondition.makeCondition("partyId", EntityOperator.EQUALS, partyId),
+                EntityCondition.makeCondition("invoiceTypeId", EntityOperator.EQUALS, "SALES_INVOICE"),
+                EntityCondition.makeCondition("statusId", EntityOperator.IN, ["INVOICE_SENT", "INVOICE_APPROVED", "INVOICE_READY"])
+            )
+            .queryList()
+
+        BigDecimal totalReceivableOutstanding = BigDecimal.ZERO
+        for (GenericValue inv : salesInvoices) {
+            BigDecimal outstanding = BigDecimal.ZERO
+            try {
+                outstanding = InvoiceWorker.getInvoiceNotApplied(inv) ?: BigDecimal.ZERO
+            } catch (Exception e) {
+                outstanding = inv.getBigDecimal("outstandingAmount") ?: BigDecimal.ZERO
+            }
+            totalReceivableOutstanding = totalReceivableOutstanding.add(outstanding)
+        }
+
+        List purchaseInvoices = EntityQuery.use(delegator)
+            .from("Invoice")
+            .where(
+                EntityCondition.makeCondition("partyIdFrom", EntityOperator.EQUALS, partyId),
+                EntityCondition.makeCondition("invoiceTypeId", EntityOperator.EQUALS, "PURCHASE_INVOICE"),
+                EntityCondition.makeCondition("statusId", EntityOperator.IN, ["INVOICE_SENT", "INVOICE_APPROVED", "INVOICE_READY"])
+            )
+            .queryList()
+
+        BigDecimal totalPayableOutstanding = BigDecimal.ZERO
+        for (GenericValue inv : purchaseInvoices) {
+            BigDecimal outstanding = BigDecimal.ZERO
+            try {
+                outstanding = InvoiceWorker.getInvoiceNotApplied(inv) ?: BigDecimal.ZERO
+            } catch (Exception e) {
+                outstanding = inv.getBigDecimal("outstandingAmount") ?: BigDecimal.ZERO
+            }
+            totalPayableOutstanding = totalPayableOutstanding.add(outstanding)
+        }
+
+        BigDecimal netExposure = totalReceivableOutstanding.subtract(totalPayableOutstanding)
+
+        String riskLevel = "NO_LIMIT"
+        BigDecimal utilizationPercent = BigDecimal.ZERO
+        if (totalCreditLimit.compareTo(BigDecimal.ZERO) > 0) {
+            utilizationPercent = totalReceivableOutstanding.divide(totalCreditLimit, 4, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"))
+            if (utilizationPercent.compareTo(new BigDecimal("100")) >= 0) {
+                riskLevel = "EXCEEDED"
+            } else if (utilizationPercent.compareTo(new BigDecimal("75")) >= 0) {
+                riskLevel = "WARNING"
+            } else {
+                riskLevel = "SAFE"
+            }
+        }
+
+        // 4. Payment Terms & Agreements
+        List agreements = EntityQuery.use(delegator)
+            .from("Agreement")
+            .where(
+                EntityCondition.makeCondition([
+                    EntityCondition.makeCondition("partyIdFrom", EntityOperator.EQUALS, partyId),
+                    EntityCondition.makeCondition("partyIdTo", EntityOperator.EQUALS, partyId)
+                ], EntityOperator.OR)
+            )
+            .filterByDate()
+            .queryList()
+
+        List paymentTerms = []
+        for (GenericValue agr : agreements) {
+            List terms = EntityQuery.use(delegator)
+                .from("AgreementTerm")
+                .where("agreementId", agr.getString("agreementId"))
+                .queryList()
+            for (GenericValue term : terms) {
+                GenericValue tt = EntityQuery.use(delegator)
+                    .from("TermType")
+                    .where("termTypeId", term.getString("termTypeId"))
+                    .cache()
+                    .queryOne()
+                paymentTerms.add([
+                    agreementId: agr.getString("agreementId"),
+                    agreementTermId: term.getString("agreementTermId"),
+                    termTypeId: term.getString("termTypeId"),
+                    termTypeDescription: tt?.getString("description") ?: term.getString("termTypeId"),
+                    termValue: term.getBigDecimal("termValue"),
+                    termDays: term.getLong("termDays"),
+                    textValue: term.getString("textValue"),
+                    description: term.getString("description") ?: agr.getString("description") ?: ""
+                ])
+            }
+        }
+
+        // 5. Tax Auth Info
+        List taxAuthInfos = EntityQuery.use(delegator)
+            .from("PartyTaxAuthInfo")
+            .where("partyId", partyId)
+            .filterByDate()
+            .queryList()
+            .collect { GenericValue tai ->
+                [
+                    taxAuthGeoId: tai.getString("taxAuthGeoId"),
+                    taxAuthPartyId: tai.getString("taxAuthPartyId"),
+                    partyTaxId: tai.getString("partyTaxId") ?: "",
+                    isExempt: tai.getString("isExempt") ?: "N",
+                    isNexus: tai.getString("isNexus") ?: "N",
+                    fromDate: tai.getTimestamp("fromDate")?.toString(),
+                    thruDate: tai.getTimestamp("thruDate")?.toString()
+                ]
+            }
+
+        // 6. Party Classifications (Segments)
+        List partyClassifications = EntityQuery.use(delegator)
+            .from("PartyClassification")
+            .where("partyId", partyId)
+            .filterByDate()
+            .queryList()
+            .collect { GenericValue pc ->
+                GenericValue group = EntityQuery.use(delegator)
+                    .from("PartyClassificationGroup")
+                    .where("partyClassificationGroupId", pc.getString("partyClassificationGroupId"))
+                    .cache()
+                    .queryOne()
+                [
+                    partyClassificationGroupId: pc.getString("partyClassificationGroupId"),
+                    description: group?.getString("description") ?: pc.getString("partyClassificationGroupId"),
+                    classificationTypeId: group?.getString("partyClassificationTypeId") ?: "",
+                    fromDate: pc.getTimestamp("fromDate")?.toString(),
+                    thruDate: pc.getTimestamp("thruDate")?.toString()
+                ]
+            }
+
+        // 7. Party Notes
+        List partyNotes = EntityQuery.use(delegator)
+            .from("PartyNoteView")
+            .where("targetPartyId", partyId)
+            .orderBy("-noteDateTime")
+            .queryList()
+            .collect { GenericValue n ->
+                [
+                    noteId: n.getString("noteId"),
+                    noteName: n.getString("noteName") ?: "",
+                    noteInfo: n.getString("noteInfo") ?: "",
+                    noteDateTime: n.getTimestamp("noteDateTime")?.toString(),
+                    noteParty: n.getString("noteParty") ?: ""
+                ]
+            }
+
+        // Master Reference Data
+        List availableGroups = EntityQuery.use(delegator)
+            .from("PartyClassificationGroup")
+            .orderBy("description")
+            .queryList()
+            .collect { GenericValue g ->
+                [
+                    partyClassificationGroupId: g.getString("partyClassificationGroupId"),
+                    description: g.getString("description") ?: g.getString("partyClassificationGroupId"),
+                    partyClassificationTypeId: g.getString("partyClassificationTypeId") ?: ""
+                ]
+            }
+
+        List availableTermTypes = EntityQuery.use(delegator)
+            .from("TermType")
+            .where(EntityCondition.makeCondition("parentTypeId", EntityOperator.IN, ["FINANCIAL_TERM", "FIN_PAYMENT_TERM", null]))
+            .orderBy("description")
+            .queryList()
+            .collect { GenericValue tt ->
+                [
+                    termTypeId: tt.getString("termTypeId"),
+                    description: tt.getString("description") ?: tt.getString("termTypeId")
+                ]
+            }
+
+        request.setAttribute("financialProfile", [
+            partyId: partyId,
+            billingAccounts: billingAccounts,
+            totalCreditLimit: totalCreditLimit,
+            totalAccountBalance: totalAccountBalance,
+            totalReceivableOutstanding: totalReceivableOutstanding,
+            totalPayableOutstanding: totalPayableOutstanding,
+            netExposure: netExposure,
+            utilizationPercent: utilizationPercent,
+            riskLevel: riskLevel,
+            paymentTerms: paymentTerms,
+            taxAuthInfos: taxAuthInfos,
+            classifications: partyClassifications,
+            notes: partyNotes,
+            availableGroups: availableGroups,
+            availableTermTypes: availableTermTypes
+        ])
+
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getPartyFinancialProfile: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 17. savePartyFinancialProfile
+ * Updates or creates a BillingAccount and attaches it as BILL_TO_CUSTOMER
+ */
+String savePartyFinancialProfile() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId zorunludur.")
+            return "error"
+        }
+
+        String billingAccountId = parameters.billingAccountId?.trim()
+        BigDecimal accountLimit = parameters.accountLimit != null && !parameters.accountLimit.toString().trim().isEmpty() ? new BigDecimal(parameters.accountLimit.toString().trim()) : BigDecimal.ZERO
+        String currencyUomId = parameters.accountCurrencyUomId?.trim() ?: "TRY"
+        String description = parameters.description?.trim() ?: "Cari Kredili Açık Hesap"
+
+        if (UtilValidate.isNotEmpty(billingAccountId)) {
+            GenericValue ba = EntityQuery.use(delegator)
+                .from("BillingAccount")
+                .where("billingAccountId", billingAccountId)
+                .queryOne()
+            if (ba) {
+                ba.set("accountLimit", accountLimit)
+                ba.set("accountCurrencyUomId", currencyUomId)
+                ba.set("description", description)
+                ba.store()
+                request.setAttribute("billingAccountId", billingAccountId)
+                request.setAttribute("message", "Cari kredi limiti ve hesap koşulları güncellendi.")
+                return "success"
+            }
+        }
+
+        // Create new BillingAccount
+        String newBaId = delegator.getNextSeqId("BillingAccount")
+        GenericValue newBa = delegator.makeValue("BillingAccount", [
+            billingAccountId: newBaId,
+            accountLimit: accountLimit,
+            accountCurrencyUomId: currencyUomId,
+            description: description,
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        newBa.create()
+
+        // Ensure PartyRole BILL_TO_CUSTOMER exists for this party
+        GenericValue pr = EntityQuery.use(delegator)
+            .from("PartyRole")
+            .where("partyId", partyId, "roleTypeId", "BILL_TO_CUSTOMER")
+            .queryOne()
+        if (!pr) {
+            delegator.makeValue("PartyRole", [partyId: partyId, roleTypeId: "BILL_TO_CUSTOMER"]).create()
+        }
+
+        // Create BillingAccountRole
+        GenericValue bar = delegator.makeValue("BillingAccountRole", [
+            billingAccountId: newBaId,
+            partyId: partyId,
+            roleTypeId: "BILL_TO_CUSTOMER",
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        bar.create()
+
+        request.setAttribute("billingAccountId", newBaId)
+        request.setAttribute("message", "Cariye yeni kredi hesabı başarıyla tanımlandı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in savePartyFinancialProfile: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 18. createPartyNote
+ * Creates an internal CRM / audit note for a party
+ */
+String createPartyNote() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        GenericValue uL = getSystemUserLogin()
+        String partyId = parameters.partyId?.trim()
+        String noteInfo = parameters.noteInfo?.trim() ?: parameters.note?.trim()
+        String noteName = parameters.noteName?.trim() ?: "Cari Görüşme / Dahili Not"
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(noteInfo)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve noteInfo zorunludur.")
+            return "error"
+        }
+
+        Map res = dispatcher.runSync("createPartyNote", [
+            userLogin: uL,
+            partyId: partyId,
+            noteName: noteName,
+            note: noteInfo
+        ])
+        if (ServiceUtil.isError(res)) {
+            request.setAttribute("_ERROR_MESSAGE_", ServiceUtil.getErrorMessage(res))
+            return "error"
+        }
+
+        request.setAttribute("noteId", res.noteId)
+        request.setAttribute("message", "Cari notu başarıyla kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyNote: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 19. addPartyClassification
+ * Adds a classification group (tag/segment) to a party
+ */
+String addPartyClassification() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String groupId = parameters.partyClassificationGroupId?.trim()
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(groupId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve partyClassificationGroupId zorunludur.")
+            return "error"
+        }
+
+        GenericValue existing = EntityQuery.use(delegator)
+            .from("PartyClassification")
+            .where("partyId", partyId, "partyClassificationGroupId", groupId)
+            .filterByDate()
+            .queryFirst()
+
+        if (existing) {
+            request.setAttribute("message", "Bu cari zaten seçili segment/etiket grubuna dahil.")
+            return "success"
+        }
+
+        GenericValue pc = delegator.makeValue("PartyClassification", [
+            partyId: partyId,
+            partyClassificationGroupId: groupId,
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        pc.create()
+
+        request.setAttribute("message", "Cari segmenti başarıyla eklendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in addPartyClassification: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 20. deletePartyClassification
+ * Expires or deletes a party classification
+ */
+String deletePartyClassification() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String groupId = parameters.partyClassificationGroupId?.trim()
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(groupId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve partyClassificationGroupId zorunludur.")
+            return "error"
+        }
+
+        List list = EntityQuery.use(delegator)
+            .from("PartyClassification")
+            .where("partyId", partyId, "partyClassificationGroupId", groupId)
+            .filterByDate()
+            .queryList()
+
+        for (GenericValue pc : list) {
+            pc.set("thruDate", UtilDateTime.nowTimestamp())
+            pc.store()
+        }
+
+        request.setAttribute("message", "Cari segmenti kaldırıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deletePartyClassification: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 21. setPartyTaxAuthInfo
+ * Sets or updates tax authority and exemption settings for a party
+ */
+String setPartyTaxAuthInfo() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String taxAuthGeoId = parameters.taxAuthGeoId?.trim() ?: "_NA_"
+        String taxAuthPartyId = parameters.taxAuthPartyId?.trim() ?: "_NA_"
+        String partyTaxId = parameters.partyTaxId?.trim() ?: ""
+        String isExempt = "Y".equalsIgnoreCase(parameters.isExempt?.toString()?.trim()) ? "Y" : "N"
+
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId zorunludur.")
+            return "error"
+        }
+
+        GenericValue existing = EntityQuery.use(delegator)
+            .from("PartyTaxAuthInfo")
+            .where("partyId", partyId, "taxAuthGeoId", taxAuthGeoId, "taxAuthPartyId", taxAuthPartyId)
+            .filterByDate()
+            .queryFirst()
+
+        if (existing) {
+            existing.set("partyTaxId", partyTaxId)
+            existing.set("isExempt", isExempt)
+            existing.store()
+        } else {
+            GenericValue newTai = delegator.makeValue("PartyTaxAuthInfo", [
+                partyId: partyId,
+                taxAuthGeoId: taxAuthGeoId,
+                taxAuthPartyId: taxAuthPartyId,
+                fromDate: UtilDateTime.nowTimestamp(),
+                partyTaxId: partyTaxId,
+                isExempt: isExempt,
+                isNexus: "Y"
+            ])
+            newTai.create()
+        }
+
+        request.setAttribute("message", "Vergi dairesi ve muafiyet bilgisi kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in setPartyTaxAuthInfo: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 22. createPartyPaymentTerm
+ * Sets up a payment term (e.g. Net 30, discount, etc.) for a party
+ */
+String createPartyPaymentTerm() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String termTypeId = parameters.termTypeId?.trim()
+        Long termDays = parameters.termDays ? Long.valueOf(parameters.termDays.toString().trim()) : null
+        BigDecimal termValue = parameters.termValue ? new BigDecimal(parameters.termValue.toString().trim()) : null
+        String description = parameters.description?.trim() ?: "Cari Vade ve Ödeme Şartı"
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(termTypeId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve termTypeId zorunludur.")
+            return "error"
+        }
+
+        // Find or create Agreement for this party
+        GenericValue agr = EntityQuery.use(delegator)
+            .from("Agreement")
+            .where(
+                EntityCondition.makeCondition("partyIdTo", EntityOperator.EQUALS, partyId),
+                EntityCondition.makeCondition("agreementTypeId", EntityOperator.EQUALS, "SALES_AGREEMENT")
+            )
+            .filterByDate()
+            .queryFirst()
+
+        String agreementId = agr ? agr.getString("agreementId") : null
+        if (!agreementId) {
+            agreementId = delegator.getNextSeqId("Agreement")
+            GenericValue newAgr = delegator.makeValue("Agreement", [
+                agreementId: agreementId,
+                partyIdFrom: "Company",
+                partyIdTo: partyId,
+                agreementTypeId: "SALES_AGREEMENT",
+                fromDate: UtilDateTime.nowTimestamp(),
+                description: "Cari Finansal Şartlar ve Vade Sözleşmesi"
+            ])
+            newAgr.create()
+        }
+
+        String agreementTermId = delegator.getNextSeqId("AgreementTerm")
+        GenericValue newTerm = delegator.makeValue("AgreementTerm", [
+            agreementTermId: agreementTermId,
+            agreementId: agreementId,
+            termTypeId: termTypeId,
+            termDays: termDays,
+            termValue: termValue,
+            description: description,
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        newTerm.create()
+
+        request.setAttribute("agreementTermId", agreementTermId)
+        request.setAttribute("message", "Ödeme şartı başarıyla tanımlandı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyPaymentTerm: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 23. deletePartyPaymentTerm
+ * Removes a payment term from a party's agreement
+ */
+String deletePartyPaymentTerm() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String agreementTermId = parameters.agreementTermId?.trim()
+        if (UtilValidate.isEmpty(agreementTermId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "agreementTermId zorunludur.")
+            return "error"
+        }
+
+        GenericValue term = EntityQuery.use(delegator)
+            .from("AgreementTerm")
+            .where("agreementTermId", agreementTermId)
+            .queryOne()
+
+        if (term) {
+            term.remove()
+        }
+
+        request.setAttribute("message", "Ödeme şartı başarıyla kaldırıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deletePartyPaymentTerm: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 24. getPartyPaymentMethods
+ * Returns EFT accounts (bank accounts/IBAN) and credit cards linked to this party
+ */
+String getPartyPaymentMethods() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId parametresi zorunludur.")
+            return "error"
+        }
+
+        List paymentMethods = EntityQuery.use(delegator)
+            .from("PaymentMethod")
+            .where("partyId", partyId)
+            .filterByDate()
+            .queryList()
+
+        List eftAccounts = []
+        List creditCards = []
+
+        for (GenericValue pm : paymentMethods) {
+            String pmId = pm.getString("paymentMethodId")
+            String pmTypeId = pm.getString("paymentMethodTypeId")
+
+            if ("EFT_ACCOUNT".equals(pmTypeId)) {
+                GenericValue eft = EntityQuery.use(delegator)
+                    .from("EftAccount")
+                    .where("paymentMethodId", pmId)
+                    .queryOne()
+                if (eft) {
+                    eftAccounts.add([
+                        paymentMethodId: pmId,
+                        bankName: eft.getString("bankName") ?: "",
+                        routingNumber: eft.getString("routingNumber") ?: "",
+                        accountNumber: eft.getString("accountNumber") ?: "",
+                        nameOnAccount: eft.getString("nameOnAccount") ?: "",
+                        companyNameOnAccount: eft.getString("companyNameOnAccount") ?: "",
+                        description: pm.getString("description") ?: "",
+                        fromDate: pm.getTimestamp("fromDate")?.toString()
+                    ])
+                }
+            } else if ("CREDIT_CARD".equals(pmTypeId)) {
+                GenericValue cc = EntityQuery.use(delegator)
+                    .from("CreditCard")
+                    .where("paymentMethodId", pmId)
+                    .queryOne()
+                if (cc) {
+                    String rawNum = cc.getString("cardNumber") ?: ""
+                    String masked = rawNum.length() > 4 ? ("**** **** **** " + rawNum.substring(rawNum.length() - 4)) : "****"
+                    creditCards.add([
+                        paymentMethodId: pmId,
+                        cardType: cc.getString("cardType") ?: "VISA",
+                        cardNumberMasked: masked,
+                        expireDate: cc.getString("expireDate") ?: "",
+                        firstNameOnCard: cc.getString("firstNameOnCard") ?: cc.getString("companyNameOnCard") ?: "",
+                        description: pm.getString("description") ?: "",
+                        fromDate: pm.getTimestamp("fromDate")?.toString()
+                    ])
+                }
+            }
+        }
+
+        request.setAttribute("paymentMethods", [
+            partyId: partyId,
+            eftAccounts: eftAccounts,
+            creditCards: creditCards
+        ])
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getPartyPaymentMethods: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 25. createPartyEftAccount
+ * Adds an EFT / IBAN Bank Account for a party
+ */
+String createPartyEftAccount() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String bankName = parameters.bankName?.trim()
+        String accountNumber = parameters.accountNumber?.trim()
+        String nameOnAccount = parameters.nameOnAccount?.trim()
+        String routingNumber = parameters.routingNumber?.trim() ?: ""
+        String description = parameters.description?.trim() ?: "Banka / IBAN Hesabı"
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(bankName) || UtilValidate.isEmpty(accountNumber)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId, bankName ve accountNumber (IBAN) zorunludur.")
+            return "error"
+        }
+
+        String paymentMethodId = delegator.getNextSeqId("PaymentMethod")
+        GenericValue pm = delegator.makeValue("PaymentMethod", [
+            paymentMethodId: paymentMethodId,
+            partyId: partyId,
+            paymentMethodTypeId: "EFT_ACCOUNT",
+            description: description,
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        pm.create()
+
+        GenericValue eft = delegator.makeValue("EftAccount", [
+            paymentMethodId: paymentMethodId,
+            bankName: bankName,
+            routingNumber: routingNumber,
+            accountNumber: accountNumber,
+            nameOnAccount: nameOnAccount ?: partyId
+        ])
+        eft.create()
+
+        request.setAttribute("paymentMethodId", paymentMethodId)
+        request.setAttribute("message", "Banka/IBAN hesabı başarıyla kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyEftAccount: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 26. deletePartyPaymentMethod
+ * Expires a payment method (EFT Account or Credit Card)
+ */
+String deletePartyPaymentMethod() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String paymentMethodId = parameters.paymentMethodId?.trim()
+        if (UtilValidate.isEmpty(paymentMethodId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "paymentMethodId zorunludur.")
+            return "error"
+        }
+
+        GenericValue pm = EntityQuery.use(delegator)
+            .from("PaymentMethod")
+            .where("paymentMethodId", paymentMethodId)
+            .queryOne()
+
+        if (pm) {
+            pm.set("thruDate", UtilDateTime.nowTimestamp())
+            pm.store()
+        }
+
+        request.setAttribute("message", "Ödeme yöntemi devreden çıkarıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deletePartyPaymentMethod: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 27. createPartyCreditCard
+ * Adds a registered credit card for a party
+ */
+String createPartyCreditCard() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String cardNumber = parameters.cardNumber?.trim()?.replaceAll("\\s+", "")
+        String expireDate = parameters.expireDate?.trim()
+        String cardType = parameters.cardType?.trim() ?: "CCT_VISA"
+        String nameOnCard = parameters.nameOnCard?.trim() ?: ""
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(cardNumber) || UtilValidate.isEmpty(expireDate)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId, cardNumber ve expireDate (AA/YYYY) zorunludur.")
+            return "error"
+        }
+
+        String paymentMethodId = delegator.getNextSeqId("PaymentMethod")
+        GenericValue pm = delegator.makeValue("PaymentMethod", [
+            paymentMethodId: paymentMethodId,
+            partyId: partyId,
+            paymentMethodTypeId: "CREDIT_CARD",
+            description: "Kayıtlı Kredi Kartı",
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        pm.create()
+
+        GenericValue cc = delegator.makeValue("CreditCard", [
+            paymentMethodId: paymentMethodId,
+            cardType: cardType,
+            cardNumber: cardNumber,
+            expireDate: expireDate,
+            firstNameOnCard: nameOnCard
+        ])
+        cc.create()
+
+        request.setAttribute("paymentMethodId", paymentMethodId)
+        request.setAttribute("message", "Kredi kartı başarıyla kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyCreditCard: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 28. getPartyAttributes
+ * Returns custom attributes (key-value pairs) for a party
+ */
+String getPartyAttributes() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId zorunludur.")
+            return "error"
+        }
+
+        List attributes = EntityQuery.use(delegator)
+            .from("PartyAttribute")
+            .where("partyId", partyId)
+            .orderBy("attrName")
+            .queryList()
+            .collect { GenericValue attr ->
+                [
+                    attrName: attr.getString("attrName"),
+                    attrValue: attr.getString("attrValue") ?: "",
+                    attrDescription: attr.getString("attrDescription") ?: ""
+                ]
+            }
+
+        request.setAttribute("attributes", attributes)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getPartyAttributes: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 29. savePartyAttribute
+ * Adds or updates a custom attribute for a party
+ */
+String savePartyAttribute() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String attrName = parameters.attrName?.trim()
+        String attrValue = parameters.attrValue?.trim() ?: ""
+        String attrDescription = parameters.attrDescription?.trim() ?: ""
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(attrName)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve attrName zorunludur.")
+            return "error"
+        }
+
+        GenericValue attr = EntityQuery.use(delegator)
+            .from("PartyAttribute")
+            .where("partyId", partyId, "attrName", attrName)
+            .queryOne()
+
+        if (attr) {
+            attr.set("attrValue", attrValue)
+            attr.set("attrDescription", attrDescription)
+            attr.store()
+        } else {
+            GenericValue newAttr = delegator.makeValue("PartyAttribute", [
+                partyId: partyId,
+                attrName: attrName,
+                attrValue: attrValue,
+                attrDescription: attrDescription
+            ])
+            newAttr.create()
+        }
+
+        request.setAttribute("message", "Özel nitelik başarıyla kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in savePartyAttribute: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 30. deletePartyAttribute
+ * Removes a custom attribute
+ */
+String deletePartyAttribute() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String attrName = parameters.attrName?.trim()
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(attrName)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve attrName zorunludur.")
+            return "error"
+        }
+
+        GenericValue attr = EntityQuery.use(delegator)
+            .from("PartyAttribute")
+            .where("partyId", partyId, "attrName", attrName)
+            .queryOne()
+
+        if (attr) {
+            attr.remove()
+        }
+
+        request.setAttribute("message", "Özel nitelik silindi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deletePartyAttribute: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Helper to ensure standard Turkish ERP party content types exist
+ */
+void ensureDefaultPartyContentTypes(def delegator) {
+    try {
+        List defaultTypes = [
+            [partyContentTypeId: "CONTRACT", description: "Sözleşme / Anlaşma Belgesi"],
+            [partyContentTypeId: "TAX_PLATE", description: "Vergi Levhası"],
+            [partyContentTypeId: "SIG_CIRCULAR", description: "İmza Sirküleri"],
+            [partyContentTypeId: "TRADE_REGISTRY", description: "Ticaret Sicil Gazetesi"],
+            [partyContentTypeId: "ID_COPY", description: "Kimlik / Pasaport Fotokopisi"],
+            [partyContentTypeId: "INTERNAL", description: "Dahili Şirket Belgesi"]
+        ]
+        for (Map tMap : defaultTypes) {
+            GenericValue existing = EntityQuery.use(delegator)
+                .from("PartyContentType")
+                .where("partyContentTypeId", tMap.partyContentTypeId)
+                .queryOne()
+            if (!existing) {
+                delegator.makeValue("PartyContentType", tMap).create()
+            }
+        }
+    } catch (Exception e) {
+        Debug.logWarning("Could not seed default party content types: " + e.getMessage(), MODULE)
+    }
+}
+
+/**
+ * 31. getPartyContents
+ * Returns documents, contracts, and files attached to a party
+ */
+String getPartyContents() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId zorunludur.")
+            return "error"
+        }
+
+        ensureDefaultPartyContentTypes(delegator)
+
+        List partyContentList = EntityQuery.use(delegator)
+            .from("PartyContent")
+            .where("partyId", partyId)
+            .filterByDate()
+            .queryList()
+
+        List contents = []
+        for (GenericValue pc : partyContentList) {
+            GenericValue content = EntityQuery.use(delegator)
+                .from("Content")
+                .where("contentId", pc.getString("contentId"))
+                .queryOne()
+
+            GenericValue pct = EntityQuery.use(delegator)
+                .from("PartyContentType")
+                .where("partyContentTypeId", pc.getString("partyContentTypeId"))
+                .cache()
+                .queryOne()
+
+            contents.add([
+                contentId: pc.getString("contentId"),
+                partyContentTypeId: pc.getString("partyContentTypeId"),
+                contentTypeDescription: pct?.getString("description") ?: pc.getString("partyContentTypeId"),
+                contentName: content?.getString("contentName") ?: pc.getString("contentId"),
+                description: content?.getString("description") ?: "",
+                fromDate: pc.getTimestamp("fromDate")?.toString()
+            ])
+        }
+
+        List availableTypes = EntityQuery.use(delegator)
+            .from("PartyContentType")
+            .orderBy("description")
+            .queryList()
+            .collect { GenericValue pt ->
+                [
+                    partyContentTypeId: pt.getString("partyContentTypeId"),
+                    description: pt.getString("description") ?: pt.getString("partyContentTypeId")
+                ]
+            }
+
+        request.setAttribute("partyContents", [
+            partyId: partyId,
+            contents: contents,
+            availableTypes: availableTypes
+        ])
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getPartyContents: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 32. createPartyContentRecord
+ * Attaches a document/contract record to a party
+ */
+String createPartyContentRecord() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String partyContentTypeId = parameters.partyContentTypeId?.trim() ?: "CONTRACT"
+        String contentName = parameters.contentName?.trim()
+        String description = parameters.description?.trim() ?: ""
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(contentName)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve contentName zorunludur.")
+            return "error"
+        }
+
+        String contentId = delegator.getNextSeqId("Content")
+        GenericValue cnt = delegator.makeValue("Content", [
+            contentId: contentId,
+            contentTypeId: "DOCUMENT",
+            contentName: contentName,
+            description: description
+        ])
+        cnt.create()
+
+        GenericValue pc = delegator.makeValue("PartyContent", [
+            partyId: partyId,
+            contentId: contentId,
+            partyContentTypeId: partyContentTypeId,
+            fromDate: UtilDateTime.nowTimestamp()
+        ])
+        pc.create()
+
+        request.setAttribute("contentId", contentId)
+        request.setAttribute("message", "Belge kaydı başarıyla eklendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyContentRecord: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 33. deletePartyContentRecord
+ * Expires a document attached to a party
+ */
+String deletePartyContentRecord() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        String contentId = parameters.contentId?.trim()
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(contentId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId ve contentId zorunludur.")
+            return "error"
+        }
+
+        List list = EntityQuery.use(delegator)
+            .from("PartyContent")
+            .where("partyId", partyId, "contentId", contentId)
+            .filterByDate()
+            .queryList()
+
+        for (GenericValue pc : list) {
+            pc.set("thruDate", UtilDateTime.nowTimestamp())
+            pc.store()
+        }
+
+        request.setAttribute("message", "Belge kaydı kaldırıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deletePartyContentRecord: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 34. getPartyUserLogins
+ * Returns system user accounts associated with a party
+ */
+String getPartyUserLogins() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String partyId = parameters.partyId?.trim()
+        if (UtilValidate.isEmpty(partyId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId zorunludur.")
+            return "error"
+        }
+
+        List userLogins = EntityQuery.use(delegator)
+            .from("UserLogin")
+            .where("partyId", partyId)
+            .queryList()
+
+        List list = []
+        for (GenericValue ul : userLogins) {
+            String uId = ul.getString("userLoginId")
+            List secGroups = EntityQuery.use(delegator)
+                .from("UserLoginSecurityGroup")
+                .where("userLoginId", uId)
+                .filterByDate()
+                .queryList()
+                .collect { GenericValue sg ->
+                    GenericValue g = EntityQuery.use(delegator)
+                        .from("SecurityGroup")
+                        .where("groupId", sg.getString("groupId"))
+                        .cache()
+                        .queryOne()
+                    [
+                        groupId: sg.getString("groupId"),
+                        description: g?.getString("description") ?: sg.getString("groupId")
+                    ]
+                }
+
+            list.add([
+                userLoginId: uId,
+                enabled: ul.getString("enabled") ?: "Y",
+                hasLoggedOut: ul.getString("hasLoggedOut") ?: "N",
+                securityGroups: secGroups
+            ])
+        }
+
+        List availableGroups = EntityQuery.use(delegator)
+            .from("SecurityGroup")
+            .orderBy("groupId")
+            .queryList()
+            .collect { GenericValue g ->
+                [
+                    groupId: g.getString("groupId"),
+                    description: g.getString("description") ?: g.getString("groupId")
+                ]
+            }
+
+        request.setAttribute("userLoginsData", [
+            partyId: partyId,
+            userLogins: list,
+            availableSecurityGroups: availableGroups
+        ])
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getPartyUserLogins: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 35. createPartyUserLogin
+ * Creates a new user login and associates with a party
+ */
+String createPartyUserLogin() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        GenericValue uL = getSystemUserLogin()
+        String partyId = parameters.partyId?.trim()
+        String userLoginId = parameters.userLoginId?.trim()
+        String currentPassword = parameters.currentPassword?.trim()
+        String groupId = parameters.groupId?.trim()
+
+        if (UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(userLoginId) || UtilValidate.isEmpty(currentPassword)) {
+            request.setAttribute("_ERROR_MESSAGE_", "partyId, userLoginId ve currentPassword zorunludur.")
+            return "error"
+        }
+
+        Map res = dispatcher.runSync("createUserLogin", [
+            userLogin: uL,
+            userLoginId: userLoginId,
+            currentPassword: currentPassword,
+            currentPasswordVerify: currentPassword,
+            enabled: "Y",
+            partyId: partyId
+        ])
+        if (ServiceUtil.isError(res)) {
+            request.setAttribute("_ERROR_MESSAGE_", ServiceUtil.getErrorMessage(res))
+            return "error"
+        }
+
+        if (UtilValidate.isNotEmpty(groupId)) {
+            dispatcher.runSync("addUserLoginToSecurityGroup", [
+                userLogin: uL,
+                userLoginId: userLoginId,
+                groupId: groupId,
+                fromDate: UtilDateTime.nowTimestamp()
+            ])
+        }
+
+        request.setAttribute("message", "Kullanıcı hesabı başarıyla oluşturuldu.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createPartyUserLogin: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 36. updatePartyUserLoginStatus
+ * Activates or deactivates a user login
+ */
+String updatePartyUserLoginStatus() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String userLoginId = parameters.userLoginId?.trim()
+        String enabled = parameters.enabled?.trim() ?: "Y"
+
+        if (UtilValidate.isEmpty(userLoginId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "userLoginId zorunludur.")
+            return "error"
+        }
+
+        GenericValue ul = EntityQuery.use(delegator)
+            .from("UserLogin")
+            .where("userLoginId", userLoginId)
+            .queryOne()
+
+        if (ul) {
+            ul.set("enabled", enabled)
+            ul.store()
+        }
+
+        request.setAttribute("message", "Kullanıcı durumu güncellendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in updatePartyUserLoginStatus: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+

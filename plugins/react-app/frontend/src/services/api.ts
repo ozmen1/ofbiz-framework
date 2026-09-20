@@ -4580,3 +4580,373 @@ export async function createPartyRelationship(payload: {
     body: JSON.stringify(payload)
   });
 }
+
+// -------------------------------------------------------------
+// Phase 2: Party Financial Profile, Risk, Terms, Notes & Segments
+// -------------------------------------------------------------
+
+export interface PartyFinancialBillingAccount {
+  billingAccountId: string;
+  accountLimit: number;
+  accountBalance: number;
+  availableBalance: number;
+  accountCurrencyUomId: string;
+  description?: string;
+  fromDate?: string;
+  thruDate?: string;
+  roleTypeId?: string;
+}
+
+export interface PartyPaymentTerm {
+  agreementId: string;
+  agreementTermId: string;
+  termTypeId: string;
+  termTypeDescription: string;
+  termValue?: number;
+  termDays?: number;
+  textValue?: string;
+  description?: string;
+}
+
+export interface PartyTaxAuthInfo {
+  taxAuthGeoId: string;
+  taxAuthPartyId: string;
+  partyTaxId: string;
+  isExempt: string;
+  isNexus: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface PartyClassification {
+  partyClassificationGroupId: string;
+  description: string;
+  classificationTypeId: string;
+  fromDate?: string;
+  thruDate?: string;
+}
+
+export interface PartyNote {
+  noteId: string;
+  noteName: string;
+  noteInfo: string;
+  noteDateTime: string;
+  noteParty: string;
+}
+
+export interface PartyClassificationGroup {
+  partyClassificationGroupId: string;
+  description: string;
+  partyClassificationTypeId: string;
+}
+
+export interface PartyTermType {
+  termTypeId: string;
+  description: string;
+}
+
+export interface PartyFinancialProfile {
+  partyId: string;
+  billingAccounts: PartyFinancialBillingAccount[];
+  totalCreditLimit: number;
+  totalAccountBalance: number;
+  totalReceivableOutstanding: number;
+  totalPayableOutstanding: number;
+  netExposure: number;
+  utilizationPercent: number;
+  riskLevel: 'SAFE' | 'WARNING' | 'EXCEEDED' | 'NO_LIMIT';
+  paymentTerms: PartyPaymentTerm[];
+  taxAuthInfos: PartyTaxAuthInfo[];
+  classifications: PartyClassification[];
+  notes: PartyNote[];
+  availableGroups: PartyClassificationGroup[];
+  availableTermTypes: PartyTermType[];
+}
+
+export interface PartyFinancialProfileResponse {
+  financialProfile: PartyFinancialProfile;
+}
+
+export interface SavePartyFinancialPayload {
+  partyId: string;
+  billingAccountId?: string;
+  accountLimit: number;
+  accountCurrencyUomId?: string;
+  description?: string;
+}
+
+export interface SetPartyTaxAuthInfoPayload {
+  partyId: string;
+  taxAuthGeoId?: string;
+  taxAuthPartyId?: string;
+  partyTaxId?: string;
+  isExempt?: 'Y' | 'N';
+}
+
+export interface CreatePartyPaymentTermPayload {
+  partyId: string;
+  termTypeId: string;
+  termDays?: number;
+  termValue?: number;
+  description?: string;
+}
+
+export async function fetchPartyFinancialProfile(partyId: string): Promise<PartyFinancialProfileResponse> {
+  return requestApi<PartyFinancialProfileResponse>(`getPartyFinancialProfile?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function savePartyFinancialProfile(payload: SavePartyFinancialPayload): Promise<{ billingAccountId: string; message: string }> {
+  return requestApi<{ billingAccountId: string; message: string }>('savePartyFinancialProfile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createPartyNote(partyId: string, noteName: string, noteInfo: string): Promise<{ noteId: string; message: string }> {
+  return requestApi<{ noteId: string; message: string }>('createPartyNote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, noteName, noteInfo })
+  });
+}
+
+export async function addPartyClassification(partyId: string, partyClassificationGroupId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('addPartyClassification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, partyClassificationGroupId })
+  });
+}
+
+export async function deletePartyClassification(partyId: string, partyClassificationGroupId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyClassification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, partyClassificationGroupId })
+  });
+}
+
+export async function setPartyTaxAuthInfo(payload: SetPartyTaxAuthInfoPayload): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('setPartyTaxAuthInfo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createPartyPaymentTerm(payload: CreatePartyPaymentTermPayload): Promise<{ agreementTermId: string; message: string }> {
+  return requestApi<{ agreementTermId: string; message: string }>('createPartyPaymentTerm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyPaymentTerm(agreementTermId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyPaymentTerm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agreementTermId })
+  });
+}
+
+// ==========================================
+// PHASE 3 & FINAL PARTY SCREENS: PAYMENT METHODS, ATTRIBUTES, CONTENT, USER LOGINS
+// ==========================================
+
+export interface PartyEftAccount {
+  paymentMethodId: string;
+  bankName: string;
+  accountNumber: string;
+  nameOnAccount: string;
+  routingNumber?: string;
+  description?: string;
+  fromDate?: string;
+}
+
+export interface PartyCreditCard {
+  paymentMethodId: string;
+  cardType: string;
+  cardNumberMasked: string;
+  expireDate: string;
+  firstNameOnCard: string;
+  description?: string;
+  fromDate?: string;
+}
+
+export interface PartyPaymentMethodsResponse {
+  partyId: string;
+  eftAccounts: PartyEftAccount[];
+  creditCards: PartyCreditCard[];
+}
+
+export interface CreatePartyEftPayload {
+  partyId: string;
+  bankName: string;
+  accountNumber: string;
+  nameOnAccount?: string;
+  routingNumber?: string;
+  description?: string;
+}
+
+export interface CreatePartyCreditCardPayload {
+  partyId: string;
+  cardNumber: string;
+  expireDate: string;
+  cardType?: string;
+  nameOnCard?: string;
+}
+
+export interface PartyAttribute {
+  attrName: string;
+  attrValue: string;
+  attrDescription?: string;
+}
+
+export interface SavePartyAttributePayload {
+  partyId: string;
+  attrName: string;
+  attrValue: string;
+  attrDescription?: string;
+}
+
+export interface PartyContentType {
+  partyContentTypeId: string;
+  description: string;
+}
+
+export interface PartyContent {
+  contentId: string;
+  partyContentTypeId: string;
+  contentTypeDescription: string;
+  contentName: string;
+  description?: string;
+  fromDate?: string;
+}
+
+export interface PartyContentsResponse {
+  partyId: string;
+  contents: PartyContent[];
+  availableTypes: PartyContentType[];
+}
+
+export interface CreatePartyContentPayload {
+  partyId: string;
+  partyContentTypeId: string;
+  contentName: string;
+  description?: string;
+}
+
+export interface PartySecurityGroup {
+  groupId: string;
+  description: string;
+}
+
+export interface PartyUserLogin {
+  userLoginId: string;
+  enabled: 'Y' | 'N';
+  hasLoggedOut: string;
+  securityGroups: PartySecurityGroup[];
+}
+
+export interface PartyUserLoginsResponse {
+  partyId: string;
+  userLogins: PartyUserLogin[];
+  availableSecurityGroups: PartySecurityGroup[];
+}
+
+export interface CreatePartyUserLoginPayload {
+  partyId: string;
+  userLoginId: string;
+  currentPassword: string;
+  groupId?: string;
+}
+
+export async function fetchPartyPaymentMethods(partyId: string): Promise<{ paymentMethods: PartyPaymentMethodsResponse }> {
+  return requestApi<{ paymentMethods: PartyPaymentMethodsResponse }>(`getPartyPaymentMethods?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function createPartyEftAccount(payload: CreatePartyEftPayload): Promise<{ paymentMethodId: string; message: string }> {
+  return requestApi<{ paymentMethodId: string; message: string }>('createPartyEftAccount', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyPaymentMethod(paymentMethodId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyPaymentMethod', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paymentMethodId })
+  });
+}
+
+export async function createPartyCreditCard(payload: CreatePartyCreditCardPayload): Promise<{ paymentMethodId: string; message: string }> {
+  return requestApi<{ paymentMethodId: string; message: string }>('createPartyCreditCard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchPartyAttributes(partyId: string): Promise<{ attributes: PartyAttribute[] }> {
+  return requestApi<{ attributes: PartyAttribute[] }>(`getPartyAttributes?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function savePartyAttribute(payload: SavePartyAttributePayload): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('savePartyAttribute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyAttribute(partyId: string, attrName: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyAttribute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, attrName })
+  });
+}
+
+export async function fetchPartyContents(partyId: string): Promise<{ partyContents: PartyContentsResponse }> {
+  return requestApi<{ partyContents: PartyContentsResponse }>(`getPartyContents?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function createPartyContentRecord(payload: CreatePartyContentPayload): Promise<{ contentId: string; message: string }> {
+  return requestApi<{ contentId: string; message: string }>('createPartyContentRecord', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deletePartyContentRecord(partyId: string, contentId: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deletePartyContentRecord', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partyId, contentId })
+  });
+}
+
+export async function fetchPartyUserLogins(partyId: string): Promise<{ userLoginsData: PartyUserLoginsResponse }> {
+  return requestApi<{ userLoginsData: PartyUserLoginsResponse }>(`getPartyUserLogins?partyId=${encodeURIComponent(partyId)}`);
+}
+
+export async function createPartyUserLogin(payload: CreatePartyUserLoginPayload): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('createPartyUserLogin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updatePartyUserLoginStatus(userLoginId: string, enabled: 'Y' | 'N'): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('updatePartyUserLoginStatus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userLoginId, enabled })
+  });
+}
