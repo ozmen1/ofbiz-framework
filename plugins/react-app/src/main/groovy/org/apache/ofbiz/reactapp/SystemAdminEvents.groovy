@@ -22,6 +22,7 @@ import org.apache.ofbiz.base.util.UtilDateTime
 import org.apache.ofbiz.base.util.UtilHttp
 import org.apache.ofbiz.base.util.UtilMisc
 import org.apache.ofbiz.base.util.cache.UtilCache
+import org.apache.ofbiz.entity.GenericValue
 import org.apache.ofbiz.entity.condition.EntityCondition
 import org.apache.ofbiz.entity.condition.EntityOperator
 import org.apache.ofbiz.entity.util.EntityQuery
@@ -642,7 +643,7 @@ String createTenantAdmin() {
             request.setAttribute("_ERROR_MESSAGE_", "Kiracı Adı (tenantName) zorunludur.")
             return "error"
         }
-        if (!tenantId.matches("^[a-zA-Z0-9_-]+$")) {
+        if (!tenantId.matches('^[a-zA-Z0-9_-]+$')) {
             request.setAttribute("_ERROR_MESSAGE_", "Kiracı Kodu sadece harf, rakam, tire (-) ve alt çizgi (_) içerebilir.")
             return "error"
         }
