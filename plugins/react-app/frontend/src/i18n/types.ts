@@ -230,6 +230,19 @@ export interface Translations {
     descriptionPlaceholder: string;
     creating: string;
     itemDescOrName: string;
+    kpiTotalInvoiced: string;
+    kpiOutstanding: string;
+    kpiPastDue: string;
+    kpiPendingApproval: string;
+    tabAll: string;
+    tabSales: string;
+    tabPurchase: string;
+    tabPastDue: string;
+    tabDueSoon: string;
+    tabInProcess: string;
+    exportCsv: string;
+    exportSuccess: string;
+    countUnit: string;
   };
   payments: {
     paymentId: string;

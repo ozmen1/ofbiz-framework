@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search,
   Filter,
@@ -11,6 +11,12 @@ import {
   AlertCircle,
   Copy,
   Check,
+  Download,
+  DollarSign,
+  TrendingUp,
+  AlertTriangle,
+  ArrowUpRight,
+  ArrowDownLeft,
 } from 'lucide-react';
 import { api, InvoiceListItem } from '../services/api';
 import { useTranslation } from '../i18n';
@@ -49,6 +55,8 @@ const getStatusLabel = (statusId: string, inv: any): string => {
   }
 };
 
+type InvoiceSegment = 'ALL' | 'SALES' | 'PURCHASE' | 'PAST_DUE' | 'DUE_SOON' | 'IN_PROCESS';
+
 interface InvoiceListProps {
   onViewInvoice?: (invoiceId: string) => void;
 }
@@ -64,6 +72,8 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [selectedStatementPartyId, setSelectedStatementPartyId] = useState<string | null>(null);
   const [showStatementModal, setShowStatementModal] = useState<boolean>(false);
+  const [activeSegment, setActiveSegment] = useState<InvoiceSegment>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -125,6 +135,80 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
     loadInvoices(emptyFilters);
   };
 
+  const formatCurrency = useCallback((val: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2
+    }).format(val || 0);
+  }, [locale]);
+
+  // KPI Metrics Calculation
+  const kpiMetrics = useMemo(() => {
+    let totalInvoiced = 0;
+    let totalOutstanding = 0;
+    let pastDueAmount = 0;
+    let pastDueCount = 0;
+    let inProcessCount = 0;
+    const now = new Date().toISOString().slice(0, 10);
+
+    for (const inv of invoices) {
+      totalInvoiced += (inv.total || 0);
+      totalOutstanding += (inv.outstandingAmount || 0);
+      if (inv.statusId === 'INVOICE_IN_PROCESS') {
+        inProcessCount++;
+      }
+      if (inv.dueDate && inv.dueDate < now && inv.statusId !== 'INVOICE_PAID' && inv.statusId !== 'INVOICE_CANCELLED' && (inv.outstandingAmount || 0) > 0) {
+        pastDueAmount += (inv.outstandingAmount || 0);
+        pastDueCount++;
+      }
+    }
+
+    return {
+      totalInvoiced,
+      totalOutstanding,
+      pastDueAmount,
+      pastDueCount,
+      inProcessCount
+    };
+  }, [invoices]);
+
+  // Filtered invoices according to active segment tab & quick search query
+  const displayedInvoices = useMemo(() => {
+    const now = new Date().toISOString().slice(0, 10);
+    const sevenDaysLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const q = searchQuery.trim().toLowerCase();
+
+    return invoices.filter(inv => {
+      // Segment filter
+      if (activeSegment === 'SALES') {
+        if (!inv.invoiceTypeId?.startsWith('SALES') && inv.invoiceTypeId !== 'CUST_RTN_INVOICE') return false;
+      } else if (activeSegment === 'PURCHASE') {
+        if (!inv.invoiceTypeId?.startsWith('PURCHASE')) return false;
+      } else if (activeSegment === 'PAST_DUE') {
+        const isPastDue = Boolean(inv.dueDate && inv.dueDate < now && inv.statusId !== 'INVOICE_PAID' && inv.statusId !== 'INVOICE_CANCELLED' && (inv.outstandingAmount || 0) > 0);
+        if (!isPastDue) return false;
+      } else if (activeSegment === 'DUE_SOON') {
+        const isDueSoon = Boolean(inv.dueDate && inv.dueDate >= now && inv.dueDate <= sevenDaysLater && inv.statusId !== 'INVOICE_PAID' && inv.statusId !== 'INVOICE_CANCELLED' && (inv.outstandingAmount || 0) > 0);
+        if (!isDueSoon) return false;
+      } else if (activeSegment === 'IN_PROCESS') {
+        if (inv.statusId !== 'INVOICE_IN_PROCESS') return false;
+      }
+
+      // Live quick search
+      if (q) {
+        const matchId = inv.invoiceId?.toLowerCase().includes(q);
+        const matchPartyFrom = inv.partyIdFrom?.toLowerCase().includes(q);
+        const matchPartyTo = inv.partyIdTo?.toLowerCase().includes(q);
+        const matchDesc = inv.description?.toLowerCase().includes(q);
+        const matchType = inv.invoiceTypeId?.toLowerCase().includes(q);
+        if (!matchId && !matchPartyFrom && !matchPartyTo && !matchDesc && !matchType) return false;
+      }
+
+      return true;
+    });
+  }, [invoices, activeSegment, searchQuery]);
+
   const handleToggleSelect = (invId: string) => {
     setSelectedInvoices(prev =>
       prev.includes(invId) ? prev.filter(id => id !== invId) : [...prev, invId]
@@ -132,11 +216,59 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   };
 
   const handleSelectAll = () => {
-    if (selectedInvoices.length === invoices.length) {
+    if (selectedInvoices.length === displayedInvoices.length) {
       setSelectedInvoices([]);
     } else {
-      setSelectedInvoices(invoices.map(i => i.invoiceId));
+      setSelectedInvoices(displayedInvoices.map(i => i.invoiceId));
     }
+  };
+
+  const handleExportCsv = () => {
+    const itemsToExport = selectedInvoices.length > 0
+      ? invoices.filter(i => selectedInvoices.includes(i.invoiceId))
+      : displayedInvoices;
+
+    if (itemsToExport.length === 0) return;
+
+    const headers = [
+      translations.invoices.invoiceId,
+      translations.invoices.type,
+      translations.invoices.partyFrom,
+      translations.invoices.partyTo,
+      translations.invoices.invoiceDate,
+      translations.invoices.dueDate,
+      translations.invoices.status,
+      translations.invoices.totalAmount,
+      translations.invoices.outstandingAmount,
+      locale === 'tr' ? 'Para Birimi' : 'Currency'
+    ];
+
+    const csvRows = [
+      headers.join(';'),
+      ...itemsToExport.map(i => [
+        `"${i.invoiceId}"`,
+        `"${(i.invoiceTypeId || '').replace(/_/g, ' ')}"`,
+        `"${i.partyIdFrom || ''}"`,
+        `"${i.partyIdTo || ''}"`,
+        `"${i.invoiceDate || ''}"`,
+        `"${i.dueDate || ''}"`,
+        `"${getStatusLabel(i.statusId, translations.invoices)}"`,
+        (i.total || 0).toString().replace('.', ','),
+        (i.outstandingAmount || 0).toString().replace('.', ','),
+        `"${i.currencyUomId || 'USD'}"`
+      ].join(';'))
+    ];
+
+    const blob = new Blob(['\uFEFF' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `faturalar_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setSuccessMsg(translations.invoices.exportSuccess);
   };
 
   const handleMassStatusChange = async (statusId: string) => {
@@ -200,6 +332,160 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
           </button>
         </div>
       )}
+
+      {/* Financial KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+        <div className="ds-stat-card border border-indigo-500/20">
+          <div className="flex items-center justify-between">
+            <span className="ds-stat-label">{translations.invoices.kpiTotalInvoiced}</span>
+            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+              <DollarSign size={18} />
+            </div>
+          </div>
+          <div className="ds-stat-value text-white mt-1">
+            {formatCurrency(kpiMetrics.totalInvoiced)}
+          </div>
+          <div className="ds-stat-sub text-slate-400 mt-0.5">
+            {invoices.length} {translations.invoices.countUnit}
+          </div>
+        </div>
+
+        <div className="ds-stat-card border border-amber-500/20">
+          <div className="flex items-center justify-between">
+            <span className="ds-stat-label">{translations.invoices.kpiOutstanding}</span>
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+              <TrendingUp size={18} />
+            </div>
+          </div>
+          <div className="ds-stat-value text-amber-400 mt-1">
+            {formatCurrency(kpiMetrics.totalOutstanding)}
+          </div>
+          <div className="ds-stat-sub text-slate-400 mt-0.5">
+            {kpiMetrics.totalOutstanding > 0 
+              ? (locale === 'tr' ? 'Tahsilat / Ödeme Bekliyor' : 'Awaiting Settlement')
+              : (locale === 'tr' ? 'Tümü Kapalı' : 'Fully Settled')}
+          </div>
+        </div>
+
+        <div className={`ds-stat-card border ${kpiMetrics.pastDueCount > 0 ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800'}`}>
+          <div className="flex items-center justify-between">
+            <span className="ds-stat-label text-rose-300">{translations.invoices.kpiPastDue}</span>
+            <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+              <AlertTriangle size={18} />
+            </div>
+          </div>
+          <div className="ds-stat-value text-rose-400 mt-1">
+            {formatCurrency(kpiMetrics.pastDueAmount)}
+          </div>
+          <div className="ds-stat-sub text-slate-400 mt-0.5">
+            {kpiMetrics.pastDueCount > 0 ? (
+              <span className="text-rose-400 font-medium">
+                {kpiMetrics.pastDueCount} {translations.invoices.countUnit} {locale === 'tr' ? 'vadesi geçmiş' : 'overdue'}
+              </span>
+            ) : (
+              <span>{locale === 'tr' ? 'Vadesi geçmiş fatura yok' : 'No overdue invoices'}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="ds-stat-card border border-sky-500/20">
+          <div className="flex items-center justify-between">
+            <span className="ds-stat-label">{translations.invoices.kpiPendingApproval}</span>
+            <div className="p-2 bg-sky-500/10 rounded-lg text-sky-400">
+              <Clock size={18} />
+            </div>
+          </div>
+          <div className="ds-stat-value text-sky-400 mt-1">
+            {kpiMetrics.inProcessCount} <span className="text-sm font-normal text-slate-400">{translations.invoices.countUnit}</span>
+          </div>
+          <div className="ds-stat-sub text-slate-400 mt-0.5">
+            {locale === 'tr' ? 'Taslak & Onay aşamasında' : 'In process & draft stage'}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Segment Filter Tabs & Export CSV */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 p-2.5 sm:p-3 rounded-xl border border-slate-800 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSegment('ALL')}
+            className={`ds-pill-tab ${activeSegment === 'ALL' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <span>{translations.invoices.tabAll}</span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
+              {invoices.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment('SALES')}
+            className={`ds-pill-tab ${activeSegment === 'SALES' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <ArrowUpRight size={14} className="text-emerald-400" />
+            <span>{translations.invoices.tabSales}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment('PURCHASE')}
+            className={`ds-pill-tab ${activeSegment === 'PURCHASE' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <ArrowDownLeft size={14} className="text-amber-400" />
+            <span>{translations.invoices.tabPurchase}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment('PAST_DUE')}
+            className={`ds-pill-tab ${activeSegment === 'PAST_DUE' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <AlertTriangle size={14} className="text-rose-400" />
+            <span>{translations.invoices.tabPastDue}</span>
+            {kpiMetrics.pastDueCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-300 font-mono font-bold">
+                {kpiMetrics.pastDueCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment('DUE_SOON')}
+            className={`ds-pill-tab ${activeSegment === 'DUE_SOON' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <Clock size={14} className="text-blue-400" />
+            <span>{translations.invoices.tabDueSoon}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSegment('IN_PROCESS')}
+            className={`ds-pill-tab ${activeSegment === 'IN_PROCESS' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <span>{translations.invoices.tabInProcess}</span>
+            {kpiMetrics.inProcessCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-sky-500/20 text-sky-300 font-mono">
+                {kpiMetrics.inProcessCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={displayedInvoices.length === 0}
+            className="ds-btn-secondary text-xs sm:text-sm py-1.5 px-3 cursor-pointer flex items-center gap-1.5 disabled:opacity-40"
+            title={translations.invoices.exportCsv}
+          >
+            <Download size={15} />
+            <span>{translations.invoices.exportCsv}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Filters Section */}
       <div className="ds-card p-6 animate-fade-in">
@@ -303,17 +589,48 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
       {/* Results Section */}
       <div className="ds-card overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-700/50">
-          <h3 className="text-white text-lg font-semibold m-0">
-            {locale === 'tr' ? 'Kayıtlar' : 'Records'} ({invoices.length} / {translations.common.total}: {totalCount})
-          </h3>
-          <button
-            className="ds-btn-secondary text-sm py-1.5 px-3"
-            onClick={() => loadInvoices(filters)}
-            disabled={loading}
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {translations.common.refresh}
-          </button>
+        <div className="flex flex-wrap justify-between items-center px-6 py-4 border-b border-slate-700/50 gap-3">
+          <div className="flex items-center gap-3">
+            <h3 className="text-white text-lg font-semibold m-0">
+              {locale === 'tr' ? 'Kayıtlar' : 'Records'} ({displayedInvoices.length} / {translations.common.total}: {totalCount})
+            </h3>
+            {activeSegment !== 'ALL' && (
+              <span className="text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-md font-mono">
+                {activeSegment}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={translations.invoices.searchPlaceholder}
+                className="ds-input pl-8 py-1.5 text-xs w-48 sm:w-64"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  <XCircle size={13} />
+                </button>
+              )}
+            </div>
+
+            <button
+              className="ds-btn-secondary text-sm py-1.5 px-3"
+              onClick={() => loadInvoices(filters)}
+              disabled={loading}
+              title={translations.common.refresh}
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
 
         {/* Batch Action Toolbar */}
@@ -368,7 +685,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                 <th className="ds-th w-10 text-center">
                   <input
                     type="checkbox"
-                    checked={invoices.length > 0 && selectedInvoices.length === invoices.length}
+                    checked={displayedInvoices.length > 0 && selectedInvoices.length === displayedInvoices.length}
                     onChange={handleSelectAll}
                     className="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800 cursor-pointer"
                   />
@@ -393,8 +710,8 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                     </div>
                   </td>
                 </tr>
-              ) : invoices.length > 0 ? (
-                invoices.map((inv) => (
+              ) : displayedInvoices.length > 0 ? (
+                displayedInvoices.map((inv) => (
                   <tr key={inv.invoiceId} className={`ds-tbody-row ${selectedInvoices.includes(inv.invoiceId) ? 'bg-indigo-950/20' : ''}`}>
                     <td className="ds-td text-center">
                       <input
@@ -406,7 +723,18 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                     </td>
                     <td className="ds-td-primary">#{inv.invoiceId}</td>
                     <td className="ds-td">{(inv.invoiceTypeId || '').replace(/_/g, ' ')}</td>
-                    <td className="ds-td-muted">{inv.invoiceDate || '-'}</td>
+                    <td className="ds-td-muted">
+                      <div>{inv.invoiceDate || '-'}</div>
+                      {inv.dueDate && (
+                        <div className={`text-[11px] font-mono mt-0.5 flex items-center gap-1 ${
+                          inv.dueDate < new Date().toISOString().slice(0, 10) && inv.statusId !== 'INVOICE_PAID' && inv.statusId !== 'INVOICE_CANCELLED' && (inv.outstandingAmount || 0) > 0
+                            ? 'text-rose-400 font-medium'
+                            : 'text-slate-500'
+                        }`}>
+                          <span>{translations.invoices.dueDate}: {inv.dueDate}</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="ds-td">
                       {inv.partyIdFrom ? (
                         <button
