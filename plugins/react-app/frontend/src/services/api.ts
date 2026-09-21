@@ -5129,6 +5129,9 @@ export interface UserAdminMetadataResponse {
   metadata: {
     securityGroups: { groupId: string; description: string }[];
     parties: { partyId: string; name: string }[];
+    securityGroupCount?: number;
+    roleTypeCount?: number;
+    activeSessionCount?: number;
   };
 }
 

@@ -835,7 +835,7 @@ String getUserAdminMetadata() {
         List parties = []
         List persons = EntityQuery.use(delegator)
             .from("Person")
-            .orderBy("firstName ASC, lastName ASC")
+            .orderBy(["firstName ASC", "lastName ASC"])
             .maxRows(60)
             .queryList()
 
@@ -861,9 +861,25 @@ String getUserAdminMetadata() {
             }
         }
 
+        long securityGroupCount = groups.size()
+        long roleTypeCount = EntityQuery.use(delegator).from("RoleType").queryCount()
+        long activeSessionCount = EntityQuery.use(delegator)
+            .from("Visit")
+            .where(EntityCondition.makeCondition([
+                EntityCondition.makeCondition("userLoginId", EntityOperator.NOT_EQUAL, null),
+                EntityCondition.makeCondition([
+                    EntityCondition.makeCondition("thruDate", EntityOperator.EQUALS, null),
+                    EntityCondition.makeCondition("thruDate", EntityOperator.GREATER_THAN_EQUAL_TO, org.apache.ofbiz.base.util.UtilDateTime.nowTimestamp())
+                ], EntityOperator.OR)
+            ], EntityOperator.AND))
+            .queryCount()
+
         request.setAttribute("metadata", [
             securityGroups: groups,
-            parties: parties
+            parties: parties,
+            securityGroupCount: securityGroupCount,
+            roleTypeCount: roleTypeCount,
+            activeSessionCount: activeSessionCount
         ])
         return "success"
     } catch (Exception e) {
@@ -1111,33 +1127,52 @@ String getLoggedInUsers() {
     def request = binding.getVariable("request")
 
     try {
+        EntityCondition cond = EntityCondition.makeCondition([
+            EntityCondition.makeCondition("userLoginId", EntityOperator.NOT_EQUAL, null),
+            EntityCondition.makeCondition([
+                EntityCondition.makeCondition("thruDate", EntityOperator.EQUALS, null),
+                EntityCondition.makeCondition("thruDate", EntityOperator.GREATER_THAN_EQUAL_TO, org.apache.ofbiz.base.util.UtilDateTime.nowTimestamp())
+            ], EntityOperator.OR)
+        ], EntityOperator.AND)
+
         List<GenericValue> activeVisits = EntityQuery.use(delegator)
             .from("Visit")
-            .where(EntityCondition.makeCondition("userLoginId", EntityOperator.NOT_EQUAL, null))
-            .filterByDate()
+            .where(cond)
             .orderBy("fromDate DESC")
             .maxRows(100)
             .queryList()
 
         List sessions = []
         Set seenUserLogins = new HashSet()
+        Map<String, String> userPartyMap = [:]
 
         for (GenericValue v : activeVisits) {
             String uId = v.getString("userLoginId")
-            String pId = v.getString("partyId")
-            String displayName = getPartyDisplayName(delegator, pId) ?: uId
+            String pId = ""
+            if (userPartyMap.containsKey(uId)) {
+                pId = userPartyMap[uId]
+            } else {
+                GenericValue ul = EntityQuery.use(delegator).from("UserLogin").where("userLoginId", uId).queryOne()
+                pId = ul?.getString("partyId") ?: ""
+                userPartyMap[uId] = pId
+            }
+            String displayName = pId ? (getPartyDisplayName(delegator, pId) ?: uId) : uId
+
+            Timestamp fromDate = v.getTimestamp("fromDate")
+            Timestamp thruDate = v.getTimestamp("thruDate")
+            Timestamp lastActive = thruDate ?: fromDate
 
             sessions.add([
                 sessionId: v.getString("sessionId") ?: v.getString("visitId"),
                 visitId: v.getString("visitId"),
                 userLoginId: uId,
-                partyId: pId ?: "",
+                partyId: pId,
                 displayName: displayName,
                 clientIpAddress: v.getString("clientIpAddress") ?: "",
                 initialUserAgent: v.getString("initialUserAgent") ?: "",
                 webappName: v.getString("webappName") ?: "",
-                fromDate: v.getTimestamp("fromDate")?.toString() ?: "",
-                lastUpdatedStamp: v.getTimestamp("lastUpdatedStamp")?.toString() ?: "",
+                fromDate: fromDate?.toString() ?: "",
+                lastUpdatedStamp: lastActive?.toString() ?: "",
                 isUniqueUser: !seenUserLogins.contains(uId)
             ])
             seenUserLogins.add(uId)

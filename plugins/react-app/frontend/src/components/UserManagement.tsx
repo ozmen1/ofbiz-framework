@@ -127,7 +127,12 @@ export const UserManagement: React.FC = () => {
   // Load Metadata
   useEffect(() => {
     fetchUserAdminMetadata()
-      .then(res => setMetadata(res.metadata))
+      .then(res => {
+        setMetadata(res.metadata);
+        if (res.metadata?.activeSessionCount !== undefined) {
+          setTotalSessionsCount(res.metadata.activeSessionCount);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -565,7 +570,7 @@ export const UserManagement: React.FC = () => {
             <Shield size={15} />
             <span>{t.tabSecurityGroups}</span>
             <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
-              {securityGroups.length || metadata.securityGroups.length}
+              {securityGroups.length || metadata.securityGroupCount || metadata.securityGroups.length || 0}
             </span>
           </button>
 
@@ -577,7 +582,7 @@ export const UserManagement: React.FC = () => {
             <Network size={15} />
             <span>{t.tabRoleTypes}</span>
             <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
-              {roleTypes.length}
+              {roleTypes.length || metadata.roleTypeCount || 0}
             </span>
           </button>
 
