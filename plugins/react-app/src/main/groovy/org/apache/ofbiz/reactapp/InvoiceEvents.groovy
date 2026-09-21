@@ -55,6 +55,25 @@ String getPartyName(def delegator, String partyId) {
     return partyId
 }
 
+String getPartyEmail(def delegator, String partyId) {
+    if (!partyId) return ""
+    try {
+        List<GenericValue> pcms = EntityQuery.use(delegator).from("PartyContactMech")
+                .where("partyId", partyId)
+                .filterByDate()
+                .queryList()
+        for (GenericValue pcm : pcms) {
+            GenericValue cm = EntityQuery.use(delegator).from("ContactMech")
+                    .where("contactMechId", pcm.contactMechId, "contactMechTypeId", "EMAIL_ADDRESS")
+                    .queryOne()
+            if (cm && cm.infoString) {
+                return cm.infoString.trim()
+            }
+        }
+    } catch (Exception ignored) {}
+    return ""
+}
+
 String getInvoiceMetadata() {
     def delegator = binding.getVariable("delegator")
     def request = binding.getVariable("request")
@@ -286,11 +305,54 @@ String getInvoiceDetails() {
             Debug.logWarning("Error calculating invoice totals: " + e.getMessage(), MODULE)
         }
 
+        // Resolve Party emails for communications & notifications
+        String partyFromEmail = getPartyEmail(delegator, invoice.partyIdFrom)
+        String partyToEmail = getPartyEmail(delegator, invoice.partyId)
+        String defaultRecipientEmail = (invoice.invoiceTypeId == "PURCHASE_INVOICE") ? (partyFromEmail ?: partyToEmail) : (partyToEmail ?: partyFromEmail)
+
+        List partyEmails = []
+        Set partiesToCheck = [invoice.partyId, invoice.partyIdFrom].findAll { it != null } as Set
+        partiesToCheck.each { pId ->
+            try {
+                List<GenericValue> pcms = EntityQuery.use(delegator).from("PartyContactMech")
+                        .where("partyId", pId)
+                        .filterByDate()
+                        .queryList()
+                pcms.each { pcm ->
+                    GenericValue cm = EntityQuery.use(delegator).from("ContactMech")
+                            .where("contactMechId", pcm.contactMechId, "contactMechTypeId", "EMAIL_ADDRESS")
+                            .queryOne()
+                    if (cm && cm.infoString) {
+                        String purposeDesc = ""
+                        try {
+                            GenericValue pcmp = EntityQuery.use(delegator).from("PartyContactMechPurpose")
+                                    .where("partyId", pId, "contactMechId", pcm.contactMechId)
+                                    .filterByDate()
+                                    .queryFirst()
+                            if (pcmp) {
+                                GenericValue pt = EntityQuery.use(delegator).from("ContactMechPurposeType").where("contactMechPurposeTypeId", pcmp.contactMechPurposeTypeId).cache().queryOne()
+                                purposeDesc = pt?.description ?: pcmp.contactMechPurposeTypeId
+                            }
+                        } catch (Exception ignored) {}
+                        partyEmails.add([
+                                partyId: pId,
+                                partyName: getPartyName(delegator, pId),
+                                email: cm.infoString.trim(),
+                                purposeDesc: purposeDesc
+                        ])
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         Map headerMap = [
                 invoiceId: invoice.invoiceId,
                 invoiceTypeId: invoice.invoiceTypeId,
                 partyIdFrom: invoice.partyIdFrom,
                 partyIdTo: invoice.partyId,
+                partyFromEmail: partyFromEmail,
+                partyToEmail: partyToEmail,
+                defaultRecipientEmail: defaultRecipientEmail,
                 invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.toString().substring(0, 10) : "",
                 dueDate: invoice.dueDate ? invoice.dueDate.toString().substring(0, 10) : "",
                 paidDate: invoice.paidDate ? invoice.paidDate.toString() : "",
@@ -428,6 +490,7 @@ String getInvoiceDetails() {
         request.setAttribute("attributes", attrsList)
         request.setAttribute("contactMechs", contactMechsList)
         request.setAttribute("contents", contentsList)
+        request.setAttribute("partyEmails", partyEmails)
         request.setAttribute("totals", [
                 total: total != null ? total.doubleValue() : 0.0,
                 taxTotal: taxTotal != null ? taxTotal.doubleValue() : 0.0,

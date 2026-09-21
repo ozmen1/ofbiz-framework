@@ -47,6 +47,9 @@ export interface InvoiceHeader {
   description?: string;
   currencyUomId: string;
   referenceNumber?: string;
+  partyFromEmail?: string;
+  partyToEmail?: string;
+  defaultRecipientEmail?: string;
 }
 
 export interface InvoiceRoleItem {
@@ -116,6 +119,7 @@ export interface InvoiceDetailResponse {
   attributes?: InvoiceAttributeItem[];
   contactMechs?: InvoiceContactMechItem[];
   contents?: InvoiceContentItem[];
+  partyEmails?: { partyId: string; partyName: string; email: string; purposeDesc?: string }[];
 }
 
 export interface InvoiceListItem {
