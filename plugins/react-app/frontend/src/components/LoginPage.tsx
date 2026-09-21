@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Lock, User, Eye, EyeOff, AlertCircle, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Sparkles, Lock, User, Eye, EyeOff, AlertCircle, Loader2, ArrowRight, ShieldCheck, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
 
@@ -10,6 +10,8 @@ export const LoginPage: React.FC = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [tenantId, setTenantId] = useState('');
+  const [showTenantInput, setShowTenantInput] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -28,7 +30,8 @@ export const LoginPage: React.FC = () => {
     try {
       const success = await login({
         username: username.trim(),
-        password: password
+        password: password,
+        userTenantId: tenantId.trim() || undefined
       });
       if (!success && !authError) {
         setLocalError(t.invalidCredentials);
@@ -43,6 +46,7 @@ export const LoginPage: React.FC = () => {
   const fillDemoCredentials = () => {
     setUsername('admin');
     setPassword('ofbiz');
+    setTenantId('');
     setLocalError(null);
     clearError();
   };
@@ -188,6 +192,42 @@ export const LoginPage: React.FC = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+          </div>
+
+          {/* Multi-Tenant Toggle & Input */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowTenantInput(!showTenantInput)}
+              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <Building2 size={13} />
+              <span>{t.tenantOptional}</span>
+              <span className="text-[10px] text-slate-500">
+                {showTenantInput ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {showTenantInput && (
+              <div className="mt-2 animate-fadeIn">
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  {t.tenantId}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Building2 size={15} />
+                  </div>
+                  <input
+                    type="text"
+                    value={tenantId}
+                    onChange={(e) => setTenantId(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder={t.tenantIdPlaceholder}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <button

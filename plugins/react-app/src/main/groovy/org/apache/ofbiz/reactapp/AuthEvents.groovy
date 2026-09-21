@@ -110,6 +110,11 @@ Map getUserProfileMap(def delegator, GenericValue userLogin) {
                       permissions.contains("REACT-APP_ADMIN") || 
                       permissions.contains("OFBTOOLS_ADMIN")
 
+    String tenantId = ""
+    try {
+        tenantId = delegator.getDelegatorTenantId() ?: ""
+    } catch (Exception ignored) {}
+
     return [
         userLoginId: userLoginId,
         partyId: partyId ?: "",
@@ -118,6 +123,7 @@ Map getUserProfileMap(def delegator, GenericValue userLogin) {
         requirePasswordChange: userLogin.getString("requirePasswordChange") ?: "N",
         lastLocale: userLogin.getString("lastLocale") ?: "",
         lastTimeZone: userLogin.getString("lastTimeZone") ?: "",
+        tenantId: tenantId,
         securityGroups: securityGroups,
         permissions: permissions.toList(),
         isAdmin: isAdmin
@@ -137,6 +143,7 @@ String apiLogin() {
     try {
         String username = parameters.USERNAME ?: parameters.username ?: parameters.userLoginId
         String password = parameters.PASSWORD ?: parameters.password
+        String userTenantId = parameters.userTenantId ?: parameters.tenantId
 
         if (UtilValidate.isEmpty(username) || UtilValidate.isEmpty(password)) {
             request.setAttribute("_ERROR_MESSAGE_", "Kullanıcı adı ve şifre zorunludur.")
@@ -146,6 +153,12 @@ String apiLogin() {
         username = username.trim()
         request.setAttribute("USERNAME", username)
         request.setAttribute("PASSWORD", password)
+
+        if (UtilValidate.isNotEmpty(userTenantId)) {
+            userTenantId = userTenantId.trim()
+            request.setAttribute("userTenantId", userTenantId)
+            parameters.put("userTenantId", userTenantId)
+        }
 
         // Delegate authentication to OFBiz LoginWorker
         String loginResult = LoginWorker.login(request, response)

@@ -726,6 +726,15 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
             {/* Masaüstü Kullanıcı Bilgi Çipi */}
             {user && (
               <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                {user.tenantId && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-mono font-semibold"
+                    title={`${translations.auth.activeTenantBadge} ${user.tenantId}`}
+                  >
+                    <Building2 size={11} />
+                    <span>{user.tenantId}</span>
+                  </span>
+                )}
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 via-red-600 to-amber-700 flex items-center justify-center text-xs font-bold text-white shadow-sm ring-1 ring-white/10">
                   {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
                 </div>

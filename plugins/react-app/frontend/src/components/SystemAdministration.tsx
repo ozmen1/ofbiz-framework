@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Server, Cpu, Activity, RefreshCw, Trash2, Play, AlertCircle,
   CheckCircle2, Search, Zap, Layers, Clock, ShieldCheck, X,
-  ChevronLeft, ChevronRight, Loader2, Database, Info, RotateCcw
+  ChevronLeft, ChevronRight, Loader2, Database, Info, RotateCcw,
+  Building2, Globe, Plus
 } from 'lucide-react';
 import {
   fetchCacheStatus,
@@ -14,15 +15,24 @@ import {
   resetJob,
   triggerServiceNow,
   fetchSystemDiagnostics,
+  fetchTenantsAdmin,
+  fetchTenantDetail,
+  updateTenantAdmin,
+  deleteTenantAdmin,
+  addTenantDomainName,
+  deleteTenantDomainName,
   CacheItem,
   MemoryInfo,
   JobItem,
   JobStats,
-  SystemDiagnosticsResponse
+  SystemDiagnosticsResponse,
+  TenantAdminItem,
+  TenantDetail
 } from '../services/api';
 import { useTranslation } from '../i18n';
+import { CreateTenantModal } from './CreateTenantModal';
 
-type AdminTab = 'cache' | 'jobs' | 'diagnostics';
+type AdminTab = 'cache' | 'jobs' | 'diagnostics' | 'tenants';
 
 export const SystemAdministration: React.FC = () => {
   const { translations } = useTranslation();
@@ -273,6 +283,144 @@ export const SystemAdministration: React.FC = () => {
     }
   }, []);
 
+  // =========================================================
+  // 4. Multi-Tenant Management State
+  // =========================================================
+  const [tenants, setTenants] = useState<TenantAdminItem[]>([]);
+  const [loadingTenants, setLoadingTenants] = useState<boolean>(false);
+  const [tenantSearch, setTenantSearch] = useState<string>('');
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+  const [tenantDetail, setTenantDetail] = useState<TenantDetail | null>(null);
+  const [loadingTenantDetail, setLoadingTenantDetail] = useState<boolean>(false);
+  const [isCreateTenantOpen, setIsCreateTenantOpen] = useState<boolean>(false);
+  const [newDomainInput, setNewDomainInput] = useState<string>('');
+  const [isAddingDomain, setIsAddingDomain] = useState<boolean>(false);
+  const [deletingTenantId, setDeletingTenantId] = useState<string | null>(null);
+  const [togglingTenantId, setTogglingTenantId] = useState<string | null>(null);
+
+  const loadTenants = useCallback(async () => {
+    setLoadingTenants(true);
+    try {
+      const res = await fetchTenantsAdmin();
+      setTenants(res.tenants || []);
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Kiracı listesi yüklenemedi.');
+    } finally {
+      setLoadingTenants(false);
+    }
+  }, []);
+
+  const loadTenantDetail = useCallback(async (tenantId: string) => {
+    setLoadingTenantDetail(true);
+    try {
+      const res = await fetchTenantDetail(tenantId);
+      setTenantDetail(res.tenantDetail || null);
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Kiracı detayı yüklenemedi.');
+    } finally {
+      setLoadingTenantDetail(false);
+    }
+  }, []);
+
+  const handleSelectTenant = (tenantId: string) => {
+    setSelectedTenantId(tenantId);
+    loadTenantDetail(tenantId);
+  };
+
+  const handleCloseTenantDrawer = () => {
+    setSelectedTenantId(null);
+    setTenantDetail(null);
+    setNewDomainInput('');
+  };
+
+  const handleToggleTenantStatus = async (tenantId: string, currentDisabled: string) => {
+    setTogglingTenantId(tenantId);
+    try {
+      const nextDisabled = currentDisabled === 'Y' ? 'N' : 'Y';
+      const res = await updateTenantAdmin({ tenantId, disabled: nextDisabled });
+      showFeedback('success', res.message || t.tenantUpdatedSuccess);
+      loadTenants();
+      if (selectedTenantId === tenantId) {
+        loadTenantDetail(tenantId);
+      }
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Kiracı durumu güncellenemedi.');
+    } finally {
+      setTogglingTenantId(null);
+    }
+  };
+
+  const handleDeleteTenant = async (tenantId: string) => {
+    if (!window.confirm(t.confirmDeleteTenant)) return;
+    setDeletingTenantId(tenantId);
+    try {
+      const res = await deleteTenantAdmin(tenantId);
+      showFeedback('success', res.message || t.tenantDeletedSuccess);
+      if (selectedTenantId === tenantId) {
+        handleCloseTenantDrawer();
+      }
+      loadTenants();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Kiracı silinemedi.');
+    } finally {
+      setDeletingTenantId(null);
+    }
+  };
+
+  const handleAddDomain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTenantId || !newDomainInput.trim()) return;
+    setIsAddingDomain(true);
+    try {
+      const res = await addTenantDomainName({
+        tenantId: selectedTenantId,
+        domainName: newDomainInput.trim().toLowerCase(),
+      });
+      showFeedback('success', res.message || t.domainAddedSuccess);
+      setNewDomainInput('');
+      loadTenantDetail(selectedTenantId);
+      loadTenants();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Alan adı eklenemedi.');
+    } finally {
+      setIsAddingDomain(false);
+    }
+  };
+
+  const handleDeleteDomain = async (domainName: string) => {
+    if (!selectedTenantId || !window.confirm(t.confirmDeleteDomain)) return;
+    try {
+      const res = await deleteTenantDomainName(domainName);
+      showFeedback('success', res.message || t.domainDeletedSuccess);
+      loadTenantDetail(selectedTenantId);
+      loadTenants();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Alan adı silinemedi.');
+    }
+  };
+
+  // Lock body scroll when tenant detail drawer is open (Golden Invariant 2)
+  useEffect(() => {
+    if (selectedTenantId) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedTenantId]);
+
+  const filteredTenants = useMemo(() => {
+    if (!tenantSearch.trim()) return tenants;
+    const q = tenantSearch.toLowerCase();
+    return tenants.filter(
+      (item) =>
+        item.tenantId.toLowerCase().includes(q) ||
+        item.tenantName.toLowerCase().includes(q)
+    );
+  }, [tenants, tenantSearch]);
+
   // Initial tab loading
   useEffect(() => {
     if (activeTab === 'cache') {
@@ -281,8 +429,10 @@ export const SystemAdministration: React.FC = () => {
       loadJobs(0);
     } else if (activeTab === 'diagnostics') {
       loadDiagnostics();
+    } else if (activeTab === 'tenants') {
+      loadTenants();
     }
-  }, [activeTab, loadCache, loadJobs, loadDiagnostics]);
+  }, [activeTab, loadCache, loadJobs, loadDiagnostics, loadTenants]);
 
   return (
     <div className="space-y-6">
@@ -342,25 +492,51 @@ export const SystemAdministration: React.FC = () => {
             <Cpu size={15} />
             <span>{t.tabDiagnostics}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('tenants')}
+            className={`ds-pill-tab ${activeTab === 'tenants' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <Building2 size={15} />
+            <span>{t.tabTenants}</span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
+              {tenants.length}
+            </span>
+          </button>
         </div>
 
-        {/* Global Tab Refresh */}
-        <button
-          type="button"
-          onClick={() => {
-            if (activeTab === 'cache') loadCache(cacheSearch);
-            else if (activeTab === 'jobs') loadJobs(jobViewIndex);
-            else loadDiagnostics();
-          }}
-          disabled={loadingCache || loadingJobs || loadingDiagnostics}
-          className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw
-            size={13}
-            className={loadingCache || loadingJobs || loadingDiagnostics ? 'animate-spin text-indigo-400' : ''}
-          />
-          <span>{common.refresh}</span>
-        </button>
+        {/* Global Tab Actions */}
+        <div className="flex items-center gap-2.5">
+          {activeTab === 'tenants' && (
+            <button
+              type="button"
+              onClick={() => setIsCreateTenantOpen(true)}
+              className="ds-btn-primary text-xs py-1.5 px-3 cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus size={14} />
+              <span>{t.createTenant}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (activeTab === 'cache') loadCache(cacheSearch);
+              else if (activeTab === 'jobs') loadJobs(jobViewIndex);
+              else if (activeTab === 'diagnostics') loadDiagnostics();
+              else loadTenants();
+            }}
+            disabled={loadingCache || loadingJobs || loadingDiagnostics || loadingTenants}
+            className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw
+              size={13}
+              className={loadingCache || loadingJobs || loadingDiagnostics || loadingTenants ? 'animate-spin text-indigo-400' : ''}
+            />
+            <span>{common.refresh}</span>
+          </button>
+        </div>
       </div>
 
       {/* ========================================================= */}
@@ -938,6 +1114,374 @@ export const SystemAdministration: React.FC = () => {
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 4. MULTI-TENANT ARCHITECTURE MANAGEMENT TAB CONTENT        */}
+      {/* ========================================================= */}
+      {activeTab === 'tenants' && (
+        <div className="space-y-6">
+          {/* Tenant Overview Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="ds-card p-4 flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                <Building2 size={22} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{t.totalTenants}</p>
+                <p className="text-xl font-bold text-white tracking-tight">{tenants.length}</p>
+              </div>
+            </div>
+
+            <div className="ds-card p-4 flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <Building2 size={22} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{t.activeTenants}</p>
+                <p className="text-xl font-bold text-emerald-300 tracking-tight">
+                  {tenants.filter(item => item.disabled !== 'Y').length}
+                </p>
+              </div>
+            </div>
+
+            <div className="ds-card p-4 flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-rose-500/15 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                <Building2 size={22} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{t.disabledTenants}</p>
+                <p className="text-xl font-bold text-rose-300 tracking-tight">
+                  {tenants.filter(item => item.disabled === 'Y').length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={tenantSearch}
+                onChange={(e) => setTenantSearch(e.target.value)}
+                placeholder={t.searchTenantsPlaceholder}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Tenants Table */}
+          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                    <th className="py-3 px-4">{t.tenantId}</th>
+                    <th className="py-3 px-4">{t.tenantName}</th>
+                    <th className="py-3 px-4">{t.initialPath}</th>
+                    <th className="py-3 px-4 text-center">{t.domainsCount}</th>
+                    <th className="py-3 px-4 text-center">{t.componentsCount}</th>
+                    <th className="py-3 px-4 text-center">{common.status}</th>
+                    <th className="py-3 px-4 text-right">{common.actions}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-sm">
+                  {loadingTenants ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <Loader2 size={24} className="animate-spin mx-auto text-indigo-400 mb-2" />
+                        <span>{common.loading}</span>
+                      </td>
+                    </tr>
+                  ) : filteredTenants.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <Building2 size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
+                        <p>{t.noTenantsFound}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTenants.map((item) => (
+                      <tr
+                        key={item.tenantId}
+                        className="hover:bg-slate-800/30 transition-colors group"
+                      >
+                        <td className="py-3 px-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectTenant(item.tenantId)}
+                            className="font-mono font-bold text-indigo-400 hover:text-indigo-300 text-xs px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 cursor-pointer"
+                          >
+                            {item.tenantId}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-white font-medium">
+                          {item.tenantName}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-xs text-slate-400">
+                          {item.initialPath || '-'}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                            <Globe size={11} className="text-slate-400" />
+                            <span>{item.domainCount}</span>
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                            <Layers size={11} className="text-slate-400" />
+                            <span>{item.componentCount}</span>
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTenantStatus(item.tenantId, item.disabled)}
+                            disabled={togglingTenantId === item.tenantId}
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
+                              item.disabled === 'Y'
+                                ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                            }`}
+                          >
+                            {togglingTenantId === item.tenantId ? (
+                              <Loader2 size={11} className="animate-spin inline" />
+                            ) : item.disabled === 'Y' ? (
+                              common.inactive
+                            ) : (
+                              common.active
+                            )}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectTenant(item.tenantId)}
+                              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer text-xs inline-flex items-center gap-1"
+                              title={t.tenantDetailTitle}
+                            >
+                              <span>Detay</span>
+                              <ChevronRight size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTenant(item.tenantId)}
+                              disabled={deletingTenantId === item.tenantId}
+                              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-40"
+                              title={t.deleteTenant}
+                            >
+                              {deletingTenantId === item.tenantId ? (
+                                <Loader2 size={14} className="animate-spin text-rose-400" />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TENANT DETAIL SIDE DRAWER                                 */}
+      {/* ========================================================= */}
+      {selectedTenantId && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 bg-black/80 transition-opacity" onClick={handleCloseTenantDrawer} />
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-slate-900 border-l border-slate-800 flex flex-col shadow-2xl overflow-y-auto">
+              {/* Drawer Header */}
+              <div className="p-5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 shadow-md">
+                    <Building2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white font-mono">{selectedTenantId}</h3>
+                    <p className="text-xs text-slate-400">{tenantDetail?.tenantName || selectedTenantId}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseTenantDrawer}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              {loadingTenantDetail || !tenantDetail ? (
+                <div className="p-12 text-center text-slate-500">
+                  <Loader2 size={24} className="animate-spin mx-auto text-indigo-400 mb-2" />
+                  <span>{common.loading}</span>
+                </div>
+              ) : (
+                <div className="p-5 space-y-6 flex-1">
+                  {/* Status & Path Card */}
+                  <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Durum:</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        tenantDetail.disabled === 'Y'
+                          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                          : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      }`}>
+                        {tenantDetail.disabled === 'Y' ? common.inactive : common.active}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">{t.initialPath}:</span>
+                      <span className="font-mono text-white">{tenantDetail.initialPath || '-'}</span>
+                    </div>
+                  </div>
+
+                  {/* Domain Names Management */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                        <Globe size={15} className="text-indigo-400" />
+                        <span>{t.domainsTitle}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {tenantDetail.domains.length} alan adı
+                      </span>
+                    </div>
+
+                    {/* Add Domain Form */}
+                    <form onSubmit={handleAddDomain} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newDomainInput}
+                        onChange={(e) => setNewDomainInput(e.target.value)}
+                        placeholder="subdomain.domain.com"
+                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newDomainInput.trim() || isAddingDomain}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1 shrink-0"
+                      >
+                        {isAddingDomain ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                        <span>{common.create}</span>
+                      </button>
+                    </form>
+
+                    {/* Domain List */}
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {tenantDetail.domains.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic p-3 bg-slate-950/30 rounded-lg">
+                          {t.noDomainsFound}
+                        </p>
+                      ) : (
+                        tenantDetail.domains.map((d) => (
+                          <div
+                            key={d.domainName}
+                            className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Globe size={13} className="text-slate-500 shrink-0" />
+                              <span className="font-mono text-white truncate">{d.domainName}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDomain(d.domainName)}
+                              className="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors cursor-pointer"
+                              title="Sil"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Components List */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Layers size={14} className="text-amber-400" />
+                        <span>{t.componentsTitle}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {tenantDetail.components.length} bileşen
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-32 overflow-y-auto flex flex-wrap gap-1.5">
+                      {tenantDetail.components.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic">{t.noComponentsFound}</p>
+                      ) : (
+                        tenantDetail.components.map((c) => (
+                          <span
+                            key={c.componentName}
+                            className="px-2 py-0.5 text-[11px] font-mono rounded bg-slate-900 text-amber-300 border border-slate-800"
+                          >
+                            {c.componentName}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DataSources List */}
+                  <div className="space-y-2 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Database size={14} className="text-indigo-400" />
+                        <span>{t.dataSourcesTitle}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {tenantDetail.dataSources.length} kaynak
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                      {tenantDetail.dataSources.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic p-3 bg-slate-950/30 rounded-lg">
+                          {t.noDataSourcesFound}
+                        </p>
+                      ) : (
+                        tenantDetail.dataSources.map((ds) => (
+                          <div
+                            key={ds.entityGroupName}
+                            className="p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 text-xs space-y-1"
+                          >
+                            <span className="font-mono font-bold text-indigo-300">{ds.entityGroupName}</span>
+                            <p className="font-mono text-[10px] text-slate-400 truncate">{ds.jdbcUri}</p>
+                            <p className="font-mono text-[10px] text-slate-500">Kullanıcı: {ds.jdbcUsername}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create Tenant */}
+      {isCreateTenantOpen && (
+        <CreateTenantModal
+          isOpen={isCreateTenantOpen}
+          onClose={() => setIsCreateTenantOpen(false)}
+          onSuccess={(newId) => {
+            showFeedback('success', `${newId} ${t.tenantCreatedSuccess}`);
+            loadTenants();
+          }}
+        />
       )}
 
       {/* ========================================================= */}

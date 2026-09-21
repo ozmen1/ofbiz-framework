@@ -1941,6 +1941,10 @@ export interface Translations {
     userBadge: string;
     securityGroups: string;
     sessionActive: string;
+    tenantId: string;
+    tenantIdPlaceholder: string;
+    tenantOptional: string;
+    activeTenantBadge: string;
   };
   users: {
     title: string;
@@ -2103,5 +2107,36 @@ export interface Translations {
     ofbizTitle: string;
     delegator: string;
     serverTime: string;
+    tabTenants: string;
+    totalTenants: string;
+    activeTenants: string;
+    disabledTenants: string;
+    createTenant: string;
+    editTenant: string;
+    deleteTenant: string;
+    tenantId: string;
+    tenantName: string;
+    initialPath: string;
+    domainsCount: string;
+    componentsCount: string;
+    dataSourcesCount: string;
+    searchTenantsPlaceholder: string;
+    noTenantsFound: string;
+    tenantCreatedSuccess: string;
+    tenantUpdatedSuccess: string;
+    tenantDeletedSuccess: string;
+    confirmDeleteTenant: string;
+    domainsTitle: string;
+    componentsTitle: string;
+    dataSourcesTitle: string;
+    addDomain: string;
+    domainName: string;
+    domainAddedSuccess: string;
+    domainDeletedSuccess: string;
+    confirmDeleteDomain: string;
+    noDomainsFound: string;
+    noComponentsFound: string;
+    noDataSourcesFound: string;
+    tenantDetailTitle: string;
   };
 }

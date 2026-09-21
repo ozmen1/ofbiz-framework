@@ -4976,6 +4976,7 @@ export interface UserLoginProfile {
   requirePasswordChange: string;
   lastLocale?: string;
   lastTimeZone?: string;
+  tenantId?: string;
   securityGroups: UserSecurityGroup[];
   permissions: string[];
   isAdmin: boolean;
@@ -4990,6 +4991,7 @@ export interface AuthCheckResponse {
 export interface LoginPayload {
   username: string;
   password: string;
+  userTenantId?: string;
 }
 
 export interface LoginResponse {
@@ -5499,6 +5501,116 @@ export async function triggerServiceNow(serviceName: string): Promise<{ success:
 
 export async function fetchSystemDiagnostics(): Promise<SystemDiagnosticsResponse> {
   return requestApi<SystemDiagnosticsResponse>('getSystemDiagnostics');
+}
+
+// ==========================================
+// Multi-Tenant Architecture API Models & Functions
+// ==========================================
+
+export interface TenantAdminItem {
+  tenantId: string;
+  tenantName: string;
+  initialPath?: string;
+  disabled: string;
+  domainCount: number;
+  componentCount: number;
+  dataSourceCount: number;
+}
+
+export interface TenantDomainItem {
+  domainName: string;
+}
+
+export interface TenantComponentItem {
+  componentName: string;
+  sequenceNum?: number;
+}
+
+export interface TenantDataSourceItem {
+  entityGroupName: string;
+  jdbcUri: string;
+  jdbcUsername: string;
+}
+
+export interface TenantDetail {
+  tenantId: string;
+  tenantName: string;
+  initialPath?: string;
+  disabled: string;
+  domains: TenantDomainItem[];
+  components: TenantComponentItem[];
+  dataSources: TenantDataSourceItem[];
+}
+
+export interface TenantsAdminResponse {
+  tenants: TenantAdminItem[];
+  totalCount: number;
+}
+
+export interface TenantDetailResponse {
+  tenantDetail: TenantDetail;
+}
+
+export async function fetchTenantsAdmin(): Promise<TenantsAdminResponse> {
+  return requestApi<TenantsAdminResponse>('getTenantsAdmin');
+}
+
+export async function fetchTenantDetail(tenantId: string): Promise<TenantDetailResponse> {
+  return requestApi<TenantDetailResponse>('getTenantDetail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId })
+  });
+}
+
+export async function createTenantAdmin(payload: {
+  tenantId: string;
+  tenantName: string;
+  initialPath?: string;
+  domainName?: string;
+}): Promise<{ message: string; tenantId: string }> {
+  return requestApi<{ message: string; tenantId: string }>('createTenantAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateTenantAdmin(payload: {
+  tenantId: string;
+  tenantName?: string;
+  initialPath?: string;
+  disabled?: 'Y' | 'N';
+}): Promise<{ message: string; tenantId: string }> {
+  return requestApi<{ message: string; tenantId: string }>('updateTenantAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteTenantAdmin(tenantId: string): Promise<{ message: string; tenantId: string }> {
+  return requestApi<{ message: string; tenantId: string }>('deleteTenantAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId })
+  });
+}
+
+export async function addTenantDomainName(payload: { tenantId: string; domainName: string }): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('addTenantDomainName', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteTenantDomainName(domainName: string): Promise<{ message: string }> {
+  return requestApi<{ message: string }>('deleteTenantDomainName', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domainName })
+  });
 }
 
 

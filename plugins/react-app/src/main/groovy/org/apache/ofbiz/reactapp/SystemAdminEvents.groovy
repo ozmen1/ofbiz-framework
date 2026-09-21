@@ -473,3 +473,395 @@ String getSystemDiagnostics() {
         return "error"
     }
 }
+
+/**
+ * =========================================================================
+ * Multi-Tenancy (Tenant) Administration Events
+ * =========================================================================
+ */
+
+/**
+ * Lists all registered tenants with domain and component counts
+ */
+String getTenantsAdmin() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        List<GenericValue> allTenants = EntityQuery.use(delegator)
+            .from("Tenant")
+            .orderBy("tenantId ASC")
+            .queryList()
+
+        List tenantsList = []
+        for (GenericValue t : allTenants) {
+            String tId = t.getString("tenantId")
+
+            long domainCount = EntityQuery.use(delegator)
+                .from("TenantDomainName")
+                .where("tenantId", tId)
+                .queryCount()
+
+            long componentCount = EntityQuery.use(delegator)
+                .from("TenantComponent")
+                .where("tenantId", tId)
+                .queryCount()
+
+            long dsCount = EntityQuery.use(delegator)
+                .from("TenantDataSource")
+                .where("tenantId", tId)
+                .queryCount()
+
+            tenantsList.add([
+                tenantId: tId,
+                tenantName: t.getString("tenantName") ?: "",
+                initialPath: t.getString("initialPath") ?: "",
+                disabled: t.getString("disabled") ?: "N",
+                domainCount: domainCount,
+                componentCount: componentCount,
+                dataSourceCount: dsCount
+            ])
+        }
+
+        request.setAttribute("tenants", tenantsList)
+        request.setAttribute("totalCount", tenantsList.size())
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Kiracı listesi alınırken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Returns complete detail for a specific tenant (domains, components, data sources)
+ */
+String getTenantDetail() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String tenantId = params.tenantId
+        if (!tenantId) {
+            request.setAttribute("_ERROR_MESSAGE_", "tenantId parametresi zorunludur.")
+            return "error"
+        }
+
+        GenericValue tenant = EntityQuery.use(delegator)
+            .from("Tenant")
+            .where("tenantId", tenantId)
+            .queryOne()
+
+        if (!tenant) {
+            request.setAttribute("_ERROR_MESSAGE_", "Belirtilen kiracı bulunamadı: " + tenantId)
+            return "error"
+        }
+
+        List<GenericValue> domains = EntityQuery.use(delegator)
+            .from("TenantDomainName")
+            .where("tenantId", tenantId)
+            .queryList()
+
+        List<GenericValue> components = EntityQuery.use(delegator)
+            .from("TenantComponent")
+            .where("tenantId", tenantId)
+            .orderBy("sequenceNum ASC")
+            .queryList()
+
+        List<GenericValue> dataSources = EntityQuery.use(delegator)
+            .from("TenantDataSource")
+            .where("tenantId", tenantId)
+            .queryList()
+
+        List domainList = domains.collect { [domainName: it.getString("domainName")] }
+        List componentList = components.collect { [componentName: it.getString("componentName"), sequenceNum: it.get("sequenceNum")] }
+        List dsList = dataSources.collect {
+            [
+                entityGroupName: it.getString("entityGroupName"),
+                jdbcUri: it.getString("jdbcUri"),
+                jdbcUsername: it.getString("jdbcUsername")
+            ]
+        }
+
+        request.setAttribute("tenantDetail", [
+            tenantId: tenant.getString("tenantId"),
+            tenantName: tenant.getString("tenantName") ?: "",
+            initialPath: tenant.getString("initialPath") ?: "",
+            disabled: tenant.getString("disabled") ?: "N",
+            domains: domainList,
+            components: componentList,
+            dataSources: dsList
+        ])
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Kiracı detayı alınırken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Creates a new Tenant record and optional initial domain
+ */
+String createTenantAdmin() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String tenantId = params.tenantId ? params.tenantId.trim() : ""
+        String tenantName = params.tenantName ? params.tenantName.trim() : ""
+        String initialPath = params.initialPath ? params.initialPath.trim() : ""
+        String domainName = params.domainName ? params.domainName.trim().toLowerCase() : ""
+
+        if (!tenantId) {
+            request.setAttribute("_ERROR_MESSAGE_", "Kiracı Kodu (tenantId) zorunludur.")
+            return "error"
+        }
+        if (!tenantName) {
+            request.setAttribute("_ERROR_MESSAGE_", "Kiracı Adı (tenantName) zorunludur.")
+            return "error"
+        }
+        if (!tenantId.matches("^[a-zA-Z0-9_-]+$")) {
+            request.setAttribute("_ERROR_MESSAGE_", "Kiracı Kodu sadece harf, rakam, tire (-) ve alt çizgi (_) içerebilir.")
+            return "error"
+        }
+
+        GenericValue existing = EntityQuery.use(delegator)
+            .from("Tenant")
+            .where("tenantId", tenantId)
+            .queryOne()
+
+        if (existing) {
+            request.setAttribute("_ERROR_MESSAGE_", "Bu kiracı kodu (${tenantId}) zaten mevcut.")
+            return "error"
+        }
+
+        GenericValue newTenant = delegator.makeValue("Tenant", [
+            tenantId: tenantId,
+            tenantName: tenantName,
+            initialPath: initialPath ?: null,
+            disabled: "N"
+        ])
+        delegator.create(newTenant)
+
+        if (domainName) {
+            GenericValue existingDomain = EntityQuery.use(delegator)
+                .from("TenantDomainName")
+                .where("domainName", domainName)
+                .queryOne()
+
+            if (!existingDomain) {
+                GenericValue newDomain = delegator.makeValue("TenantDomainName", [
+                    tenantId: tenantId,
+                    domainName: domainName
+                ])
+                delegator.create(newDomain)
+            }
+        }
+
+        request.setAttribute("tenantId", tenantId)
+        request.setAttribute("message", "Kiracı (${tenantId}) başarıyla oluşturuldu.")
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Kiracı oluşturulurken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Updates a tenant's name, path or disabled status
+ */
+String updateTenantAdmin() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String tenantId = params.tenantId ? params.tenantId.trim() : ""
+        if (!tenantId) {
+            request.setAttribute("_ERROR_MESSAGE_", "tenantId zorunludur.")
+            return "error"
+        }
+
+        GenericValue tenant = EntityQuery.use(delegator)
+            .from("Tenant")
+            .where("tenantId", tenantId)
+            .queryOne()
+
+        if (!tenant) {
+            request.setAttribute("_ERROR_MESSAGE_", "Kiracı bulunamadı: " + tenantId)
+            return "error"
+        }
+
+        if (params.tenantName != null) tenant.set("tenantName", params.tenantName.trim())
+        if (params.initialPath != null) tenant.set("initialPath", params.initialPath.trim() ?: null)
+        if (params.disabled != null) tenant.set("disabled", "Y".equalsIgnoreCase(params.disabled) ? "Y" : "N")
+
+        delegator.store(tenant)
+
+        request.setAttribute("tenantId", tenantId)
+        request.setAttribute("message", "Kiracı bilgileri başarıyla güncellendi.")
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Kiracı güncellenirken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Deletes a tenant and its domain/component associations
+ */
+String deleteTenantAdmin() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String tenantId = params.tenantId ? params.tenantId.trim() : ""
+        if (!tenantId) {
+            request.setAttribute("_ERROR_MESSAGE_", "tenantId zorunludur.")
+            return "error"
+        }
+
+        GenericValue tenant = EntityQuery.use(delegator)
+            .from("Tenant")
+            .where("tenantId", tenantId)
+            .queryOne()
+
+        if (!tenant) {
+            request.setAttribute("_ERROR_MESSAGE_", "Kiracı bulunamadı: " + tenantId)
+            return "error"
+        }
+
+        // Remove related domain names
+        delegator.removeByAnd("TenantDomainName", [tenantId: tenantId])
+        // Remove related components
+        delegator.removeByAnd("TenantComponent", [tenantId: tenantId])
+        // Remove related data sources
+        delegator.removeByAnd("TenantDataSource", [tenantId: tenantId])
+        // Remove tenant record
+        delegator.removeValue(tenant)
+
+        request.setAttribute("tenantId", tenantId)
+        request.setAttribute("message", "Kiracı (${tenantId}) ve tüm ilişkili kayıtları silindi.")
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Kiracı silinirken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Adds a domain mapping to a tenant
+ */
+String addTenantDomainName() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String tenantId = params.tenantId ? params.tenantId.trim() : ""
+        String domainName = params.domainName ? params.domainName.trim().toLowerCase() : ""
+
+        if (!tenantId || !domainName) {
+            request.setAttribute("_ERROR_MESSAGE_", "tenantId ve domainName zorunludur.")
+            return "error"
+        }
+
+        GenericValue existingDomain = EntityQuery.use(delegator)
+            .from("TenantDomainName")
+            .where("domainName", domainName)
+            .queryOne()
+
+        if (existingDomain) {
+            request.setAttribute("_ERROR_MESSAGE_", "Bu alan adı (${domainName}) zaten bir kiracıya atanmış.")
+            return "error"
+        }
+
+        GenericValue newDomain = delegator.makeValue("TenantDomainName", [
+            tenantId: tenantId,
+            domainName: domainName
+        ])
+        delegator.create(newDomain)
+
+        request.setAttribute("message", "Alan adı başarıyla eklendi: " + domainName)
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Alan adı eklenirken hata: " + e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * Removes a domain mapping
+ */
+String deleteTenantDomainName() {
+    def request = binding.getVariable("request")
+    def delegator = binding.getVariable("delegator")
+    def session = request.getSession()
+    def userLogin = session ? session.getAttribute("userLogin") : null
+
+    if (!userLogin) {
+        request.setAttribute("_ERROR_MESSAGE_", "Yetkilendirme hatası: Lütfen giriş yapın.")
+        return "error"
+    }
+
+    try {
+        def params = getParams(binding)
+        String domainName = params.domainName ? params.domainName.trim().toLowerCase() : ""
+
+        if (!domainName) {
+            request.setAttribute("_ERROR_MESSAGE_", "domainName zorunludur.")
+            return "error"
+        }
+
+        delegator.removeByAnd("TenantDomainName", [domainName: domainName])
+        request.setAttribute("message", "Alan adı başarıyla silindi: " + domainName)
+        return "success"
+    } catch (Exception e) {
+        request.setAttribute("_ERROR_MESSAGE_", "Alan adı silinirken hata: " + e.getMessage())
+        return "error"
+    }
+}
