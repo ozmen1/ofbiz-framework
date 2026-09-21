@@ -43,6 +43,18 @@ Timestamp parseTimestamp(Object dateObj) {
     }
 }
 
+String getPartyName(def delegator, String partyId) {
+    if (!partyId) return ""
+    try {
+        GenericValue p = EntityQuery.use(delegator).from("PartyNameView").where("partyId", partyId).queryOne()
+        if (p) {
+            String name = p.groupName ?: ((p.firstName ?: "") + " " + (p.lastName ?: "")).trim()
+            return name ?: partyId
+        }
+    } catch (Exception e) {}
+    return partyId
+}
+
 String getInvoiceMetadata() {
     def delegator = binding.getVariable("delegator")
     def request = binding.getVariable("request")
@@ -288,10 +300,94 @@ String getInvoiceDetails() {
                 referenceNumber: invoice.referenceNumber
         ]
 
+        // Invoice Roles
+        List<GenericValue> rolesGv = EntityQuery.use(delegator)
+                .from("InvoiceRole")
+                .where("invoiceId", invoiceId)
+                .queryList()
+
+        List rolesList = []
+        rolesGv.each { r ->
+            String partyName = getPartyName(delegator, r.partyId)
+            String roleDesc = r.roleTypeId
+            try {
+                GenericValue rt = EntityQuery.use(delegator).from("RoleType").where("roleTypeId", r.roleTypeId).cache().queryOne()
+                if (rt && rt.description) roleDesc = rt.description
+            } catch (Exception ignored) {}
+            rolesList.add([
+                    invoiceId: r.invoiceId,
+                    partyId: r.partyId,
+                    partyName: partyName,
+                    roleTypeId: r.roleTypeId,
+                    roleTypeDesc: roleDesc,
+                    datetimePerformed: r.datetimePerformed ? r.datetimePerformed.toString() : "",
+                    percentage: r.percentage != null ? r.percentage.doubleValue() : null
+            ])
+        }
+
+        // Invoice Attributes (e-Fatura, ETTN, senaryo, vb.)
+        List<GenericValue> attrsGv = EntityQuery.use(delegator)
+                .from("InvoiceAttribute")
+                .where("invoiceId", invoiceId)
+                .orderBy("attrName")
+                .queryList()
+
+        List attrsList = []
+        attrsGv.each { a ->
+            attrsList.add([
+                    invoiceId: a.invoiceId,
+                    attrName: a.attrName,
+                    attrValue: a.attrValue,
+                    attrDescription: a.attrDescription
+            ])
+        }
+
+        // Invoice Contact Mechs (Adres ve İletişim Noktaları)
+        List<GenericValue> cmGv = EntityQuery.use(delegator)
+                .from("InvoiceContactMech")
+                .where("invoiceId", invoiceId)
+                .queryList()
+
+        List contactMechsList = []
+        cmGv.each { icm ->
+            String purposeDesc = icm.contactMechPurposeTypeId
+            try {
+                GenericValue pt = EntityQuery.use(delegator).from("ContactMechPurposeType").where("contactMechPurposeTypeId", icm.contactMechPurposeTypeId).cache().queryOne()
+                if (pt && pt.description) purposeDesc = pt.description
+            } catch (Exception ignored) {}
+
+            String detailInfo = ""
+            try {
+                GenericValue pa = EntityQuery.use(delegator).from("PostalAddress").where("contactMechId", icm.contactMechId).queryOne()
+                if (pa) {
+                    detailInfo = "${pa.address1 ?: ''} ${pa.address2 ?: ''} ${pa.city ?: ''} ${pa.postalCode ?: ''} ${pa.countryGeoId ?: ''}".trim()
+                } else {
+                    GenericValue tn = EntityQuery.use(delegator).from("TelecomNumber").where("contactMechId", icm.contactMechId).queryOne()
+                    if (tn) {
+                        detailInfo = "${tn.countryCode ? '+' + tn.countryCode : ''} ${tn.areaCode ?: ''} ${tn.contactNumber ?: ''}".trim()
+                    } else {
+                        GenericValue cm = EntityQuery.use(delegator).from("ContactMech").where("contactMechId", icm.contactMechId).queryOne()
+                        if (cm) detailInfo = cm.infoString ?: ""
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            contactMechsList.add([
+                    invoiceId: icm.invoiceId,
+                    contactMechId: icm.contactMechId,
+                    contactMechPurposeTypeId: icm.contactMechPurposeTypeId,
+                    contactMechPurposeTypeDesc: purposeDesc,
+                    detailInfo: detailInfo
+            ])
+        }
+
         request.setAttribute("invoice", headerMap)
         request.setAttribute("items", itemsList)
         request.setAttribute("statusHistory", statusHistory)
         request.setAttribute("paymentsApplied", paymentsApplied)
+        request.setAttribute("roles", rolesList)
+        request.setAttribute("attributes", attrsList)
+        request.setAttribute("contactMechs", contactMechsList)
         request.setAttribute("totals", [
                 total: total != null ? total.doubleValue() : 0.0,
                 taxTotal: taxTotal != null ? taxTotal.doubleValue() : 0.0,
@@ -591,6 +687,345 @@ String copyInvoice() {
         return "success"
     } catch (Exception e) {
         Debug.logError(e, "Error in copyInvoice: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String createInvoiceRole() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String partyId = parameters.partyId
+    String roleTypeId = parameters.roleTypeId
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(roleTypeId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId, partyId ve roleTypeId zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue uL = getSystemUserLogin()
+        Map serviceCtx = [
+                userLogin: uL,
+                invoiceId: invoiceId,
+                partyId: partyId,
+                roleTypeId: roleTypeId,
+                datetimePerformed: UtilDateTime.nowTimestamp()
+        ]
+        if (parameters.percentage) {
+            serviceCtx.percentage = new BigDecimal(parameters.percentage.toString().trim())
+        }
+
+        Map serviceRes = dispatcher.runSync("createInvoiceRole", serviceCtx)
+        if (ServiceUtil.isError(serviceRes)) {
+            // Fallback direct entity creation if service check failed due to status
+            GenericValue existing = EntityQuery.use(delegator).from("InvoiceRole")
+                    .where("invoiceId", invoiceId, "partyId", partyId, "roleTypeId", roleTypeId).queryOne()
+            if (!existing) {
+                GenericValue newRole = delegator.makeValue("InvoiceRole", [
+                        invoiceId: invoiceId,
+                        partyId: partyId,
+                        roleTypeId: roleTypeId,
+                        datetimePerformed: UtilDateTime.nowTimestamp(),
+                        percentage: serviceCtx.percentage
+                ])
+                newRole.create()
+            }
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("partyId", partyId)
+        request.setAttribute("roleTypeId", roleTypeId)
+        request.setAttribute("_EVENT_MESSAGE_", "Fatura rolü başarıyla eklendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createInvoiceRole: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String removeInvoiceRole() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String partyId = parameters.partyId
+    String roleTypeId = parameters.roleTypeId
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(partyId) || UtilValidate.isEmpty(roleTypeId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId, partyId ve roleTypeId zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue uL = getSystemUserLogin()
+        Map serviceRes = dispatcher.runSync("removeInvoiceRole", [
+                userLogin: uL,
+                invoiceId: invoiceId,
+                partyId: partyId,
+                roleTypeId: roleTypeId
+        ])
+        if (ServiceUtil.isError(serviceRes)) {
+            // Fallback direct entity remove
+            GenericValue existing = EntityQuery.use(delegator).from("InvoiceRole")
+                    .where("invoiceId", invoiceId, "partyId", partyId, "roleTypeId", roleTypeId).queryOne()
+            if (existing) {
+                existing.remove()
+            }
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("_EVENT_MESSAGE_", "Fatura rolü silindi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in removeInvoiceRole: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String createInvoiceAttribute() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String attrName = parameters.attrName
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(attrName)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId ve attrName zorunludur.")
+        return "error"
+    }
+
+    try {
+        String attrValue = parameters.attrValue ?: ""
+        String attrDescription = parameters.attrDescription ?: ""
+
+        GenericValue existing = EntityQuery.use(delegator).from("InvoiceAttribute")
+                .where("invoiceId", invoiceId, "attrName", attrName).queryOne()
+        if (existing) {
+            existing.set("attrValue", attrValue)
+            existing.set("attrDescription", attrDescription)
+            existing.store()
+        } else {
+            GenericValue newAttr = delegator.makeValue("InvoiceAttribute", [
+                    invoiceId: invoiceId,
+                    attrName: attrName,
+                    attrValue: attrValue,
+                    attrDescription: attrDescription
+            ])
+            newAttr.create()
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("attrName", attrName)
+        request.setAttribute("_EVENT_MESSAGE_", "Fatura niteliği kaydedildi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createInvoiceAttribute: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String deleteInvoiceAttribute() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String attrName = parameters.attrName
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(attrName)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId ve attrName zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue existing = EntityQuery.use(delegator).from("InvoiceAttribute")
+                .where("invoiceId", invoiceId, "attrName", attrName).queryOne()
+        if (existing) {
+            existing.remove()
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("_EVENT_MESSAGE_", "Fatura niteliği silindi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deleteInvoiceAttribute: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String createInvoiceContactMech() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String contactMechId = parameters.contactMechId
+    String contactMechPurposeTypeId = parameters.contactMechPurposeTypeId
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(contactMechId) || UtilValidate.isEmpty(contactMechPurposeTypeId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId, contactMechId ve contactMechPurposeTypeId zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue existing = EntityQuery.use(delegator).from("InvoiceContactMech")
+                .where("invoiceId", invoiceId, "contactMechId", contactMechId, "contactMechPurposeTypeId", contactMechPurposeTypeId).queryOne()
+        if (!existing) {
+            GenericValue newCm = delegator.makeValue("InvoiceContactMech", [
+                    invoiceId: invoiceId,
+                    contactMechId: contactMechId,
+                    contactMechPurposeTypeId: contactMechPurposeTypeId
+            ])
+            newCm.create()
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("contactMechId", contactMechId)
+        request.setAttribute("contactMechPurposeTypeId", contactMechPurposeTypeId)
+        request.setAttribute("_EVENT_MESSAGE_", "İletişim / adres noktası faturaya bağlandı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createInvoiceContactMech: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String deleteInvoiceContactMech() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String contactMechId = parameters.contactMechId
+    String contactMechPurposeTypeId = parameters.contactMechPurposeTypeId
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(contactMechId) || UtilValidate.isEmpty(contactMechPurposeTypeId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId, contactMechId ve contactMechPurposeTypeId zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue existing = EntityQuery.use(delegator).from("InvoiceContactMech")
+                .where("invoiceId", invoiceId, "contactMechId", contactMechId, "contactMechPurposeTypeId", contactMechPurposeTypeId).queryOne()
+        if (existing) {
+            existing.remove()
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("_EVENT_MESSAGE_", "Fatura adres bağlantısı kaldırıldı.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deleteInvoiceContactMech: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String getInvoiceRolesAndAttributesMetadata() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+
+    try {
+        // Purpose Types
+        List<GenericValue> purposesGv = EntityQuery.use(delegator).from("ContactMechPurposeType")
+                .where(EntityCondition.makeCondition("contactMechPurposeTypeId", EntityOperator.IN, [
+                        "BILLING_LOCATION", "SHIPPING_LOCATION", "PAYMENT_LOCATION", "GENERAL_LOCATION", "ORDER_EMAIL"
+                ]))
+                .orderBy("description")
+                .queryList()
+        if (purposesGv.isEmpty()) {
+            purposesGv = EntityQuery.use(delegator).from("ContactMechPurposeType").orderBy("description").maxRows(20).queryList()
+        }
+        List purposeTypes = []
+        purposesGv.each { p ->
+            purposeTypes.add([contactMechPurposeTypeId: p.contactMechPurposeTypeId, description: p.description ?: p.contactMechPurposeTypeId])
+        }
+
+        // Role Types
+        List<GenericValue> roleTypesGv = EntityQuery.use(delegator).from("RoleType")
+                .where(EntityCondition.makeCondition("roleTypeId", EntityOperator.IN, [
+                        "BILL_TO_CUSTOMER", "BILL_FROM_VENDOR", "SALES_REP", "ACCOUNTING_CLERK", "CARRIER", "APPROVER", "ORIG_VENDOR"
+                ]))
+                .orderBy("description")
+                .queryList()
+        if (roleTypesGv.isEmpty()) {
+            roleTypesGv = EntityQuery.use(delegator).from("RoleType").orderBy("description").maxRows(20).queryList()
+        }
+        List roleTypes = []
+        roleTypesGv.each { rt ->
+            roleTypes.add([roleTypeId: rt.roleTypeId, description: rt.description ?: rt.roleTypeId])
+        }
+
+        // Available Contact Mechs for Parties involved
+        List partyContactMechs = []
+        if (UtilValidate.isNotEmpty(invoiceId)) {
+            GenericValue invoice = EntityQuery.use(delegator).from("Invoice").where("invoiceId", invoiceId).queryOne()
+            if (invoice) {
+                Set partyIds = [invoice.partyIdFrom, invoice.partyId].findAll { it != null } as Set
+                partyIds.each { pId ->
+                    List<GenericValue> pcms = EntityQuery.use(delegator).from("PartyContactMech")
+                            .where("partyId", pId)
+                            .filterByDate()
+                            .queryList()
+                    pcms.each { pcm ->
+                        String cmId = pcm.contactMechId
+                        String detailInfo = ""
+                        String typeId = ""
+                        try {
+                            GenericValue cm = EntityQuery.use(delegator).from("ContactMech").where("contactMechId", cmId).queryOne()
+                            if (cm) typeId = cm.contactMechTypeId
+                            GenericValue pa = EntityQuery.use(delegator).from("PostalAddress").where("contactMechId", cmId).queryOne()
+                            if (pa) {
+                                detailInfo = "${pa.address1 ?: ''} ${pa.city ?: ''} ${pa.postalCode ?: ''} ${pa.countryGeoId ?: ''}".trim()
+                            } else {
+                                GenericValue tn = EntityQuery.use(delegator).from("TelecomNumber").where("contactMechId", cmId).queryOne()
+                                if (tn) {
+                                    detailInfo = "${tn.countryCode ? '+' + tn.countryCode : ''} ${tn.contactNumber ?: ''}".trim()
+                                } else if (cm) {
+                                    detailInfo = cm.infoString ?: ""
+                                }
+                            }
+                        } catch (Exception ignored) {}
+
+                        partyContactMechs.add([
+                                contactMechId: cmId,
+                                partyId: pId,
+                                partyName: getPartyName(delegator, pId),
+                                contactMechTypeId: typeId,
+                                detailInfo: detailInfo
+                        ])
+                    }
+                }
+            }
+        }
+
+        // Standard e-Invoice Attribute Suggestions
+        List attributePresets = [
+                [attrName: "EINVOICE_UUID", label: "ETTN / E-Fatura UUID", placeholder: "e.g. 550e8400-e29b-41d4-a716-446655440000"],
+                [attrName: "EINVOICE_PROFILE", label: "Fatura Senaryosu", placeholder: "TICARIFATURA / TEMELFATURA / IHRACAT / EARSIV"],
+                [attrName: "EINVOICE_TYPE", label: "Fatura Tipi", placeholder: "SATIS / IADE / TEVKIFAT / ISTISNA"],
+                [attrName: "TAX_OFFICE", label: "Vergi Dairesi", placeholder: "e.g. Kadıköy V.D."],
+                [attrName: "TAX_EXEMPTION_REASON", label: "İstisna / Muafiyet Nedeni", placeholder: "e.g. 3065 sayılı KDV Kanunu Madde 11/1-a"],
+                [attrName: "DESPATCH_REF", label: "İrsaliye Numarası & Tarihi", placeholder: "e.g. IRS202600000123 / 2026-09-20"]
+        ]
+
+        request.setAttribute("purposeTypes", purposeTypes)
+        request.setAttribute("roleTypes", roleTypes)
+        request.setAttribute("partyContactMechs", partyContactMechs)
+        request.setAttribute("attributePresets", attributePresets)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getInvoiceRolesAndAttributesMetadata: " + e.getMessage(), MODULE)
         request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
         return "error"
     }

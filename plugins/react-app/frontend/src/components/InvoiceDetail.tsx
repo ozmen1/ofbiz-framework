@@ -9,6 +9,7 @@ import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
 import InvoicePrintModal from './InvoicePrintModal';
 import EditInvoiceItemModal from './EditInvoiceItemModal';
 import ApplyPaymentModal from './ApplyPaymentModal';
+import InvoiceRolesAndAttributes from './InvoiceRolesAndAttributes';
 import { useTranslation } from '../i18n';
 
 interface InvoiceDetailProps {
@@ -851,6 +852,18 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
         {/* Faz 7: Notlar & Vade Şartları */}
         {invoice.invoiceId && (
           <InvoiceNotesAndTerms invoiceId={invoice.invoiceId} />
+        )}
+
+        {/* Faz 4: Adresler, Nitelikler & Roller */}
+        {invoice.invoiceId && (
+          <InvoiceRolesAndAttributes
+            invoiceId={invoice.invoiceId}
+            roles={detail.roles}
+            attributes={detail.attributes}
+            contactMechs={detail.contactMechs}
+            isEditable={isEditable}
+            onRefresh={loadInvoice}
+          />
         )}
 
       </div>

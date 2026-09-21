@@ -49,12 +49,57 @@ export interface InvoiceHeader {
   referenceNumber?: string;
 }
 
+export interface InvoiceRoleItem {
+  invoiceId: string;
+  partyId: string;
+  partyName?: string;
+  roleTypeId: string;
+  roleTypeDesc?: string;
+  datetimePerformed?: string;
+  percentage?: number;
+}
+
+export interface InvoiceAttributeItem {
+  invoiceId: string;
+  attrName: string;
+  attrValue?: string;
+  attrDescription?: string;
+}
+
+export interface InvoiceContactMechItem {
+  invoiceId: string;
+  contactMechId: string;
+  contactMechPurposeTypeId: string;
+  contactMechPurposeTypeDesc?: string;
+  detailInfo?: string;
+}
+
+export interface InvoiceRolesAndAttributesMetadataResponse {
+  purposeTypes: { contactMechPurposeTypeId: string; description: string }[];
+  roleTypes: { roleTypeId: string; description: string }[];
+  partyContactMechs: {
+    contactMechId: string;
+    partyId: string;
+    partyName: string;
+    contactMechTypeId: string;
+    detailInfo: string;
+  }[];
+  attributePresets: {
+    attrName: string;
+    label: string;
+    placeholder: string;
+  }[];
+}
+
 export interface InvoiceDetailResponse {
   invoice: InvoiceHeader;
   items: InvoiceItem[];
   statusHistory: InvoiceStatusHistory[];
   paymentsApplied: PaymentApplication[];
   totals: InvoiceTotals;
+  roles?: InvoiceRoleItem[];
+  attributes?: InvoiceAttributeItem[];
+  contactMechs?: InvoiceContactMechItem[];
 }
 
 export interface InvoiceListItem {
@@ -1970,6 +2015,59 @@ export const api = {
   // 10. Get Metadata
   getInvoiceMetadata: async (): Promise<InvoiceMetadataResponse> => {
     return requestApi<InvoiceMetadataResponse>('getInvoiceMetadata');
+  },
+
+  // 10b. Roles, Attributes & Contact Mechs (Phase 4)
+  getInvoiceRolesAndAttributesMetadata: async (invoiceId: string): Promise<InvoiceRolesAndAttributesMetadataResponse> => {
+    return requestApi<InvoiceRolesAndAttributesMetadataResponse>(`getInvoiceRolesAndAttributesMetadata?invoiceId=${encodeURIComponent(invoiceId)}`);
+  },
+
+  createInvoiceRole: async (payload: { invoiceId: string; partyId: string; roleTypeId: string; percentage?: number }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('createInvoiceRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  removeInvoiceRole: async (payload: { invoiceId: string; partyId: string; roleTypeId: string }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('removeInvoiceRole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  createInvoiceAttribute: async (payload: { invoiceId: string; attrName: string; attrValue?: string; attrDescription?: string }): Promise<{ invoiceId: string; attrName: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; attrName: string; _EVENT_MESSAGE_?: string }>('createInvoiceAttribute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  deleteInvoiceAttribute: async (payload: { invoiceId: string; attrName: string }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('deleteInvoiceAttribute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  createInvoiceContactMech: async (payload: { invoiceId: string; contactMechId: string; contactMechPurposeTypeId: string }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('createInvoiceContactMech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  deleteInvoiceContactMech: async (payload: { invoiceId: string; contactMechId: string; contactMechPurposeTypeId: string }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('deleteInvoiceContactMech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
   },
 
   // Dashboard summary

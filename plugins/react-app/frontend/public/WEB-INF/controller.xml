@@ -80,6 +80,55 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <request-map uri="createInvoiceRole">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="createInvoiceRole"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="removeInvoiceRole">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="removeInvoiceRole"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="createInvoiceAttribute">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="createInvoiceAttribute"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="deleteInvoiceAttribute">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="deleteInvoiceAttribute"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="createInvoiceContactMech">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="createInvoiceContactMech"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="deleteInvoiceContactMech">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="deleteInvoiceContactMech"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="getInvoiceRolesAndAttributesMetadata">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="getInvoiceRolesAndAttributesMetadata"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <request-map uri="getInvoiceMetadata">
         <security https="false" auth="false"/>
         <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="getInvoiceMetadata"/>
