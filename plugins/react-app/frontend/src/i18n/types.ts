@@ -2004,6 +2004,28 @@ export interface Translations {
     confirmDeleteRoleType: string;
     noRoleTypesFound: string;
     noParentRole: string;
+    tabActiveSessions: string;
+    tabLoginHistory: string;
+    totalActiveSessions: string;
+    uniqueActiveUsers: string;
+    clientIp: string;
+    userAgent: string;
+    sessionId: string;
+    sessionStart: string;
+    lastRequest: string;
+    webapp: string;
+    onlineNow: string;
+    searchSessionsPlaceholder: string;
+    noActiveSessionsFound: string;
+    temporaryAssignment: string;
+    thruDateOptional: string;
+    indefinite: string;
+    expiresOn: string;
+    expired: string;
+    loginSuccessful: string;
+    loginFailed: string;
+    noLoginHistoryFound: string;
+    refreshSessions: string;
   };
 
   systemAdmin: {

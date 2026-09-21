@@ -5176,7 +5176,11 @@ export async function adminResetUserPassword(payload: { userLoginId: string; new
   });
 }
 
-export async function addUserSecurityGroup(payload: { userLoginId: string; groupId: string }): Promise<{ message: string }> {
+export async function addUserSecurityGroup(payload: {
+  userLoginId: string;
+  groupId: string;
+  thruDate?: string;
+}): Promise<{ message: string }> {
   return requestApi<{ message: string }>('addUserSecurityGroup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -5264,6 +5268,63 @@ export async function deleteRoleTypeAdmin(roleTypeId: string): Promise<{ roleTyp
     body: JSON.stringify({ roleTypeId })
   });
 }
+
+export interface UserLoginHistoryItem {
+  userLoginId: string;
+  fromDate: string;
+  thruDate: string;
+  successfulLogin: string;
+  originUserLoginId: string;
+  visitId: string;
+  clientIpAddress: string;
+  initialUserAgent: string;
+  webappName: string;
+}
+
+export interface UserLoginHistoryResponse {
+  history: UserLoginHistoryItem[];
+  totalCount: number;
+  viewIndex: number;
+  viewSize: number;
+}
+
+export async function fetchUserLoginHistory(params?: {
+  userLoginId?: string;
+  viewIndex?: number;
+  viewSize?: number;
+}): Promise<UserLoginHistoryResponse> {
+  const query = new URLSearchParams();
+  if (params?.userLoginId) query.set('userLoginId', params.userLoginId);
+  if (params?.viewIndex !== undefined) query.set('viewIndex', params.viewIndex.toString());
+  if (params?.viewSize !== undefined) query.set('viewSize', params.viewSize.toString());
+  const qStr = query.toString();
+  return requestApi<UserLoginHistoryResponse>(`getUserLoginHistory${qStr ? '?' + qStr : ''}`);
+}
+
+export interface ActiveSessionItem {
+  sessionId: string;
+  visitId: string;
+  userLoginId: string;
+  partyId: string;
+  displayName: string;
+  clientIpAddress: string;
+  initialUserAgent: string;
+  webappName: string;
+  fromDate: string;
+  lastUpdatedStamp?: string;
+  isUniqueUser: boolean;
+}
+
+export interface LoggedInUsersResponse {
+  sessions: ActiveSessionItem[];
+  totalCount: number;
+  uniqueUsersCount: number;
+}
+
+export async function fetchLoggedInUsers(): Promise<LoggedInUsersResponse> {
+  return requestApi<LoggedInUsersResponse>('getLoggedInUsers');
+}
+
 
 
 // ==========================================

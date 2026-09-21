@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Shield, Key, Search, Plus, RefreshCw, CheckCircle2,
   AlertCircle, Lock, Unlock, UserCheck, UserX, ChevronRight, X,
-  ShieldCheck, Loader2, ChevronLeft, Trash2, Network
+  ShieldCheck, Loader2, ChevronLeft, Trash2, Network, Radio,
+  Activity, Monitor, Clock, Calendar
 } from 'lucide-react';
 import {
   fetchUserLogins,
@@ -18,23 +19,27 @@ import {
   fetchUserAdminMetadata,
   fetchRoleTypesAdmin,
   deleteRoleTypeAdmin,
+  fetchLoggedInUsers,
+  fetchUserLoginHistory,
   UserLoginAdminItem,
   UserLoginDetail,
   SecurityGroupAdminItem,
   SecurityGroupDetailResponse,
   UserAdminMetadataResponse,
-  RoleTypeAdminItem
+  RoleTypeAdminItem,
+  ActiveSessionItem,
+  UserLoginHistoryItem
 } from '../services/api';
 import { useTranslation } from '../i18n';
 import { CreateUserModal } from './CreateUserModal';
 import { CreateSecurityGroupModal } from './CreateSecurityGroupModal';
 import { CreateRoleTypeModal } from './CreateRoleTypeModal';
 
-type MainTab = 'users' | 'securityGroups' | 'roleTypes';
+type MainTab = 'users' | 'securityGroups' | 'roleTypes' | 'activeSessions';
 
 
 export const UserManagement: React.FC = () => {
-  const { translations } = useTranslation();
+  const { locale, translations } = useTranslation();
   const t = translations.users;
   const common = translations.common;
 
@@ -60,13 +65,25 @@ export const UserManagement: React.FC = () => {
   const [userDetail, setUserDetail] = useState<UserLoginDetail | null>(null);
   const [loadingUserDetail, setLoadingUserDetail] = useState<boolean>(false);
   const [assignGroupId, setAssignGroupId] = useState<string>('');
+  const [assignThruDate, setAssignThruDate] = useState<string>('');
   const [isAssigningGroup, setIsAssigningGroup] = useState<boolean>(false);
+  const [loginHistory, setLoginHistory] = useState<UserLoginHistoryItem[]>([]);
+  const [loadingLoginHistory, setLoadingLoginHistory] = useState<boolean>(false);
 
   // Reset password state inside drawer
   const [showResetPasswordForm, setShowResetPasswordForm] = useState<boolean>(false);
   const [resetNewPassword, setResetNewPassword] = useState<string>('');
   const [resetVerifyPassword, setResetVerifyPassword] = useState<string>('');
   const [isResettingPassword, setIsResettingPassword] = useState<boolean>(false);
+
+  // =====================
+  // Active Sessions Tab State
+  // =====================
+  const [activeSessions, setActiveSessions] = useState<ActiveSessionItem[]>([]);
+  const [totalSessionsCount, setTotalSessionsCount] = useState<number>(0);
+  const [uniqueUsersCount, setUniqueUsersCount] = useState<number>(0);
+  const [loadingSessions, setLoadingSessions] = useState<boolean>(false);
+  const [sessionSearchQuery, setSessionSearchQuery] = useState<string>('');
 
   // =====================
   // Security Groups Tab State
@@ -178,23 +195,96 @@ export const UserManagement: React.FC = () => {
     }
   }, [loadUsers, activeTab, statusFilter, groupFilter]);
 
+  // Lock body scroll when drawer is open (Golden Invariant 2)
+  useEffect(() => {
+    if (selectedUserLoginId) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedUserLoginId]);
+
+  // Date formatter (Full i18n Standard)
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // ==========================================
+  // Load Active Sessions (Live Online Users)
+  // ==========================================
+  const loadActiveSessions = useCallback(async () => {
+    setLoadingSessions(true);
+    try {
+      const res = await fetchLoggedInUsers();
+      setActiveSessions(res.sessions || []);
+      setTotalSessionsCount(res.totalCount || 0);
+      setUniqueUsersCount(res.uniqueUsersCount || 0);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Aktif oturumlar yüklenemedi.';
+      showFeedback('error', msg);
+    } finally {
+      setLoadingSessions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'activeSessions') {
+      loadActiveSessions();
+    }
+  }, [activeTab, loadActiveSessions]);
+
+  const filteredSessions = useMemo(() => {
+    if (!sessionSearchQuery.trim()) return activeSessions;
+    const q = sessionSearchQuery.toLowerCase();
+    return activeSessions.filter(
+      (s) =>
+        s.userLoginId?.toLowerCase().includes(q) ||
+        s.displayName?.toLowerCase().includes(q) ||
+        s.clientIpAddress?.toLowerCase().includes(q) ||
+        s.webappName?.toLowerCase().includes(q)
+    );
+  }, [activeSessions, sessionSearchQuery]);
+
   // ==========================================
   // Load User Detail
   // ==========================================
   const loadUserDetail = useCallback(async (userLoginId: string) => {
     setLoadingUserDetail(true);
+    setLoadingLoginHistory(true);
     try {
-      const res = await fetchUserLoginDetail(userLoginId);
-      setUserDetail(res.userDetail);
+      const [detailRes, histRes] = await Promise.all([
+        fetchUserLoginDetail(userLoginId),
+        fetchUserLoginHistory({ userLoginId, viewSize: 10 }).catch(() => ({ history: [], totalCount: 0 }))
+      ]);
+      setUserDetail(detailRes.userDetail);
+      setLoginHistory(histRes.history || []);
       setShowResetPasswordForm(false);
       setResetNewPassword('');
       setResetVerifyPassword('');
       setAssignGroupId('');
+      setAssignThruDate('');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Kullanıcı detayı yüklenemedi.';
       showFeedback('error', msg);
     } finally {
       setLoadingUserDetail(false);
+      setLoadingLoginHistory(false);
     }
   }, []);
 
@@ -206,6 +296,7 @@ export const UserManagement: React.FC = () => {
   const handleCloseDrawer = () => {
     setSelectedUserLoginId(null);
     setUserDetail(null);
+    setLoginHistory([]);
   };
 
   // ==========================================
@@ -285,7 +376,8 @@ export const UserManagement: React.FC = () => {
     try {
       const res = await addUserSecurityGroup({
         userLoginId: selectedUserLoginId,
-        groupId: assignGroupId
+        groupId: assignGroupId,
+        thruDate: assignThruDate.trim() || undefined
       });
       showFeedback('success', res.message || 'Yetki grubu atandı.');
       loadUserDetail(selectedUserLoginId);
@@ -488,6 +580,20 @@ export const UserManagement: React.FC = () => {
               {roleTypes.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('activeSessions')}
+            className={`ds-pill-tab ${activeTab === 'activeSessions' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <Radio size={15} className={totalSessionsCount > 0 ? 'text-emerald-400 animate-pulse' : ''} />
+            <span>{t.tabActiveSessions}</span>
+            <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              totalSessionsCount > 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-300'
+            }`}>
+              {totalSessionsCount}
+            </span>
+          </button>
         </div>
 
         {/* Action Button */}
@@ -520,6 +626,17 @@ export const UserManagement: React.FC = () => {
             >
               <Plus size={16} />
               <span>{t.createRoleType}</span>
+            </button>
+          )}
+          {activeTab === 'activeSessions' && (
+            <button
+              type="button"
+              onClick={loadActiveSessions}
+              disabled={loadingSessions}
+              className="ds-btn-secondary text-xs sm:text-sm py-2 px-3 sm:px-4 cursor-pointer flex items-center gap-1.5"
+            >
+              <RefreshCw size={15} className={loadingSessions ? 'animate-spin' : ''} />
+              <span>{t.refreshSessions}</span>
             </button>
           )}
         </div>
@@ -927,28 +1044,41 @@ export const UserManagement: React.FC = () => {
                     </div>
 
                     {/* Add Group Form */}
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={assignGroupId}
-                        onChange={(e) => setAssignGroupId(e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
-                      >
-                        <option value="">-- {t.selectGroup} --</option>
-                        {metadata.securityGroups.map((g) => (
-                          <option key={g.groupId} value={g.groupId}>
-                            {g.groupId} - {g.description}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        disabled={!assignGroupId || isAssigningGroup}
-                        onClick={handleAddSecurityGroup}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1 shrink-0"
-                      >
-                        {isAssigningGroup ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                        <span>{common.create}</span>
-                      </button>
+                    <div className="space-y-2 p-3 bg-slate-950/40 rounded-xl border border-slate-800/80">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={assignGroupId}
+                          onChange={(e) => setAssignGroupId(e.target.value)}
+                          className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        >
+                          <option value="">-- {t.selectGroup} --</option>
+                          {metadata.securityGroups.map((g) => (
+                            <option key={g.groupId} value={g.groupId}>
+                              {g.groupId} - {g.description}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          disabled={!assignGroupId || isAssigningGroup}
+                          onClick={handleAddSecurityGroup}
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1 shrink-0"
+                        >
+                          {isAssigningGroup ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                          <span>{common.create}</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-slate-400 text-xs">
+                        <Calendar size={13} className="text-slate-500 shrink-0" />
+                        <span className="text-[11px] shrink-0">{t.thruDateOptional}:</span>
+                        <input
+                          type="date"
+                          value={assignThruDate}
+                          onChange={(e) => setAssignThruDate(e.target.value)}
+                          className="flex-1 px-2.5 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
                     </div>
 
                     {/* Assigned Groups List */}
@@ -968,15 +1098,21 @@ export const UserManagement: React.FC = () => {
                             }`}
                           >
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-mono font-bold text-amber-300">{g.groupId}</span>
                                 {g.isActive ? (
                                   <span className="text-[9px] px-1.5 py-0.2 bg-emerald-500/10 text-emerald-300 rounded font-semibold">
-                                    Aktif
+                                    {common.active}
                                   </span>
                                 ) : (
                                   <span className="text-[9px] px-1.5 py-0.2 bg-slate-800 text-slate-400 rounded">
-                                    Süresi Dolmuş
+                                    {t.expired}
+                                  </span>
+                                )}
+                                {g.thruDate && (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/10 text-amber-300 rounded font-mono flex items-center gap-0.5">
+                                    <Clock size={9} />
+                                    {t.expiresOn} {g.thruDate.substring(0, 10)}
                                   </span>
                                 )}
                               </div>
@@ -1011,7 +1147,7 @@ export const UserManagement: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-36 overflow-y-auto flex flex-wrap gap-1">
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 max-h-32 overflow-y-auto flex flex-wrap gap-1">
                       {userDetail.permissions.length === 0 ? (
                         <p className="text-xs text-slate-600 italic">Doğrudan aktif izin bulunmuyor.</p>
                       ) : (
@@ -1025,6 +1161,67 @@ export const UserManagement: React.FC = () => {
                         ))
                       )}
                     </div>
+                  </div>
+
+                  {/* Login Audit Trail (UserLoginHistory) */}
+                  <div className="space-y-2 pt-3 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                        <Clock size={14} className="text-indigo-400" />
+                        <span>{t.tabLoginHistory}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {loginHistory.length} {common.total || 'kayıt'}
+                      </span>
+                    </div>
+
+                    {loadingLoginHistory ? (
+                      <div className="py-4 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
+                        <Loader2 size={14} className="animate-spin text-indigo-400" />
+                        <span>{common.loading}</span>
+                      </div>
+                    ) : loginHistory.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic p-3 bg-slate-950/30 rounded-lg">
+                        {t.noLoginHistoryFound}
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {loginHistory.map((h, idx) => {
+                          const isSuccess = h.successfulLogin !== 'N';
+                          return (
+                            <div
+                              key={(h.fromDate || '') + (h.visitId || '') + idx}
+                              className="p-2 rounded-lg bg-slate-950/50 border border-slate-800/80 text-[11px] space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  {isSuccess ? (
+                                    <span className="text-emerald-400 flex items-center gap-1">
+                                      <CheckCircle2 size={12} /> {t.loginSuccessful}
+                                    </span>
+                                  ) : (
+                                    <span className="text-rose-400 flex items-center gap-1">
+                                      <AlertCircle size={12} /> {t.loginFailed}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-slate-500 font-mono text-[10px]">
+                                  {formatDate(h.fromDate)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                                <span>IP: {h.clientIpAddress || '-'}</span>
+                                {h.thruDate && (
+                                  <span className="text-slate-500">
+                                    Çıkış: {formatDate(h.thruDate)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1350,6 +1547,167 @@ export const UserManagement: React.FC = () => {
                             ) : (
                               <Trash2 size={15} />
                             )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: ACTIVE SESSIONS (LIVE ONLINE SESSIONS) */}
+      {/* ========================================================================= */}
+      {activeTab === 'activeSessions' && (
+        <div className="space-y-4">
+          {/* Stats Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <Radio size={24} className={totalSessionsCount > 0 ? 'animate-pulse' : ''} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">{t.totalActiveSessions}</p>
+                <h4 className="text-2xl font-bold text-white font-mono mt-0.5">{totalSessionsCount}</h4>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                <Users size={24} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">{t.uniqueActiveUsers}</p>
+                <h4 className="text-2xl font-bold text-white font-mono mt-0.5">{uniqueUsersCount}</h4>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <Activity size={24} />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">{t.status}</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-sm font-semibold text-emerald-400">{t.onlineNow}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={sessionSearchQuery}
+                onChange={(e) => setSessionSearchQuery(e.target.value)}
+                placeholder={t.searchSessionsPlaceholder}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Sessions Table */}
+          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                    <th className="py-3 px-4">{t.userLoginId}</th>
+                    <th className="py-3 px-4">{t.clientIp}</th>
+                    <th className="py-3 px-4">{t.webapp}</th>
+                    <th className="py-3 px-4">{t.userAgent}</th>
+                    <th className="py-3 px-4">{t.sessionStart}</th>
+                    <th className="py-3 px-4">{t.lastRequest}</th>
+                    <th className="py-3 px-4 text-center">{t.status}</th>
+                    <th className="py-3 px-4 text-right">{common.actions}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-sm">
+                  {loadingSessions ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-500">
+                        <Loader2 size={24} className="animate-spin mx-auto text-indigo-400 mb-2" />
+                        <span>{common.loading}</span>
+                      </td>
+                    </tr>
+                  ) : filteredSessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-500">
+                        <Radio size={32} className="mx-auto text-slate-600 mb-2 opacity-60" />
+                        <p>{t.noActiveSessionsFound}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSessions.map((session) => (
+                      <tr
+                        key={session.visitId}
+                        className="hover:bg-slate-800/30 transition-colors group"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xs uppercase border border-indigo-500/30">
+                              {session.userLoginId ? session.userLoginId.charAt(0) : 'U'}
+                            </div>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectUser(session.userLoginId)}
+                                className="font-mono font-bold text-white text-xs hover:text-indigo-400 transition-colors cursor-pointer text-left block"
+                              >
+                                {session.userLoginId}
+                              </button>
+                              {session.displayName && (
+                                <p className="text-[11px] text-slate-400">{session.displayName}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-xs text-slate-300">
+                          <div className="flex items-center gap-1.5">
+                            <Network size={13} className="text-slate-500" />
+                            <span>{session.clientIpAddress || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-slate-800 text-indigo-300 border border-slate-700">
+                            {session.webappName || 'ofbiz'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-slate-400 max-w-[200px] truncate" title={session.initialUserAgent}>
+                          <div className="flex items-center gap-1.5">
+                            <Monitor size={13} className="text-slate-500 shrink-0" />
+                            <span className="truncate">{session.initialUserAgent ? session.initialUserAgent.substring(0, 35) + '...' : '-'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-slate-400 font-mono whitespace-nowrap">
+                          {formatDate(session.fromDate)}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-slate-400 font-mono whitespace-nowrap">
+                          {formatDate(session.lastUpdatedStamp || session.fromDate)}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            {t.onlineNow}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectUser(session.userLoginId)}
+                            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs"
+                            title={t.userDetail}
+                          >
+                            <span>{t.userDetail}</span>
+                            <ChevronRight size={14} />
                           </button>
                         </td>
                       </tr>

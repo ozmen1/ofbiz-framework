@@ -475,12 +475,30 @@ String addUserSecurityGroup() {
             return "error"
         }
 
-        Map res = dispatcher.runSync("addUserLoginToSecurityGroup", [
+        Timestamp fromDate = UtilDateTime.nowTimestamp()
+        Timestamp thruDate = null
+        if (UtilValidate.isNotEmpty(parameters.thruDate)) {
+            try {
+                String tdStr = parameters.thruDate.toString().trim()
+                if (tdStr.length() == 10) {
+                    thruDate = Timestamp.valueOf(tdStr + " 23:59:59")
+                } else {
+                    thruDate = Timestamp.valueOf(tdStr)
+                }
+            } catch (Exception ignored) {}
+        }
+
+        Map inMap = [
             userLogin: uL,
             userLoginId: userLoginId,
             groupId: groupId,
-            fromDate: UtilDateTime.nowTimestamp()
-        ])
+            fromDate: fromDate
+        ]
+        if (thruDate != null) {
+            inMap.thruDate = thruDate
+        }
+
+        Map res = dispatcher.runSync("addUserLoginToSecurityGroup", inMap)
 
         if (ServiceUtil.isError(res)) {
             request.setAttribute("_ERROR_MESSAGE_", ServiceUtil.getErrorMessage(res))
@@ -488,6 +506,7 @@ String addUserSecurityGroup() {
         }
 
         request.setAttribute("message", "Yetki grubu başarıyla atandı.")
+
         return "success"
     } catch (Exception e) {
         Debug.logError(e, "Error in addUserSecurityGroup: " + e.getMessage(), MODULE)
@@ -1014,4 +1033,125 @@ String deleteRoleTypeAdmin() {
         return "error"
     }
 }
+
+/**
+ * 16. getUserLoginHistory
+ * Returns paginated login history (audit trail) with IP and user-agent details
+ */
+String getUserLoginHistory() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        String userLoginId = parameters.userLoginId?.trim()
+        int viewIndex = parameters.viewIndex ? Integer.parseInt(parameters.viewIndex.toString()) : 0
+        int viewSize = parameters.viewSize ? Integer.parseInt(parameters.viewSize.toString()) : 20
+
+        def baseQuery = EntityQuery.use(delegator).from("UserLoginHistory")
+        if (UtilValidate.isNotEmpty(userLoginId)) {
+            baseQuery = baseQuery.where("userLoginId", userLoginId)
+        }
+
+        long totalCount = baseQuery.queryCount()
+
+        List<GenericValue> rawHistory = baseQuery
+            .orderBy("fromDate DESC")
+            .maxRows(viewSize)
+            .offset(viewIndex * viewSize)
+            .queryList()
+
+        List history = []
+        for (GenericValue ulh : rawHistory) {
+            String vId = ulh.getString("visitId")
+            String ip = ""
+            String userAgent = ""
+            String webappName = ""
+
+            if (UtilValidate.isNotEmpty(vId)) {
+                GenericValue visit = EntityQuery.use(delegator).from("Visit").where("visitId", vId).queryOne()
+                if (visit) {
+                    ip = visit.getString("clientIpAddress") ?: ""
+                    userAgent = visit.getString("initialUserAgent") ?: ""
+                    webappName = visit.getString("webappName") ?: ""
+                }
+            }
+
+            history.add([
+                userLoginId: ulh.getString("userLoginId"),
+                fromDate: ulh.getTimestamp("fromDate")?.toString() ?: "",
+                thruDate: ulh.getTimestamp("thruDate")?.toString() ?: "",
+                successfulLogin: ulh.getString("successfulLogin") ?: "Y",
+                originUserLoginId: ulh.getString("originUserLoginId") ?: "",
+                visitId: vId ?: "",
+                clientIpAddress: ip,
+                initialUserAgent: userAgent,
+                webappName: webappName
+            ])
+        }
+
+        request.setAttribute("history", history)
+        request.setAttribute("totalCount", totalCount)
+        request.setAttribute("viewIndex", viewIndex)
+        request.setAttribute("viewSize", viewSize)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getUserLoginHistory: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 17. getLoggedInUsers
+ * Returns real-time list of active online user sessions
+ */
+String getLoggedInUsers() {
+    def delegator = binding.getVariable("delegator")
+    def request = binding.getVariable("request")
+
+    try {
+        List<GenericValue> activeVisits = EntityQuery.use(delegator)
+            .from("Visit")
+            .where(EntityCondition.makeCondition("userLoginId", EntityOperator.NOT_EQUAL, null))
+            .filterByDate()
+            .orderBy("fromDate DESC")
+            .maxRows(100)
+            .queryList()
+
+        List sessions = []
+        Set seenUserLogins = new HashSet()
+
+        for (GenericValue v : activeVisits) {
+            String uId = v.getString("userLoginId")
+            String pId = v.getString("partyId")
+            String displayName = getPartyDisplayName(delegator, pId) ?: uId
+
+            sessions.add([
+                sessionId: v.getString("sessionId") ?: v.getString("visitId"),
+                visitId: v.getString("visitId"),
+                userLoginId: uId,
+                partyId: pId ?: "",
+                displayName: displayName,
+                clientIpAddress: v.getString("clientIpAddress") ?: "",
+                initialUserAgent: v.getString("initialUserAgent") ?: "",
+                webappName: v.getString("webappName") ?: "",
+                fromDate: v.getTimestamp("fromDate")?.toString() ?: "",
+                lastUpdatedStamp: v.getTimestamp("lastUpdatedStamp")?.toString() ?: "",
+                isUniqueUser: !seenUserLogins.contains(uId)
+            ])
+            seenUserLogins.add(uId)
+        }
+
+        request.setAttribute("sessions", sessions)
+        request.setAttribute("totalCount", sessions.size())
+        request.setAttribute("uniqueUsersCount", seenUserLogins.size())
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getLoggedInUsers: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
 
