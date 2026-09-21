@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ArrowLeft, Save, Edit3, CheckCircle2, Clock, XCircle, FileText, Building2, User, 
   Calendar, AlignLeft, Plus, Trash2, Copy, AlertCircle, Check, Loader2,
-  Tag, ShieldAlert, CreditCard
+  Tag, ShieldAlert, CreditCard, Printer
 } from 'lucide-react';
 import { api, InvoiceDetailResponse } from '../services/api';
 import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
+import InvoicePrintModal from './InvoicePrintModal';
 import { useTranslation } from '../i18n';
 
 interface InvoiceDetailProps {
@@ -62,6 +63,7 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
 
   // Edit Header State
   const [isEditingHeader, setIsEditingHeader] = useState(false);
@@ -286,6 +288,15 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
         </button>
 
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            className="ds-btn-secondary flex items-center gap-2 cursor-pointer"
+            onClick={() => setShowPrintModal(true)}
+            title={inv.printInvoice}
+          >
+            <Printer size={16} /> {inv.printInvoice}
+          </button>
+
           <button
             className="ds-btn-secondary flex items-center gap-2"
             onClick={handleCopyInvoice}
@@ -783,6 +794,16 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
         )}
 
       </div>
+
+      {/* Invoice Print & PDF Preview Modal (Faz 2) */}
+      {showPrintModal && (
+        <InvoicePrintModal
+          invoiceId={invoice.invoiceId}
+          isOpen={showPrintModal}
+          onClose={() => setShowPrintModal(false)}
+          preloadedDetail={detail}
+        />
+      )}
 
     </div>
   );

@@ -17,10 +17,12 @@ import {
   AlertTriangle,
   ArrowUpRight,
   ArrowDownLeft,
+  Printer,
 } from 'lucide-react';
 import { api, InvoiceListItem } from '../services/api';
 import { useTranslation } from '../i18n';
 import { PartyStatementModal } from './PartyStatementModal';
+import InvoicePrintModal from './InvoicePrintModal';
 
 const getStatusBadgeClass = (statusId: string): string => {
   switch (statusId) {
@@ -72,6 +74,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [selectedStatementPartyId, setSelectedStatementPartyId] = useState<string | null>(null);
   const [showStatementModal, setShowStatementModal] = useState<boolean>(false);
+  const [printInvoiceId, setPrintInvoiceId] = useState<string | null>(null);
   const [activeSegment, setActiveSegment] = useState<InvoiceSegment>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -796,6 +799,14 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
                         <button
                           type="button"
                           className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
+                          onClick={() => setPrintInvoiceId(inv.invoiceId)}
+                          title={translations.invoices.printInvoice}
+                        >
+                          <Printer size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors cursor-pointer"
                           onClick={() => handleCopyInvoice(inv.invoiceId)}
                           title={tBatch.copyInvoice}
                         >
@@ -837,6 +848,15 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
           setSelectedStatementPartyId(null);
         }}
       />
+
+      {/* Invoice Print & PDF Preview Modal (Faz 2) */}
+      {printInvoiceId && (
+        <InvoicePrintModal
+          invoiceId={printInvoiceId}
+          isOpen={Boolean(printInvoiceId)}
+          onClose={() => setPrintInvoiceId(null)}
+        />
+      )}
     </div>
   );
 };

@@ -243,6 +243,16 @@ export interface Translations {
     exportCsv: string;
     exportSuccess: string;
     countUnit: string;
+    printInvoice: string;
+    printPreview: string;
+    printAction: string;
+    invoiceTitle: string;
+    billFrom: string;
+    billTo: string;
+    grandTotal: string;
+    balanceDue: string;
+    authorizedStamp: string;
+    recipientSignature: string;
   };
   payments: {
     paymentId: string;
