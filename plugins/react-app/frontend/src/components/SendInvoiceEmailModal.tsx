@@ -22,48 +22,15 @@ export const SendInvoiceEmailModal: React.FC<SendInvoiceEmailModalProps> = ({
   const inv = translations.invoices;
   const common = translations.common;
 
-  // Derive initial recipient email with smart multi-source fallback
+  // Derive initial recipient email if available from contact mechs
   const defaultRecipient = () => {
-    // 1. Check backend-computed default recipient email
-    if (detail?.invoice?.defaultRecipientEmail) {
-      return detail.invoice.defaultRecipientEmail;
-    }
-
-    const isPurchase = detail?.invoice?.invoiceTypeId === 'PURCHASE_INVOICE';
-
-    // 2. Check counter-party email directly on invoice header
-    if (isPurchase && detail?.invoice?.partyFromEmail) return detail.invoice.partyFromEmail;
-    if (!isPurchase && detail?.invoice?.partyToEmail) return detail.invoice.partyToEmail;
-
-    // 3. Check partyEmails array from backend
-    if (detail?.partyEmails && detail.partyEmails.length > 0) {
-      const targetPartyId = isPurchase ? detail.invoice.partyIdFrom : detail.invoice.partyIdTo;
-      const match = detail.partyEmails.find(pe => pe.partyId === targetPartyId);
-      if (match?.email) return match.email;
-      return detail.partyEmails[0].email;
-    }
-
-    // 4. Check contact mechs linked directly to invoice
-    if (detail?.contactMechs) {
-      const emailCm = detail.contactMechs.find(
-        cm => cm.contactMechPurposeTypeId === 'ORDER_EMAIL' || 
-              cm.contactMechPurposeTypeId === 'PRIMARY_EMAIL' || 
-              cm.detailInfo?.includes('@')
-      );
-      if (emailCm?.detailInfo) return emailCm.detailInfo;
-    }
-
-    return '';
-  };
-
-  // Derive initial CC email (e.g. internal accounting or company email)
-  const defaultCc = () => {
-    const isPurchase = detail?.invoice?.invoiceTypeId === 'PURCHASE_INVOICE';
-    // For purchase invoices, our company is partyTo
-    if (isPurchase && detail?.invoice?.partyToEmail) return detail.invoice.partyToEmail;
-    // For sales invoices, our company is partyFrom
-    if (!isPurchase && detail?.invoice?.partyFromEmail) return detail.invoice.partyFromEmail;
-    return '';
+    if (!detail?.contactMechs) return '';
+    const emailCm = detail.contactMechs.find(
+      cm => cm.contactMechPurposeTypeId === 'ORDER_EMAIL' || 
+            cm.contactMechPurposeTypeId === 'PRIMARY_EMAIL' || 
+            cm.detailInfo?.includes('@')
+    );
+    return emailCm?.detailInfo || '';
   };
 
   const defaultSubject = () => {
@@ -93,7 +60,6 @@ export const SendInvoiceEmailModal: React.FC<SendInvoiceEmailModalProps> = ({
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       setSendTo(defaultRecipient());
-      setSendCc(defaultCc());
       setSubject(defaultSubject());
       setBodyText(defaultBody());
       setError(null);
@@ -201,35 +167,6 @@ export const SendInvoiceEmailModal: React.FC<SendInvoiceEmailModalProps> = ({
               className="ds-input w-full text-sm"
               required
             />
-            {detail?.partyEmails && detail.partyEmails.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-[11px] text-slate-400">
-                  {locale === 'tr' ? 'Kayıtlı E-Postalar:' : 'Registered Emails:'}
-                </span>
-                {detail.partyEmails.map((pe, idx) => (
-                  <button
-                    key={`to-${pe.partyId}-${pe.email}-${idx}`}
-                    type="button"
-                    onClick={() => setSendTo(pe.email)}
-                    title={pe.purposeDesc || pe.partyName}
-                    className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
-                      sendTo === pe.email
-                        ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-medium'
-                        : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                    }`}
-                  >
-                    <span className="font-semibold text-slate-400 mr-1">{pe.partyName || pe.partyId}:</span>
-                    {pe.email}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[11px] text-amber-400/80 mt-1">
-                {locale === 'tr' 
-                  ? 'Cari kartında kayıtlı e-posta bulunamadı. Lütfen e-postayı manuel giriniz.' 
-                  : 'No registered email found on party card. Please enter manually.'}
-              </p>
-            )}
           </div>
 
           <div>
@@ -241,31 +178,6 @@ export const SendInvoiceEmailModal: React.FC<SendInvoiceEmailModalProps> = ({
               onChange={(e) => setSendCc(e.target.value)}
               className="ds-input w-full text-sm"
             />
-            {detail?.partyEmails && detail.partyEmails.length > 1 && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className="text-[11px] text-slate-400">
-                  {locale === 'tr' ? 'Hızlı Bilgi (CC):' : 'Quick CC:'}
-                </span>
-                {detail.partyEmails
-                  .filter(pe => pe.email !== sendTo)
-                  .map((pe, idx) => (
-                    <button
-                      key={`cc-${pe.partyId}-${pe.email}-${idx}`}
-                      type="button"
-                      onClick={() => setSendCc(pe.email)}
-                      title={pe.purposeDesc || pe.partyName}
-                      className={`text-[11px] px-2 py-0.5 rounded-md border transition-all ${
-                        sendCc === pe.email
-                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 font-medium'
-                          : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                      }`}
-                    >
-                      <span className="font-semibold text-slate-400 mr-1">{pe.partyName || pe.partyId}:</span>
-                      {pe.email}
-                    </button>
-                  ))}
-              </div>
-            )}
           </div>
 
           <div>
