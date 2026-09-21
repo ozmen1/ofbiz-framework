@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Printer, X, FileText, AlertCircle, Building2, User } from 'lucide-react';
+import { Printer, X, FileText, AlertCircle, Building2, User, Download, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { api, InvoiceDetailResponse, fetchPartyDetail, PartyDetail } from '../services/api';
 import { useTranslation } from '../i18n';
 
@@ -78,8 +80,150 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
 
   if (!isOpen) return null;
 
+  const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
+
   const handlePrint = () => {
+    // Golden Invariant: Ensure body overflow does not clip printing
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'visible';
+
     window.print();
+
+    // Restore body overflow lock after print dialog
+    setTimeout(() => {
+      document.body.style.overflow = prevOverflow || 'hidden';
+    }, 500);
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('printable-invoice-container');
+    if (!element || downloadingPdf) return;
+
+    setDownloadingPdf(true);
+    try {
+      const targetWidth = 800; // Optimal A4 proportion width in pixels
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // Sharp 2x Retina resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1200,
+        windowHeight: Math.max(element.scrollHeight, element.offsetHeight, 2500),
+        onclone: (clonedDoc) => {
+          const clonedElem = clonedDoc.getElementById('printable-invoice-container');
+          if (clonedElem) {
+            // 1. Unconstrain all ancestors in cloned DOM so html2canvas never clips vertical content
+            let p: HTMLElement | null = clonedElem.parentElement;
+            while (p && p !== clonedDoc.body) {
+              p.style.overflow = 'visible';
+              p.style.maxHeight = 'none';
+              p.style.height = 'auto';
+              p.style.position = 'static';
+              p.style.display = 'block';
+              p.style.padding = '0';
+              p.style.margin = '0';
+              p = p.parentElement;
+            }
+            if (clonedDoc.body) {
+              clonedDoc.body.style.overflow = 'visible';
+              clonedDoc.body.style.height = 'auto';
+              clonedDoc.body.style.maxHeight = 'none';
+              clonedDoc.body.style.padding = '0';
+              clonedDoc.body.style.margin = '0';
+            }
+            if (clonedDoc.documentElement) {
+              clonedDoc.documentElement.style.overflow = 'visible';
+              clonedDoc.documentElement.style.height = 'auto';
+              clonedDoc.documentElement.style.maxHeight = 'none';
+            }
+
+            // 2. Set clean paper styling on clonedElem
+            clonedElem.style.width = `${targetWidth}px`;
+            clonedElem.style.maxWidth = `${targetWidth}px`;
+            clonedElem.style.minWidth = `${targetWidth}px`;
+            clonedElem.style.height = 'auto';
+            clonedElem.style.minHeight = 'auto';
+            clonedElem.style.boxSizing = 'border-box';
+            clonedElem.style.borderRadius = '0px';
+            clonedElem.style.boxShadow = 'none';
+            clonedElem.style.border = 'none';
+            clonedElem.style.padding = '24px 28px 28px 28px';
+            clonedElem.style.margin = '0 auto';
+          }
+        }
+      });
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      // A4 portrait dimensions: 210mm x 297mm
+      const marginMm = 8;
+      const usableWidthMm = 210 - (marginMm * 2); // 194 mm
+      const usableHeightMm = 297 - (marginMm * 2); // 281 mm
+
+      const imgRatio = canvas.height / canvas.width;
+      const naturalHeightMm = usableWidthMm * imgRatio;
+
+      // Fit on single page if natural height is within single page or slight overflow (up to 1.35x)
+      if (naturalHeightMm <= usableHeightMm * 1.35) {
+        const scale = Math.min(1, usableHeightMm / naturalHeightMm);
+        const finalWidthMm = usableWidthMm * scale;
+        const finalHeightMm = naturalHeightMm * scale;
+        const xOffset = marginMm + (usableWidthMm - finalWidthMm) / 2;
+        const yOffset = marginMm;
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, finalWidthMm, finalHeightMm, undefined, 'FAST');
+      } else {
+        // Multi-page slicing for multi-item invoices
+        const pageHeightInPx = (canvas.width * usableHeightMm) / usableWidthMm;
+        let currentY = 0;
+        let pageNum = 0;
+
+        while (currentY < canvas.height) {
+          const sliceHeight = Math.min(pageHeightInPx, canvas.height - currentY);
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const pageCtx = pageCanvas.getContext('2d');
+
+          if (pageCtx) {
+            pageCtx.fillStyle = '#ffffff';
+            pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            pageCtx.drawImage(
+              canvas,
+              0, currentY, canvas.width, sliceHeight,
+              0, 0, canvas.width, sliceHeight
+            );
+
+            const sliceImgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+            const sliceHeightMm = (sliceHeight * usableWidthMm) / canvas.width;
+
+            if (pageNum > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(sliceImgData, 'JPEG', marginMm, marginMm, usableWidthMm, sliceHeightMm, undefined, 'FAST');
+          }
+
+          currentY += sliceHeight;
+          pageNum++;
+        }
+      }
+
+      pdf.save(`Fatura-${invoice?.invoiceId || invoiceId || 'export'}.pdf`);
+    } catch (err: unknown) {
+      console.error('PDF export error:', err);
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const formatCurrency = (val: number, currency: string = 'USD') => {
@@ -108,24 +252,65 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
       {/* Print Specific CSS Style */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+          }
+
+          /* Ensure body and html behave like a clean, printable document */
+          html, body {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 100% !important;
+            background: white !important;
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Hide everything except printable invoice container */
           body * {
             visibility: hidden !important;
           }
-          #printable-invoice-container, #printable-invoice-container * {
+
+          /* Neutralize modal overlays, backdrops and scroll containers */
+          .fixed,
+          [class*="fixed"],
+          [class*="overflow-y-auto"],
+          [class*="max-h-"],
+          .animate-fade-in {
+            position: static !important;
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            width: auto !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          #printable-invoice-container,
+          #printable-invoice-container * {
             visibility: visible !important;
           }
+
           #printable-invoice-container {
-            position: absolute !important;
+            position: relative !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
-            margin: 0 !important;
-            padding: 16px !important;
+            max-width: 100% !important;
+            min-height: auto !important;
+            margin: 0 auto !important;
+            padding: 12px 16px !important;
             background: white !important;
             color: #0f172a !important;
             border: none !important;
             box-shadow: none !important;
           }
+
           .no-print {
             display: none !important;
           }
@@ -156,15 +341,31 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={loading || !detail || downloadingPdf}
+              className="ds-btn-primary py-2 px-3 sm:px-4 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-md shadow-indigo-500/20 disabled:opacity-50"
+              title={invT.downloadPdf}
+            >
+              {downloadingPdf ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              <span>{downloadingPdf ? invT.generatingPdf : invT.downloadPdf}</span>
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
-              disabled={loading || !detail}
-              className="ds-btn-primary py-2 px-4 text-xs sm:text-sm flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-500/20 disabled:opacity-50"
+              disabled={loading || !detail || downloadingPdf}
+              className="ds-btn-secondary py-2 px-3 sm:px-4 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 cursor-pointer disabled:opacity-50"
+              title={invT.printAction}
             >
               <Printer size={16} />
-              <span>{invT.printAction}</span>
+              <span className="hidden sm:inline">{invT.printAction}</span>
             </button>
 
             <button
@@ -416,11 +617,24 @@ export const InvoicePrintModal: React.FC<InvoicePrintModalProps> = ({
           <button
             type="button"
             onClick={handlePrint}
-            disabled={loading || !detail}
-            className="ds-btn-primary py-1.5 px-4 text-xs sm:text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            disabled={loading || !detail || downloadingPdf}
+            className="ds-btn-secondary py-1.5 px-4 text-xs sm:text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Printer size={15} />
             <span>{invT.printAction}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={loading || !detail || downloadingPdf}
+            className="ds-btn-primary py-1.5 px-4 text-xs sm:text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {downloadingPdf ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Download size={15} />
+            )}
+            <span>{downloadingPdf ? invT.generatingPdf : invT.downloadPdf}</span>
           </button>
         </div>
 

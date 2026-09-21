@@ -248,6 +248,8 @@ export interface Translations {
     printInvoice: string;
     printPreview: string;
     printAction: string;
+    downloadPdf: string;
+    generatingPdf: string;
     invoiceTitle: string;
     billFrom: string;
     billTo: string;
