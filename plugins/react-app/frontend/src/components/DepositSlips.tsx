@@ -190,7 +190,7 @@ export const DepositSlips: React.FC<DepositSlipsProps> = ({ initialFinAccountId 
             disabled={loading}
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">{translations.common.refresh}</span>
+            <span>{translations.common.refresh}</span>
           </button>
           <button
             onClick={() => {
@@ -224,96 +224,103 @@ export const DepositSlips: React.FC<DepositSlipsProps> = ({ initialFinAccountId 
       )}
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="ds-stat-card border-l-4 border-l-indigo-500 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-medium">{translations.depositSlips.stats.totalSlips}</span>
-            <Building2 className="text-indigo-400" size={18} />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium tracking-wide truncate">{translations.depositSlips.stats.totalSlips}</span>
+            <Building2 className="text-indigo-400 shrink-0" size={18} />
           </div>
-          <p className="text-2xl font-bold text-white mt-2">{totalSlipsCount}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">{totalSlipsCount}</p>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-emerald-500 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-medium">{translations.depositSlips.stats.totalDepositedAmount}</span>
-            <DollarSign className="text-emerald-400" size={18} />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium tracking-wide truncate">{translations.depositSlips.stats.totalDepositedAmount}</span>
+            <DollarSign className="text-emerald-400 shrink-0" size={18} />
           </div>
-          <p className="text-2xl font-bold text-white mt-2">{formatCurrency(totalDepositedVolume)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">{formatCurrency(totalDepositedVolume)}</p>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-amber-500 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-medium">{translations.depositSlips.stats.undepositedCount}</span>
-            <CreditCard className="text-amber-400" size={18} />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium tracking-wide truncate">{translations.depositSlips.stats.undepositedCount}</span>
+            <CreditCard className="text-amber-400 shrink-0" size={18} />
           </div>
-          <p className="text-2xl font-bold text-white mt-2">{undepositedCount}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">{undepositedCount}</p>
         </div>
 
         <div className="ds-stat-card border-l-4 border-l-rose-500 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-medium">{translations.depositSlips.stats.undepositedAmount}</span>
-            <Wallet className="text-rose-400" size={18} />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium tracking-wide truncate">{translations.depositSlips.stats.undepositedAmount}</span>
+            <Wallet className="text-rose-400 shrink-0" size={18} />
           </div>
-          <p className="text-2xl font-bold text-white mt-2">{formatCurrency(undepositedAmount)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">{formatCurrency(undepositedAmount)}</p>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="ds-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-slate-500" size={16} />
+      <div className="ds-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+          {/* Search Input with properly spaced icon */}
+          <div className="relative w-full sm:w-64 shrink-0">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
             <input
               type="text"
               placeholder={translations.common.search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="ds-input pl-9 text-xs"
+              className="ds-input !pl-10 text-xs"
             />
           </div>
 
           {/* Account Filter */}
-          <select
-            value={selectedFinAccountId}
-            onChange={(e) => setSelectedFinAccountId(e.target.value)}
-            className="ds-select text-xs w-full sm:w-56"
-          >
-            <option value="">{translations.depositSlips.bankAccount}: {translations.common.all}</option>
-            {finAccounts.map(fa => (
-              <option key={fa.finAccountId} value={fa.finAccountId}>
-                {fa.finAccountName} ({fa.finAccountId})
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-64 shrink-0">
+            <select
+              value={selectedFinAccountId}
+              onChange={(e) => setSelectedFinAccountId(e.target.value)}
+              className="ds-select text-xs w-full"
+            >
+              <option value="">{translations.depositSlips.bankAccount}: {translations.common.all}</option>
+              {finAccounts.map(fa => (
+                <option key={fa.finAccountId} value={fa.finAccountId}>
+                  {fa.finAccountName} ({fa.finAccountId})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {undepositedCount > 0 && (
-          <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
-            <ArrowDownLeft size={14} />
-            <span>{undepositedCount} {translations.depositSlips.stats.undepositedCount} ({formatCurrency(undepositedAmount)})</span>
+          <div className="flex items-center gap-2 text-xs text-amber-500 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded-xl border border-amber-500/20 shrink-0">
+            <ArrowDownLeft size={14} className="shrink-0" />
+            <span className="font-medium">{undepositedCount} {translations.depositSlips.stats.undepositedCount} ({formatCurrency(undepositedAmount)})</span>
           </div>
         )}
       </div>
 
-      {/* Deposit Slips Table */}
+      {/* Deposit Slips Table / Empty State */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="ds-spinner"></div>
         </div>
       ) : slips.length === 0 ? (
-        <div className="ds-card text-center py-16 text-slate-400 text-sm">
-          <Building2 className="mx-auto text-slate-600 mb-2" size={36} />
-          <p>{translations.depositSlips.noDepositSlips}</p>
+        <div className="ds-card flex flex-col items-center justify-center text-center py-16 px-4 text-slate-400 text-sm">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-3 shadow-inner">
+            <Building2 size={26} />
+          </div>
+          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">{translations.depositSlips.noDepositSlips}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+            {translations.depositSlips.subtitle}
+          </p>
           {undepositedCount > 0 && (
             <button
               onClick={() => {
                 setSelectedPaymentIds(undeposited.map(p => p.paymentId));
                 setShowCreateModal(true);
               }}
-              className="mt-4 ds-btn-primary inline-flex items-center gap-2 text-xs"
+              className="mt-5 ds-btn-primary text-xs cursor-pointer"
             >
-              <Plus size={14} />
+              <Plus size={15} />
               <span>{translations.depositSlips.newSlip}</span>
             </button>
           )}

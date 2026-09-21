@@ -1,10 +1,10 @@
 /**
- * OFBiz React App — Unified Design System
+ * OFBiz React App — Unified Design System (Oracle Redwood Edition)
  * Tüm sayfalar bu Tailwind utility class'larını ve CSS variables'larını kullanır.
  *
- * Dark Palette:  slate-950 (bg) → slate-900/800 (card) → slate-700 (border)
- * Light Palette: slate-100 (bg) → white (card) → slate-200 (border)
- * Accent:        indigo-600 (primary) | emerald-500 (success) | rose-500 (danger) | amber-500 (warning)
+ * Dark Palette:  slate-950 (#161513) → slate-900 (#1d1b18) / slate-800 (#262421) → slate-700 (#3c3834)
+ * Light Palette: slate-100 (#f5f3ef) → white (card) → slate-200 (#e8e5df)
+ * Accent:        Oracle Red (#c74634) | Forest Teal (#267261) | Danger (#c74634) | Ochre Amber (#d97706)
  */
 
 /* ─── Kart & Panel ─── */
@@ -15,7 +15,7 @@
   @apply bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-md dark:shadow-xl transition-colors;
 }
 
-/* ─── Butonlar ─── */
+/* ─── Butonlar (Oracle Redwood Primary) ─── */
 .ds-btn-primary {
   @apply flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium border border-indigo-500/40 shadow-sm shadow-indigo-950/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
 }
@@ -31,9 +31,11 @@
 
 /* ─── Form Elemanları ─── */
 .ds-input {
+  box-sizing: border-box;
   @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all w-full;
 }
 .ds-select {
+  box-sizing: border-box;
   @apply bg-slate-50 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full;
 }
 .ds-label {
@@ -83,6 +85,7 @@
 .ds-badge-purple { @apply bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/20; }
 .ds-badge-slate  { @apply bg-slate-200 dark:bg-slate-600/40 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600/30; }
 .ds-badge-indigo { @apply bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20; }
+.ds-badge-oracle { @apply bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20; }
 
 /* ─── Modal ─── */
 .ds-overlay {
@@ -142,7 +145,7 @@
   @apply text-xs text-slate-500 mt-1 truncate;
 }
 
-/* ─── Yükleniyor Spinner ─── */
+/* ─── Yükleniyor Spinner (Oracle Red) ─── */
 .ds-spinner {
   @apply animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full;
 }

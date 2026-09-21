@@ -17,7 +17,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '', showLa
     <button
       type="button"
       onClick={toggleTheme}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
         isDark
           ? 'bg-slate-900 border-slate-800 text-amber-400 hover:text-amber-300 hover:bg-slate-800/80 shadow-inner'
           : 'bg-slate-100 border-slate-300 text-indigo-600 hover:text-indigo-700 hover:bg-slate-200/80 shadow-sm'

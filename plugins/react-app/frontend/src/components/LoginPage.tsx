@@ -73,17 +73,17 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 sm:p-6 relative selection:bg-indigo-500 selection:text-white">
-      {/* Background ambient gradient glow */}
+      {/* Background ambient gradient glow (Oracle Redwood Atmosphere) */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 left-1/3 -translate-x-1/2 w-72 h-72 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Language Switcher Bar */}
-      <div className="absolute top-6 right-6 z-10 flex items-center bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-lg">
+      <div className="absolute top-6 right-6 z-10 inline-flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-lg shrink-0">
         <button
           type="button"
           onClick={() => setLocale('tr')}
-          className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-            locale === 'tr' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+          className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+            locale === 'tr' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/50'
           }`}
           title="Türkçe"
         >
@@ -93,8 +93,8 @@ export const LoginPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setLocale('en')}
-          className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-            locale === 'en' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+          className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+            locale === 'en' ? 'bg-indigo-600 text-white shadow-sm' : 'border border-transparent text-slate-400 hover:text-white hover:bg-slate-800/50'
           }`}
           title="English"
         >
@@ -107,10 +107,15 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700 shadow-xl shadow-indigo-500/20 mb-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 via-red-600 to-indigo-800 shadow-xl shadow-indigo-600/30 ring-1 ring-white/10 mb-2">
             <Sparkles size={28} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{t.loginTitle}</h1>
+          <div className="flex items-center justify-center gap-1.5">
+            <h1 className="text-2xl font-bold text-white tracking-tight">{t.loginTitle}</h1>
+            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold">
+              Oracle
+            </span>
+          </div>
           <p className="text-xs text-slate-400">{t.loginSubtitle}</p>
         </div>
 
@@ -188,7 +193,7 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-red-700 hover:from-indigo-500 hover:to-red-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>

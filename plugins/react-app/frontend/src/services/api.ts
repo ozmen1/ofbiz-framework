@@ -5228,6 +5228,44 @@ export async function fetchUserAdminMetadata(): Promise<UserAdminMetadataRespons
   return requestApi<UserAdminMetadataResponse>('getUserAdminMetadata');
 }
 
+export interface RoleTypeAdminItem {
+  roleTypeId: string;
+  parentTypeId: string;
+  description: string;
+  hasTable: string;
+  partyCount: number;
+}
+
+export interface RoleTypesAdminResponse {
+  roleTypes: RoleTypeAdminItem[];
+  totalCount: number;
+}
+
+export async function fetchRoleTypesAdmin(): Promise<RoleTypesAdminResponse> {
+  return requestApi<RoleTypesAdminResponse>('getRoleTypesAdmin');
+}
+
+export async function createRoleTypeAdmin(payload: {
+  roleTypeId: string;
+  description: string;
+  parentTypeId?: string;
+}): Promise<{ roleTypeId: string; message: string }> {
+  return requestApi<{ roleTypeId: string; message: string }>('createRoleTypeAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteRoleTypeAdmin(roleTypeId: string): Promise<{ roleTypeId: string; message: string }> {
+  return requestApi<{ roleTypeId: string; message: string }>('deleteRoleTypeAdmin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roleTypeId })
+  });
+}
+
+
 // ==========================================
 // Phase 3: System, Cache & Job Scheduler Management Models
 // ==========================================

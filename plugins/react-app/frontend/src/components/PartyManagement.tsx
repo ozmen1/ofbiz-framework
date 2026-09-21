@@ -42,6 +42,8 @@ import {
   fetchPartyMetadata,
   fetchPartyFinancialProfile,
   setPartyStatus,
+  addPartyRole,
+  deletePartyRole,
   deletePartyContactMech,
   deletePartyIdentification,
   addPartyClassification,
@@ -135,12 +137,19 @@ export const PartyManagement: React.FC = () => {
   const [selectedSegmentToAdd, setSelectedSegmentToAdd] = useState('');
   const [statementPartyId, setStatementPartyId] = useState<string | null>(null);
 
+  // Party Role Management State
+  const [isAddingRole, setIsAddingRole] = useState(false);
+  const [newRoleTypeId, setNewRoleTypeId] = useState('');
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false);
+  const [deletingRoleTypeId, setDeletingRoleTypeId] = useState<string | null>(null);
+
   // Load Metadata
   useEffect(() => {
     fetchPartyMetadata()
       .then(res => setMetadata(res))
       .catch(err => console.error('Could not load party metadata:', err));
   }, []);
+
 
   // Fetch Parties
   const loadParties = useCallback(async () => {
@@ -215,7 +224,49 @@ export const PartyManagement: React.FC = () => {
     setPartyAttributes([]);
     setPartyContents(null);
     setPartyUserLogins(null);
+    setIsAddingRole(false);
+    setNewRoleTypeId('');
   };
+
+  // Memoized available roles not yet assigned to the current party
+  const availableRoles = useMemo(() => {
+    if (!partyDetail || !metadata?.roleTypes) return [];
+    const assignedRoleIds = new Set(partyDetail.roles.map(r => r.roleTypeId));
+    return metadata.roleTypes.filter(rt => !assignedRoleIds.has(rt.roleTypeId));
+  }, [partyDetail, metadata]);
+
+  // Add party role
+  const handleAddPartyRole = async () => {
+    if (!partyDetail || !newRoleTypeId) return;
+    setIsSubmittingRole(true);
+    try {
+      await addPartyRole(partyDetail.partyId, newRoleTypeId);
+      setIsAddingRole(false);
+      setNewRoleTypeId('');
+      await handleOpenDetail(partyDetail.partyId);
+      loadParties();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : common.error);
+    } finally {
+      setIsSubmittingRole(false);
+    }
+  };
+
+  // Delete party role
+  const handleDeletePartyRole = async (roleTypeId: string) => {
+    if (!partyDetail || !confirm(t.confirmDeleteRole)) return;
+    setDeletingRoleTypeId(roleTypeId);
+    try {
+      await deletePartyRole(partyDetail.partyId, roleTypeId);
+      await handleOpenDetail(partyDetail.partyId);
+      loadParties();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : common.error);
+    } finally {
+      setDeletingRoleTypeId(null);
+    }
+  };
+
 
   const refreshFinancialData = async (partyId: string) => {
     try {
@@ -1410,22 +1461,109 @@ export const PartyManagement: React.FC = () => {
                       </div>
 
                       {/* Active Roles */}
-                      <div className="space-y-2 pt-2 border-t border-slate-800">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                          <ShieldCheck size={14} className="text-indigo-400" />
-                          <span>{t.rolesAndClass}</span>
-                        </h3>
-                        <div className="flex flex-wrap gap-1.5">
-                          {partyDetail.roles.map(r => (
-                            <span
-                              key={r.roleTypeId}
-                              className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700"
+                      <div className="space-y-3 pt-3 border-t border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <ShieldCheck size={14} className="text-indigo-400" />
+                            <span>{t.rolesAndClass}</span>
+                          </h3>
+                          {!isAddingRole && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsAddingRole(true);
+                                if (availableRoles.length > 0) {
+                                  setNewRoleTypeId(availableRoles[0].roleTypeId);
+                                }
+                              }}
+                              className="px-2 py-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer border border-indigo-500/20"
                             >
-                              {r.description} ({r.roleTypeId})
-                            </span>
-                          ))}
+                              <Plus size={12} />
+                              <span>{t.addRole}</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Inline Add Role Selector */}
+                        {isAddingRole && (
+                          <div className="p-3 bg-slate-900 border border-slate-700 rounded-xl space-y-2.5 animate-fadeIn">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-slate-300">{t.addRole}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsAddingRole(false);
+                                  setNewRoleTypeId('');
+                                }}
+                                className="text-slate-400 hover:text-white cursor-pointer"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+
+                            {availableRoles.length === 0 ? (
+                              <p className="text-xs text-amber-400/90 italic">{t.noAvailableRoles}</p>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={newRoleTypeId}
+                                  onChange={e => setNewRoleTypeId(e.target.value)}
+                                  className="flex-1 px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:border-indigo-500 focus:outline-hidden"
+                                >
+                                  {availableRoles.map(rt => (
+                                    <option key={rt.roleTypeId} value={rt.roleTypeId}>
+                                      {rt.description} ({rt.roleTypeId})
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  disabled={isSubmittingRole || !newRoleTypeId}
+                                  onClick={handleAddPartyRole}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shrink-0"
+                                >
+                                  {isSubmittingRole ? (
+                                    <RefreshCw size={12} className="animate-spin" />
+                                  ) : (
+                                    <Plus size={12} />
+                                  )}
+                                  <span>{common.save}</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Roles Badge List */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {partyDetail.roles.length === 0 ? (
+                            <span className="text-xs text-slate-500 italic">Atanmış rol bulunmuyor.</span>
+                          ) : (
+                            partyDetail.roles.map(r => (
+                              <span
+                                key={r.roleTypeId}
+                                className="group inline-flex items-center gap-1.5 text-xs pl-2.5 pr-1.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-600 transition-colors"
+                              >
+                                <span>{r.description} ({r.roleTypeId})</span>
+                                <button
+                                  type="button"
+                                  disabled={deletingRoleTypeId === r.roleTypeId}
+                                  onClick={() => handleDeletePartyRole(r.roleTypeId)}
+                                  title={t.removeRole}
+                                  className="p-0.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 rounded transition-colors cursor-pointer disabled:opacity-40"
+                                >
+                                  {deletingRoleTypeId === r.roleTypeId ? (
+                                    <RefreshCw size={11} className="animate-spin text-rose-400" />
+                                  ) : (
+                                    <X size={12} />
+                                  )}
+                                </button>
+                              </span>
+                            ))
+                          )}
                         </div>
                       </div>
+
                     </>
                   )}
 

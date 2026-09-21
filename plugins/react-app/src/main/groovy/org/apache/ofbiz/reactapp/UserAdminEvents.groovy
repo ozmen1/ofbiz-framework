@@ -853,3 +853,165 @@ String getUserAdminMetadata() {
         return "error"
     }
 }
+
+/**
+ * 13. getRoleTypesAdmin
+ * Returns all system RoleType entities with child/parent relations and party usage count
+ */
+String getRoleTypesAdmin() {
+    def delegator = binding.getVariable("delegator")
+    def request = binding.getVariable("request")
+
+    try {
+        List<GenericValue> roleTypesGv = EntityQuery.use(delegator)
+            .from("RoleType")
+            .orderBy("roleTypeId ASC")
+            .queryList()
+
+        // Count parties per role
+        List<GenericValue> partyRolesGv = EntityQuery.use(delegator)
+            .from("PartyRole")
+            .queryList()
+
+        Map<String, Integer> counts = [:]
+        for (GenericValue pr : partyRolesGv) {
+            String rt = pr.getString("roleTypeId")
+            counts[rt] = (counts[rt] ?: 0) + 1
+        }
+
+        List roleTypes = []
+        for (GenericValue rt : roleTypesGv) {
+            String rtId = rt.getString("roleTypeId")
+            roleTypes.add([
+                roleTypeId: rtId,
+                parentTypeId: rt.getString("parentTypeId") ?: "",
+                description: rt.getString("description") ?: rtId,
+                hasTable: rt.getString("hasTable") ?: "N",
+                partyCount: counts[rtId] ?: 0
+            ])
+        }
+
+        request.setAttribute("roleTypes", roleTypes)
+        request.setAttribute("totalCount", roleTypes.size())
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getRoleTypesAdmin: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 14. createRoleTypeAdmin
+ * Creates a new RoleType definition
+ */
+String createRoleTypeAdmin() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        GenericValue uL = getSystemUserLogin(binding)
+        String roleTypeId = parameters.roleTypeId?.trim()?.toUpperCase()
+        String description = parameters.description?.trim()
+        String parentTypeId = parameters.parentTypeId?.trim() ?: null
+
+        if (UtilValidate.isEmpty(roleTypeId) || UtilValidate.isEmpty(description)) {
+            request.setAttribute("_ERROR_MESSAGE_", "Rol Tipi Kodu ve Açıklama zorunludur.")
+            return "error"
+        }
+
+        // Check if already exists
+        GenericValue existing = EntityQuery.use(delegator).from("RoleType").where("roleTypeId", roleTypeId).queryOne()
+        if (existing) {
+            request.setAttribute("_ERROR_MESSAGE_", "Bu Rol Tipi zaten mevcut: " + roleTypeId)
+            return "error"
+        }
+
+        // Validate parentTypeId if given
+        if (UtilValidate.isNotEmpty(parentTypeId)) {
+            GenericValue parent = EntityQuery.use(delegator).from("RoleType").where("roleTypeId", parentTypeId).queryOne()
+            if (!parent) {
+                request.setAttribute("_ERROR_MESSAGE_", "Geçersiz Üst Rol Tipi: " + parentTypeId)
+                return "error"
+            }
+        }
+
+        Map inMap = [
+            userLogin: uL,
+            roleTypeId: roleTypeId,
+            description: description
+        ]
+        if (UtilValidate.isNotEmpty(parentTypeId)) {
+            inMap.parentTypeId = parentTypeId
+        }
+
+        Map res = dispatcher.runSync("createRoleType", inMap)
+        if (ServiceUtil.isError(res)) {
+            request.setAttribute("_ERROR_MESSAGE_", ServiceUtil.getErrorMessage(res))
+            return "error"
+        }
+
+        request.setAttribute("roleTypeId", roleTypeId)
+        request.setAttribute("message", "Rol tipi başarıyla oluşturuldu.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createRoleTypeAdmin: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+/**
+ * 15. deleteRoleTypeAdmin
+ * Deletes an unused RoleType
+ */
+String deleteRoleTypeAdmin() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    try {
+        GenericValue uL = getSystemUserLogin(binding)
+        String roleTypeId = parameters.roleTypeId?.trim()
+
+        if (UtilValidate.isEmpty(roleTypeId)) {
+            request.setAttribute("_ERROR_MESSAGE_", "roleTypeId zorunludur.")
+            return "error"
+        }
+
+        // Check if any party uses it
+        long usedCount = EntityQuery.use(delegator).from("PartyRole").where("roleTypeId", roleTypeId).queryCount()
+        if (usedCount > 0) {
+            request.setAttribute("_ERROR_MESSAGE_", "Bu rol tipi şu anda ${usedCount} adet cariye atanmış olduğundan silinemez.")
+            return "error"
+        }
+
+        // Check if any child role type references this as parent
+        long childCount = EntityQuery.use(delegator).from("RoleType").where("parentTypeId", roleTypeId).queryCount()
+        if (childCount > 0) {
+            request.setAttribute("_ERROR_MESSAGE_", "Bu rol tipi alt rollerin üst rolü (${childCount} adet) olduğundan silinemez.")
+            return "error"
+        }
+
+        Map res = dispatcher.runSync("deleteRoleType", [
+            userLogin: uL,
+            roleTypeId: roleTypeId
+        ])
+        if (ServiceUtil.isError(res)) {
+            request.setAttribute("_ERROR_MESSAGE_", ServiceUtil.getErrorMessage(res))
+            return "error"
+        }
+
+        request.setAttribute("roleTypeId", roleTypeId)
+        request.setAttribute("message", "Rol tipi başarıyla silindi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deleteRoleTypeAdmin: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+

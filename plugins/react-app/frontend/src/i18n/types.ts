@@ -1773,6 +1773,13 @@ export interface Translations {
     createdDate: string;
     taxAndIdNumbers: string;
     rolesAndClass: string;
+    addRole: string;
+    removeRole: string;
+    selectRole: string;
+    roleAddedSuccess: string;
+    roleRemovedSuccess: string;
+    confirmDeleteRole: string;
+    noAvailableRoles: string;
     contactMechs: string;
     postalAddresses: string;
     telecomNumbers: string;
@@ -1984,7 +1991,21 @@ export interface Translations {
     updatedSuccess: string;
     resetPasswordSuccess: string;
     groupCreatedSuccess: string;
+    tabRoleTypes: string;
+    createRoleType: string;
+    roleTypeCode: string;
+    roleTypeDescription: string;
+    parentRoleType: string;
+    partyCount: string;
+    hasTable: string;
+    searchRoleTypesPlaceholder: string;
+    roleTypeCreatedSuccess: string;
+    roleTypeDeletedSuccess: string;
+    confirmDeleteRoleType: string;
+    noRoleTypesFound: string;
+    noParentRole: string;
   };
+
   systemAdmin: {
     title: string;
     subtitle: string;

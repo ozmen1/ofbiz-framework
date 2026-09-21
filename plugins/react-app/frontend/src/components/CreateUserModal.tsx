@@ -254,7 +254,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-red-700 hover:from-indigo-500 hover:to-red-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

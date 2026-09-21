@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Shield, Key, Search, Plus, RefreshCw, CheckCircle2,
   AlertCircle, Lock, Unlock, UserCheck, UserX, ChevronRight, X,
-  ShieldCheck, Loader2, ChevronLeft, Trash2
+  ShieldCheck, Loader2, ChevronLeft, Trash2, Network
 } from 'lucide-react';
 import {
   fetchUserLogins,
@@ -16,17 +16,22 @@ import {
   addPermissionToSecurityGroup,
   removePermissionFromSecurityGroup,
   fetchUserAdminMetadata,
+  fetchRoleTypesAdmin,
+  deleteRoleTypeAdmin,
   UserLoginAdminItem,
   UserLoginDetail,
   SecurityGroupAdminItem,
   SecurityGroupDetailResponse,
-  UserAdminMetadataResponse
+  UserAdminMetadataResponse,
+  RoleTypeAdminItem
 } from '../services/api';
 import { useTranslation } from '../i18n';
 import { CreateUserModal } from './CreateUserModal';
 import { CreateSecurityGroupModal } from './CreateSecurityGroupModal';
+import { CreateRoleTypeModal } from './CreateRoleTypeModal';
 
-type MainTab = 'users' | 'securityGroups';
+type MainTab = 'users' | 'securityGroups' | 'roleTypes';
+
 
 export const UserManagement: React.FC = () => {
   const { translations } = useTranslation();
@@ -84,6 +89,15 @@ export const UserManagement: React.FC = () => {
   });
   const [isCreateUserOpen, setIsCreateUserOpen] = useState<boolean>(false);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState<boolean>(false);
+  const [isCreateRoleTypeOpen, setIsCreateRoleTypeOpen] = useState<boolean>(false);
+
+  // =====================
+  // Role Types Tab State
+  // =====================
+  const [roleTypes, setRoleTypes] = useState<RoleTypeAdminItem[]>([]);
+  const [loadingRoleTypes, setLoadingRoleTypes] = useState<boolean>(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState<string>('');
+  const [deletingRoleTypeId, setDeletingRoleTypeId] = useState<string | null>(null);
 
   // Alert Feedback
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -99,6 +113,40 @@ export const UserManagement: React.FC = () => {
       .then(res => setMetadata(res.metadata))
       .catch(() => {});
   }, []);
+
+  // Load Role Types
+  const loadRoleTypes = useCallback(async () => {
+    setLoadingRoleTypes(true);
+    try {
+      const res = await fetchRoleTypesAdmin();
+      setRoleTypes(res.roleTypes || []);
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Rol tipleri yüklenemedi.');
+    } finally {
+      setLoadingRoleTypes(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'roleTypes') {
+      loadRoleTypes();
+    }
+  }, [activeTab, loadRoleTypes]);
+
+  const handleDeleteRoleType = async (roleTypeId: string) => {
+    if (!window.confirm(t.confirmDeleteRoleType)) return;
+    setDeletingRoleTypeId(roleTypeId);
+    try {
+      await deleteRoleTypeAdmin(roleTypeId);
+      showFeedback('success', t.roleTypeDeletedSuccess);
+      loadRoleTypes();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : 'Rol tipi silinemedi.');
+    } finally {
+      setDeletingRoleTypeId(null);
+    }
+  };
+
 
   // ==========================================
   // Load Users List
@@ -368,6 +416,18 @@ export const UserManagement: React.FC = () => {
     );
   }, [groupPermissionsDetail, permSearchQuery]);
 
+  // Filtered Role Types
+  const filteredRoleTypes = useMemo(() => {
+    if (!roleSearchQuery.trim()) return roleTypes;
+    const q = roleSearchQuery.toLowerCase();
+    return roleTypes.filter(
+      rt =>
+        rt.roleTypeId.toLowerCase().includes(q) ||
+        rt.description.toLowerCase().includes(q) ||
+        rt.parentTypeId.toLowerCase().includes(q)
+    );
+  }, [roleTypes, roleSearchQuery]);
+
   const totalPages = Math.ceil(totalCount / viewSize) || 1;
 
   return (
@@ -416,11 +476,23 @@ export const UserManagement: React.FC = () => {
               {securityGroups.length || metadata.securityGroups.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('roleTypes')}
+            className={`ds-pill-tab ${activeTab === 'roleTypes' ? 'ds-pill-tab-active' : ''}`}
+          >
+            <Network size={15} />
+            <span>{t.tabRoleTypes}</span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-mono">
+              {roleTypes.length}
+            </span>
+          </button>
         </div>
 
         {/* Action Button */}
         <div>
-          {activeTab === 'users' ? (
+          {activeTab === 'users' && (
             <button
               type="button"
               onClick={() => setIsCreateUserOpen(true)}
@@ -429,7 +501,8 @@ export const UserManagement: React.FC = () => {
               <Plus size={16} />
               <span>{t.createUser}</span>
             </button>
-          ) : (
+          )}
+          {activeTab === 'securityGroups' && (
             <button
               type="button"
               onClick={() => setIsCreateGroupOpen(true)}
@@ -439,8 +512,19 @@ export const UserManagement: React.FC = () => {
               <span>{t.createGroup}</span>
             </button>
           )}
+          {activeTab === 'roleTypes' && (
+            <button
+              type="button"
+              onClick={() => setIsCreateRoleTypeOpen(true)}
+              className="ds-btn-primary text-xs sm:text-sm py-2 px-3 sm:px-4 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>{t.createRoleType}</span>
+            </button>
+          )}
         </div>
       </div>
+
 
       {/* ========================================================================= */}
       {/* TAB 1: USERS LIST & MANAGEMENT */}
@@ -696,7 +780,7 @@ export const UserManagement: React.FC = () => {
               {/* Drawer Header */}
               <div className="p-5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-sm">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-red-600 to-amber-700 flex items-center justify-center font-bold text-white shadow-md text-sm ring-1 ring-white/10">
                     {selectedUserLoginId.charAt(0).toUpperCase()}
                   </div>
                   <div>
@@ -1134,6 +1218,150 @@ export const UserManagement: React.FC = () => {
         </div>
       )}
 
+      {/* ========================================================================= */}
+      {/* TAB 3: ROLE TYPES MANAGEMENT */}
+      {/* ========================================================================= */}
+
+      {activeTab === 'roleTypes' && (
+        <div className="space-y-4">
+          {/* Filter / Search Bar */}
+          <div className="ds-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+              <div className="relative flex-1">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  value={roleSearchQuery}
+                  onChange={(e) => setRoleSearchQuery(e.target.value)}
+                  placeholder={t.searchRoleTypesPlaceholder}
+                  className="ds-input pl-10 text-xs py-2"
+                />
+                {roleSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setRoleSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={loadRoleTypes}
+                disabled={loadingRoleTypes}
+                className="ds-btn-secondary p-2 text-slate-400 hover:text-white cursor-pointer"
+                title={common.refresh}
+              >
+                <RefreshCw size={15} className={loadingRoleTypes ? 'animate-spin text-indigo-400' : ''} />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-400">
+              {filteredRoleTypes.length} {t.tabRoleTypes.toLowerCase()}
+            </div>
+          </div>
+
+          {/* Role Types Grid / Table */}
+          <div className="ds-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[11px]">
+                    <th className="px-4 py-3 font-semibold">{t.roleTypeCode}</th>
+                    <th className="px-4 py-3 font-semibold">{t.roleTypeDescription}</th>
+                    <th className="px-4 py-3 font-semibold">{t.parentRoleType}</th>
+                    <th className="px-4 py-3 font-semibold text-center">{t.partyCount}</th>
+                    <th className="px-4 py-3 font-semibold text-center">{t.hasTable}</th>
+                    <th className="px-4 py-3 font-semibold text-right">{common.actions}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {loadingRoleTypes ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                        <Loader2 size={24} className="animate-spin mx-auto text-indigo-500 mb-2" />
+                        <span>{common.loading}</span>
+                      </td>
+                    </tr>
+                  ) : filteredRoleTypes.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                        <Network size={32} className="mx-auto text-slate-600 mb-2" />
+                        <p>{t.noRoleTypesFound}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredRoleTypes.map((rt) => (
+                      <tr key={rt.roleTypeId} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="font-mono font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
+                            {rt.roleTypeId}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-200 font-medium">
+                          {rt.description}
+                        </td>
+                        <td className="px-4 py-3">
+                          {rt.parentTypeId ? (
+                            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                              <ChevronRight size={12} className="text-amber-400" />
+                              <span>{rt.parentTypeId}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-500 italic">
+                              {t.noParentRole}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold font-mono ${
+                              rt.partyCount > 0
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-slate-800 text-slate-400 border border-slate-700'
+                            }`}
+                          >
+                            {rt.partyCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+                              rt.hasTable === 'Y'
+                                ? 'bg-indigo-500/20 text-indigo-300'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {rt.hasTable === 'Y' ? common.yes : common.no}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            disabled={deletingRoleTypeId === rt.roleTypeId || rt.partyCount > 0}
+                            onClick={() => handleDeleteRoleType(rt.roleTypeId)}
+                            title={rt.partyCount > 0 ? 'Atanmış carisi olan rol silinemez' : common.delete}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            {deletingRoleTypeId === rt.roleTypeId ? (
+                              <Loader2 size={15} className="animate-spin text-rose-400" />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       {isCreateUserOpen && (
         <CreateUserModal
@@ -1157,7 +1385,20 @@ export const UserManagement: React.FC = () => {
           }}
         />
       )}
+
+      {isCreateRoleTypeOpen && (
+        <CreateRoleTypeModal
+          isOpen={isCreateRoleTypeOpen}
+          onClose={() => setIsCreateRoleTypeOpen(false)}
+          existingRoleTypes={roleTypes}
+          onSuccess={(newId) => {
+            showFeedback('success', `${newId} ${t.roleTypeCreatedSuccess}`);
+            loadRoleTypes();
+          }}
+        />
+      )}
     </div>
+
   );
 };
 
