@@ -12,6 +12,7 @@ import {
   InvoiceRolesAndAttributesMetadataResponse 
 } from '../services/api';
 import { useTranslation } from '../i18n';
+import { useRouter } from '../router';
 
 interface InvoiceRolesAndAttributesProps {
   invoiceId: string;
@@ -35,8 +36,26 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
   const { translations, locale } = useTranslation();
   const inv = translations.invoices;
   const common = translations.common;
+  const { queryParams, setQueryParam } = useRouter();
 
-  const [activeTab, setActiveTab] = useState<'addresses' | 'attributes' | 'roles' | 'attachments'>('addresses');
+  const validTabs = ['addresses', 'attributes', 'roles', 'attachments'] as const;
+  const initialTab = (queryParams.tab && (validTabs as readonly string[]).includes(queryParams.tab))
+    ? (queryParams.tab as typeof validTabs[number])
+    : 'addresses';
+
+  const [activeTab, setActiveTab] = useState<'addresses' | 'attributes' | 'roles' | 'attachments'>(initialTab);
+
+  const handleTabSelect = (tab: typeof validTabs[number]) => {
+    setActiveTab(tab);
+    setQueryParam('tab', tab === 'addresses' ? undefined : tab);
+  };
+
+  useEffect(() => {
+    if (queryParams.tab && (validTabs as readonly string[]).includes(queryParams.tab)) {
+      setActiveTab(queryParams.tab as typeof validTabs[number]);
+    }
+  }, [queryParams.tab]);
+
   const [metadata, setMetadata] = useState<InvoiceRolesAndAttributesMetadataResponse | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -323,7 +342,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
         <div className="flex items-center gap-1.5 p-1 bg-black/30 rounded-xl border border-slate-800 self-start sm:self-auto">
           <button
             type="button"
-            onClick={() => setActiveTab('addresses')}
+            onClick={() => handleTabSelect('addresses')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === 'addresses'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -339,7 +358,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
 
           <button
             type="button"
-            onClick={() => setActiveTab('attributes')}
+            onClick={() => handleTabSelect('attributes')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === 'attributes'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -355,7 +374,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
 
           <button
             type="button"
-            onClick={() => setActiveTab('roles')}
+            onClick={() => handleTabSelect('roles')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === 'roles'
                 ? 'bg-indigo-600 text-white shadow-sm'
@@ -371,7 +390,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
 
           <button
             type="button"
-            onClick={() => setActiveTab('attachments')}
+            onClick={() => handleTabSelect('attachments')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === 'attachments'
                 ? 'bg-indigo-600 text-white shadow-sm'

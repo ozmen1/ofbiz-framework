@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { api, InvoiceListItem } from '../services/api';
 import { useTranslation } from '../i18n';
+import { useRouter } from '../router';
 import { PartyStatementModal } from './PartyStatementModal';
 import InvoicePrintModal from './InvoicePrintModal';
 
@@ -75,8 +76,35 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
   const [selectedStatementPartyId, setSelectedStatementPartyId] = useState<string | null>(null);
   const [showStatementModal, setShowStatementModal] = useState<boolean>(false);
   const [printInvoiceId, setPrintInvoiceId] = useState<string | null>(null);
-  const [activeSegment, setActiveSegment] = useState<InvoiceSegment>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const { queryParams, setQueryParams } = useRouter();
+  const validSegments: InvoiceSegment[] = ['ALL', 'SALES', 'PURCHASE', 'PAST_DUE', 'DUE_SOON', 'IN_PROCESS'];
+  const initialSegment = (queryParams.segment && validSegments.includes(queryParams.segment as InvoiceSegment))
+    ? (queryParams.segment as InvoiceSegment)
+    : 'ALL';
+  const [activeSegment, setActiveSegment] = useState<InvoiceSegment>(initialSegment);
+  const [searchQuery, setSearchQuery] = useState<string>(queryParams.q || '');
+
+  const handleSegmentChange = (segment: InvoiceSegment) => {
+    setActiveSegment(segment);
+    setQueryParams({ segment: segment === 'ALL' ? undefined : segment });
+  };
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    setQueryParams({ q: q || undefined });
+  };
+
+  useEffect(() => {
+    if (queryParams.segment && validSegments.includes(queryParams.segment as InvoiceSegment)) {
+      setActiveSegment(queryParams.segment as InvoiceSegment);
+    } else if (!queryParams.segment) {
+      setActiveSegment('ALL');
+    }
+    if (queryParams.q !== undefined) {
+      setSearchQuery(queryParams.q);
+    }
+  }, [queryParams.segment, queryParams.q]);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -412,7 +440,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             type="button"
-            onClick={() => setActiveSegment('ALL')}
+            onClick={() => handleSegmentChange('ALL')}
             className={`ds-pill-tab ${activeSegment === 'ALL' ? 'ds-pill-tab-active' : ''}`}
           >
             <span>{translations.invoices.tabAll}</span>
@@ -423,7 +451,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <button
             type="button"
-            onClick={() => setActiveSegment('SALES')}
+            onClick={() => handleSegmentChange('SALES')}
             className={`ds-pill-tab ${activeSegment === 'SALES' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowUpRight size={14} className="text-emerald-400" />
@@ -432,7 +460,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <button
             type="button"
-            onClick={() => setActiveSegment('PURCHASE')}
+            onClick={() => handleSegmentChange('PURCHASE')}
             className={`ds-pill-tab ${activeSegment === 'PURCHASE' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowDownLeft size={14} className="text-amber-400" />
@@ -441,7 +469,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <button
             type="button"
-            onClick={() => setActiveSegment('PAST_DUE')}
+            onClick={() => handleSegmentChange('PAST_DUE')}
             className={`ds-pill-tab ${activeSegment === 'PAST_DUE' ? 'ds-pill-tab-active' : ''}`}
           >
             <AlertTriangle size={14} className="text-rose-400" />
@@ -455,7 +483,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <button
             type="button"
-            onClick={() => setActiveSegment('DUE_SOON')}
+            onClick={() => handleSegmentChange('DUE_SOON')}
             className={`ds-pill-tab ${activeSegment === 'DUE_SOON' ? 'ds-pill-tab-active' : ''}`}
           >
             <Clock size={14} className="text-blue-400" />
@@ -464,7 +492,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
 
           <button
             type="button"
-            onClick={() => setActiveSegment('IN_PROCESS')}
+            onClick={() => handleSegmentChange('IN_PROCESS')}
             className={`ds-pill-tab ${activeSegment === 'IN_PROCESS' ? 'ds-pill-tab-active' : ''}`}
           >
             <span>{translations.invoices.tabInProcess}</span>
@@ -610,14 +638,14 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ onViewInvoice }) => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={translations.invoices.searchPlaceholder}
                 className="ds-input pl-8 py-1.5 text-xs w-48 sm:w-64"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => handleSearchChange('')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
                   <XCircle size={13} />

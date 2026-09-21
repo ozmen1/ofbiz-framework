@@ -5,11 +5,12 @@ import {
   Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
   ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
-  Key, User, Shield
+  Key, User, Shield, Share2, Check
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { useRouter } from '../router';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -62,7 +63,31 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { locale, setLocale, translations } = useTranslation();
   const { user, logout } = useAuth();
+  const { getShareableUrl } = useRouter();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyShareLink = async () => {
+    try {
+      const url = getShareableUrl();
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (e) {
+      console.error('Failed to copy share link:', e);
+    }
+  };
 
   // Accordion state for expandable modules
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
@@ -717,6 +742,24 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
           <div className="flex items-center gap-2.5 shrink-0">
             {/* Tema Değiştirici */}
             <ThemeToggle />
+
+            {/* Bağlantıyı Paylaş / Kopyala */}
+            <button
+              type="button"
+              onClick={handleCopyShareLink}
+              className={`p-2 rounded-xl border transition-all duration-200 flex items-center gap-1.5 text-xs font-medium cursor-pointer ${
+                copiedLink
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+              }`}
+              title={copiedLink ? translations.common.linkCopied : translations.common.copyLink}
+              aria-label={copiedLink ? translations.common.linkCopied : translations.common.copyLink}
+            >
+              {copiedLink ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
+              <span className="hidden xl:inline">
+                {copiedLink ? translations.common.linkCopied : translations.common.copyLink}
+              </span>
+            </button>
 
             {/* Masaüstü Dil Değiştirici */}
             <div className="hidden sm:block">

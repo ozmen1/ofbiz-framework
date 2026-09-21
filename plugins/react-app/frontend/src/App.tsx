@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, useTransition, useCallback } from 'react'
+import { lazy, Suspense, useTransition, useCallback } from 'react'
 import Layout from './components/Layout'
 import ViewLoader from './components/ViewLoader'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -6,6 +6,7 @@ import LoginPage from './components/LoginPage'
 import { I18nProvider } from './i18n'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { RouterProvider, useRouter } from './router'
 import './index.css'
 import './design-system.css'
 
@@ -73,25 +74,15 @@ export type ViewType =
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-  const [activeInvoiceId, setActiveInvoiceId] = useState<string | null>(null);
-  const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
-  const [activeJournalTransId, setActiveJournalTransId] = useState<string | null>(null);
+  const { currentView, currentId, navigate } = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleNavigate = useCallback((view: ViewType, id?: string) => {
     startTransition(() => {
-      setCurrentView(view);
-      if (view === 'invoice-detail' && id !== undefined) {
-        setActiveInvoiceId(id);
-      } else if (view === 'payment-detail' && id !== undefined) {
-        setActivePaymentId(id);
-      } else if (view === 'journal-entries' && id !== undefined) {
-        setActiveJournalTransId(id);
-      }
+      navigate(view, id);
     });
     window.scrollTo({ top: 0, behavior: 'auto' });
-  }, []);
+  }, [navigate]);
 
   if (isLoading) {
     return <ViewLoader />;
@@ -120,7 +111,7 @@ function AppContent() {
       case 'invoice-detail':
         return (
           <InvoiceDetail 
-            invoiceId={activeInvoiceId} 
+            invoiceId={currentId} 
             onBack={() => handleNavigate('invoices')} 
             onViewInvoice={(newId) => handleNavigate('invoice-detail', newId)}
             onViewPayment={(paymentId) => handleNavigate('payment-detail', paymentId)}
@@ -146,7 +137,7 @@ function AppContent() {
       case 'payment-detail':
         return (
           <PaymentDetail 
-            paymentId={activePaymentId} 
+            paymentId={currentId} 
             onBack={() => handleNavigate('payments')} 
             onViewInvoice={(invoiceId) => handleNavigate('invoice-detail', invoiceId)}
           />
@@ -169,7 +160,7 @@ function AppContent() {
         return (
           <JournalEntries 
             onCreateNew={() => handleNavigate('create-journal-entry')}
-            initialSelectedId={activeJournalTransId}
+            initialSelectedId={currentId}
           />
         );
 
@@ -256,7 +247,9 @@ function App() {
     <ThemeProvider>
       <I18nProvider>
         <AuthProvider>
-          <AppContent />
+          <RouterProvider>
+            <AppContent />
+          </RouterProvider>
         </AuthProvider>
       </I18nProvider>
     </ThemeProvider>

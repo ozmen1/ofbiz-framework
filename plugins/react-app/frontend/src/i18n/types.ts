@@ -52,6 +52,8 @@ export interface Translations {
     theme: string;
     lightMode: string;
     darkMode: string;
+    copyLink: string;
+    linkCopied: string;
   };
   nav: {
     appName: string;

@@ -52,6 +52,8 @@ export const en: Translations = {
     theme: 'Theme',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
+    copyLink: 'Copy Link',
+    linkCopied: 'Copied!',
   },
   nav: {
     appName: 'OFBiz ERP',
