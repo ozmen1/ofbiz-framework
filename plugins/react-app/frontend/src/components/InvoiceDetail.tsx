@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ArrowLeft, Save, Edit3, CheckCircle2, Clock, XCircle, FileText, Building2, User, 
   Calendar, AlignLeft, Plus, Trash2, Copy, AlertCircle, Check, Loader2,
-  Tag, ShieldAlert, CreditCard, Printer
+  Tag, ShieldAlert, CreditCard, Printer, Mail
 } from 'lucide-react';
 import { api, InvoiceDetailResponse, InvoiceItem } from '../services/api';
 import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
@@ -10,6 +10,7 @@ import InvoicePrintModal from './InvoicePrintModal';
 import EditInvoiceItemModal from './EditInvoiceItemModal';
 import ApplyPaymentModal from './ApplyPaymentModal';
 import InvoiceRolesAndAttributes from './InvoiceRolesAndAttributes';
+import SendInvoiceEmailModal from './SendInvoiceEmailModal';
 import { useTranslation } from '../i18n';
 
 interface InvoiceDetailProps {
@@ -67,6 +68,7 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [showEmailModal, setShowEmailModal] = useState<boolean>(false);
 
   // Edit Item Modal State (Faz 3)
   const [editingItem, setEditingItem] = useState<InvoiceItem | null>(null);
@@ -323,6 +325,15 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
             title={inv.printInvoice}
           >
             <Printer size={16} /> {inv.printInvoice}
+          </button>
+
+          <button
+            type="button"
+            className="ds-btn-secondary flex items-center gap-2 cursor-pointer"
+            onClick={() => setShowEmailModal(true)}
+            title={inv.sendEmailAction}
+          >
+            <Mail size={16} /> {inv.sendEmailAction}
           </button>
 
           <button
@@ -854,13 +865,14 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
           <InvoiceNotesAndTerms invoiceId={invoice.invoiceId} />
         )}
 
-        {/* Faz 4: Adresler, Nitelikler & Roller */}
+        {/* Faz 4 & 5: Adresler, Nitelikler, Roller & Ekler */}
         {invoice.invoiceId && (
           <InvoiceRolesAndAttributes
             invoiceId={invoice.invoiceId}
             roles={detail.roles}
             attributes={detail.attributes}
             contactMechs={detail.contactMechs}
+            contents={detail.contents}
             isEditable={isEditable}
             onRefresh={loadInvoice}
           />
@@ -875,6 +887,20 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
           isOpen={showPrintModal}
           onClose={() => setShowPrintModal(false)}
           preloadedDetail={detail}
+        />
+      )}
+
+      {/* Send Invoice Email Modal (Faz 5) */}
+      {showEmailModal && (
+        <SendInvoiceEmailModal
+          isOpen={showEmailModal}
+          invoiceId={invoice.invoiceId}
+          detail={detail}
+          onClose={() => setShowEmailModal(false)}
+          onSent={() => {
+            flashMessage(inv.sendEmailSuccess);
+            loadInvoice();
+          }}
         />
       )}
 

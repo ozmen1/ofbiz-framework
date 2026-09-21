@@ -129,6 +129,27 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <request-map uri="createInvoiceContent">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="createInvoiceContent"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="deleteInvoiceContent">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="deleteInvoiceContent"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
+    <request-map uri="sendInvoiceEmail">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="sendInvoiceEmail"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <request-map uri="getInvoiceMetadata">
         <security https="false" auth="false"/>
         <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/InvoiceEvents.groovy" invoke="getInvoiceMetadata"/>

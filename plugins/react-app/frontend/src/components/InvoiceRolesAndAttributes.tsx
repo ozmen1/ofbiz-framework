@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   MapPin, Tag, Users, Plus, Trash2, Check, AlertCircle, Loader2, 
-  Sparkles, X
+  Sparkles, X, Paperclip, FileText
 } from 'lucide-react';
 import { 
   api, 
   InvoiceRoleItem, 
   InvoiceAttributeItem, 
   InvoiceContactMechItem,
+  InvoiceContentItem,
   InvoiceRolesAndAttributesMetadataResponse 
 } from '../services/api';
 import { useTranslation } from '../i18n';
@@ -17,6 +18,7 @@ interface InvoiceRolesAndAttributesProps {
   roles?: InvoiceRoleItem[];
   attributes?: InvoiceAttributeItem[];
   contactMechs?: InvoiceContactMechItem[];
+  contents?: InvoiceContentItem[];
   isEditable: boolean;
   onRefresh: () => void;
 }
@@ -26,6 +28,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
   roles = [],
   attributes = [],
   contactMechs = [],
+  contents = [],
   isEditable,
   onRefresh
 }) => {
@@ -33,7 +36,7 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
   const inv = translations.invoices;
   const common = translations.common;
 
-  const [activeTab, setActiveTab] = useState<'addresses' | 'attributes' | 'roles'>('addresses');
+  const [activeTab, setActiveTab] = useState<'addresses' | 'attributes' | 'roles' | 'attachments'>('addresses');
   const [metadata, setMetadata] = useState<InvoiceRolesAndAttributesMetadataResponse | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -60,6 +63,14 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
     partyId: '',
     roleTypeId: 'SALES_REP',
     percentage: ''
+  });
+
+  // Attachment / Content Form State
+  const [showAddContent, setShowAddContent] = useState<boolean>(false);
+  const [contentForm, setContentForm] = useState({
+    contentName: '',
+    invoiceContentTypeId: 'INVOICE_ATTACHMENT',
+    description: ''
   });
 
   const showFeedback = (type: 'success' | 'error', text: string) => {
@@ -106,6 +117,15 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
       { roleTypeId: 'ACCOUNTING_CLERK', description: 'Accounting Clerk' },
       { roleTypeId: 'CARRIER', description: 'Carrier / Nakliyeci' },
       { roleTypeId: 'APPROVER', description: 'Approver / Onaylayan' }
+    ];
+  }, [metadata]);
+
+  const contentTypeOptions = useMemo(() => {
+    return metadata?.invoiceContentTypes || [
+      { invoiceContentTypeId: 'INVOICE_ATTACHMENT', description: 'Invoice Attachment / Fatura Eki' },
+      { invoiceContentTypeId: 'INVOICE_IMAGE', description: 'Invoice Image / Fatura Görseli' },
+      { invoiceContentTypeId: 'COMMENTS', description: 'Comments / Açıklama Belgesi' },
+      { invoiceContentTypeId: 'TAX_DOCUMENT', description: 'Tax Document / Vergi Belgesi' },
     ];
   }, [metadata]);
 
@@ -243,6 +263,47 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
     }
   };
 
+  // Handler: Add Attachment
+  const handleAddContent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contentForm.contentName.trim()) {
+      showFeedback('error', locale === 'tr' ? 'Belge / dosya adı zorunludur.' : 'Attachment name is required.');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await api.createInvoiceContent({
+        invoiceId,
+        contentName: contentForm.contentName.trim(),
+        invoiceContentTypeId: contentForm.invoiceContentTypeId,
+        description: contentForm.description.trim() || undefined
+      });
+      showFeedback('success', inv.attachmentSaved);
+      setShowAddContent(false);
+      setContentForm({ contentName: '', invoiceContentTypeId: 'INVOICE_ATTACHMENT', description: '' });
+      onRefresh();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : (locale === 'tr' ? 'Belge eklenemedi.' : 'Failed to add attachment.'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handler: Delete Attachment
+  const handleDeleteContent = async (contentId: string, invoiceContentTypeId: string) => {
+    if (!confirm(inv.deleteAttachmentConfirm)) return;
+    setActionLoading(true);
+    try {
+      await api.deleteInvoiceContent({ invoiceId, contentId, invoiceContentTypeId });
+      showFeedback('success', inv.attachmentDeleted);
+      onRefresh();
+    } catch (err: unknown) {
+      showFeedback('error', err instanceof Error ? err.message : (locale === 'tr' ? 'Belge silinemedi.' : 'Failed to delete attachment.'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="ds-card animate-fade-in col-span-full">
       {/* Header & Tabs */}
@@ -305,6 +366,22 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
             <span>{inv.tabRoles}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-indigo-200">
               {roles.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('attachments')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeTab === 'attachments'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Paperclip size={14} />
+            <span>{inv.tabAttachments}</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-indigo-200">
+              {contents.length}
             </span>
           </button>
         </div>
@@ -791,6 +868,160 @@ export const InvoiceRolesAndAttributes: React.FC<InvoiceRolesAndAttributesProps>
           ) : (
             <div className="p-6 bg-black/20 rounded-xl border border-slate-800/60 text-center">
               <p className="text-xs text-slate-500">{inv.noRoles}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: ATTACHMENTS & DOCUMENTS */}
+      {activeTab === 'attachments' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-400">
+              {locale === 'tr'
+                ? 'Faturaya eklenmiş taranmış nüshalar, sözleşmeler, sevk irsaliyeleri ve ek belgeler.'
+                : 'Scanned copies, contracts, dispatch notes, and supporting documents attached to this invoice.'}
+            </p>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setShowAddContent(true)}
+                className="ds-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <Plus size={14} /> {inv.addAttachment}
+              </button>
+            )}
+          </div>
+
+          {/* Form: Add Attachment */}
+          {showAddContent && (
+            <div className="p-4 bg-slate-900/90 rounded-xl border border-indigo-500/30 animate-fade-in space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
+                  <Paperclip size={14} /> {inv.addAttachment}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddContent(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddContent} className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">{inv.docName} *</label>
+                    <input
+                      type="text"
+                      required
+                      value={contentForm.contentName}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, contentName: e.target.value }))}
+                      placeholder={locale === 'tr' ? 'örn. Fatura_Asli.pdf / Sevk_Irsaliyesi.jpg' : 'e.g. Signed_Invoice.pdf'}
+                      className="ds-input text-xs w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">{inv.docType} *</label>
+                    <select
+                      value={contentForm.invoiceContentTypeId}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, invoiceContentTypeId: e.target.value }))}
+                      className="ds-input text-xs w-full"
+                    >
+                      {contentTypeOptions.map((ct) => (
+                        <option key={ct.invoiceContentTypeId} value={ct.invoiceContentTypeId}>
+                          {ct.description || ct.invoiceContentTypeId}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-full">
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">{common.description}</label>
+                    <input
+                      type="text"
+                      value={contentForm.description}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder={locale === 'tr' ? 'Belge açıklaması veya arşiv referans notu' : 'Document description or archive note'}
+                      className="ds-input text-xs w-full"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddContent(false)}
+                    className="ds-btn-secondary text-xs py-1 px-3"
+                  >
+                    {common.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="ds-btn-primary text-xs py-1 px-3 flex items-center gap-1.5"
+                  >
+                    {actionLoading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    {common.save}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* List of Attachments */}
+          {contents.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="ds-table text-xs">
+                <thead>
+                  <tr className="ds-thead-row">
+                    <th className="ds-th">{inv.docName}</th>
+                    <th className="ds-th">{inv.docType}</th>
+                    <th className="ds-th">{common.description}</th>
+                    <th className="ds-th">{common.date}</th>
+                    {isEditable && <th className="ds-th text-center w-16">{common.actions}</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {contents.map((c) => (
+                    <tr key={`${c.contentId}-${c.invoiceContentTypeId}-${c.fromDate || ''}`} className="ds-tbody-row">
+                      <td className="ds-td font-medium text-slate-100 flex items-center gap-2">
+                        <FileText size={14} className="text-indigo-400 shrink-0" />
+                        <span>{c.contentName || c.contentId}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">({c.contentId})</span>
+                      </td>
+                      <td className="ds-td">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          {c.invoiceContentTypeDesc || c.invoiceContentTypeId}
+                        </span>
+                      </td>
+                      <td className="ds-td text-slate-300">
+                        {c.description || '-'}
+                      </td>
+                      <td className="ds-td text-slate-400">
+                        {c.fromDate ? c.fromDate.substring(0, 10) : '-'}
+                      </td>
+                      {isEditable && (
+                        <td className="ds-td text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteContent(c.contentId, c.invoiceContentTypeId)}
+                            disabled={actionLoading}
+                            title={common.delete}
+                            className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-6 bg-black/20 rounded-xl border border-slate-800/60 text-center">
+              <p className="text-xs text-slate-500">{inv.noAttachments}</p>
             </div>
           )}
         </div>

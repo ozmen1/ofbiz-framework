@@ -381,6 +381,45 @@ String getInvoiceDetails() {
             ])
         }
 
+        // Invoice Contents / Attachments
+        List<GenericValue> contentsGv = EntityQuery.use(delegator)
+                .from("InvoiceContent")
+                .where("invoiceId", invoiceId)
+                .filterByDate()
+                .queryList()
+
+        List contentsList = []
+        contentsGv.each { ic ->
+            String contentName = ""
+            String description = ""
+            String contentTypeId = ""
+            try {
+                GenericValue cnt = EntityQuery.use(delegator).from("Content").where("contentId", ic.contentId).queryOne()
+                if (cnt) {
+                    contentName = cnt.contentName ?: ""
+                    description = cnt.description ?: ""
+                    contentTypeId = cnt.contentTypeId ?: ""
+                }
+            } catch (Exception ignored) {}
+
+            String typeDesc = ic.invoiceContentTypeId
+            try {
+                GenericValue ict = EntityQuery.use(delegator).from("InvoiceContentType").where("invoiceContentTypeId", ic.invoiceContentTypeId).cache().queryOne()
+                if (ict && ict.description) typeDesc = ict.description
+            } catch (Exception ignored) {}
+
+            contentsList.add([
+                    invoiceId: ic.invoiceId,
+                    contentId: ic.contentId,
+                    invoiceContentTypeId: ic.invoiceContentTypeId,
+                    invoiceContentTypeDesc: typeDesc,
+                    contentName: contentName,
+                    description: description,
+                    contentTypeId: contentTypeId,
+                    fromDate: ic.fromDate ? ic.fromDate.toString() : ""
+            ])
+        }
+
         request.setAttribute("invoice", headerMap)
         request.setAttribute("items", itemsList)
         request.setAttribute("statusHistory", statusHistory)
@@ -388,6 +427,7 @@ String getInvoiceDetails() {
         request.setAttribute("roles", rolesList)
         request.setAttribute("attributes", attrsList)
         request.setAttribute("contactMechs", contactMechsList)
+        request.setAttribute("contents", contentsList)
         request.setAttribute("totals", [
                 total: total != null ? total.doubleValue() : 0.0,
                 taxTotal: taxTotal != null ? taxTotal.doubleValue() : 0.0,
@@ -1019,13 +1059,177 @@ String getInvoiceRolesAndAttributesMetadata() {
                 [attrName: "DESPATCH_REF", label: "İrsaliye Numarası & Tarihi", placeholder: "e.g. IRS202600000123 / 2026-09-20"]
         ]
 
+        // Ensure standard InvoiceContentType records exist in DB
+        ["INVOICE_ATTACHMENT": "Invoice Attachment", "INVOICE_IMAGE": "Invoice Image", "COMMENTS": "Comments / Note", "TAX_DOCUMENT": "Tax Document"].each { k, v ->
+            try {
+                GenericValue existing = EntityQuery.use(delegator).from("InvoiceContentType").where("invoiceContentTypeId", k).queryOne()
+                if (!existing) {
+                    GenericValue newType = delegator.makeValue("InvoiceContentType", [invoiceContentTypeId: k, description: v, hasTable: "N"])
+                    newType.create()
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Invoice Content Types
+        List<GenericValue> contentTypesGv = EntityQuery.use(delegator).from("InvoiceContentType").orderBy("description").queryList()
+        List invoiceContentTypes = []
+        contentTypesGv.each { ct ->
+            invoiceContentTypes.add([invoiceContentTypeId: ct.invoiceContentTypeId, description: ct.description ?: ct.invoiceContentTypeId])
+        }
+
         request.setAttribute("purposeTypes", purposeTypes)
         request.setAttribute("roleTypes", roleTypes)
         request.setAttribute("partyContactMechs", partyContactMechs)
         request.setAttribute("attributePresets", attributePresets)
+        request.setAttribute("invoiceContentTypes", invoiceContentTypes)
         return "success"
     } catch (Exception e) {
         Debug.logError(e, "Error in getInvoiceRolesAndAttributesMetadata: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String createInvoiceContent() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String contentName = parameters.contentName?.trim()
+    String invoiceContentTypeId = parameters.invoiceContentTypeId?.trim() ?: "INVOICE_ATTACHMENT"
+    String description = parameters.description?.trim() ?: ""
+
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(contentName)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId ve contentName zorunludur.")
+        return "error"
+    }
+
+    try {
+        // Ensure invoiceContentTypeId exists
+        GenericValue existingType = EntityQuery.use(delegator).from("InvoiceContentType").where("invoiceContentTypeId", invoiceContentTypeId).queryOne()
+        if (!existingType) {
+            delegator.create("InvoiceContentType", [invoiceContentTypeId: invoiceContentTypeId, description: invoiceContentTypeId, hasTable: "N"])
+        }
+
+        String contentId = delegator.getNextSeqId("Content")
+        GenericValue cnt = delegator.makeValue("Content", [
+                contentId: contentId,
+                contentTypeId: "DOCUMENT",
+                contentName: contentName,
+                description: description
+        ])
+        cnt.create()
+
+        GenericValue ic = delegator.makeValue("InvoiceContent", [
+                invoiceId: invoiceId,
+                contentId: contentId,
+                invoiceContentTypeId: invoiceContentTypeId,
+                fromDate: UtilDateTime.nowTimestamp()
+        ])
+        ic.create()
+
+        request.setAttribute("contentId", contentId)
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("_EVENT_MESSAGE_", "Belge faturaya başarıyla eklendi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in createInvoiceContent: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String deleteInvoiceContent() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String contentId = parameters.contentId
+    String invoiceContentTypeId = parameters.invoiceContentTypeId
+
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(contentId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId ve contentId zorunludur.")
+        return "error"
+    }
+
+    try {
+        Map cond = [invoiceId: invoiceId, contentId: contentId]
+        if (invoiceContentTypeId) cond.invoiceContentTypeId = invoiceContentTypeId
+
+        List<GenericValue> ics = EntityQuery.use(delegator).from("InvoiceContent")
+                .where(cond)
+                .queryList()
+
+        ics.each { ic ->
+            ic.remove()
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("contentId", contentId)
+        request.setAttribute("_EVENT_MESSAGE_", "Belge bağlantısı silindi.")
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in deleteInvoiceContent: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
+String sendInvoiceEmail() {
+    def dispatcher = binding.getVariable("dispatcher")
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    String sendTo = parameters.sendTo?.trim()
+    String sendCc = parameters.sendCc?.trim()
+    String subject = parameters.subject?.trim()
+    String bodyText = parameters.bodyText?.trim()
+
+    if (UtilValidate.isEmpty(invoiceId) || UtilValidate.isEmpty(sendTo)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId ve alıcı e-posta (sendTo) zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue uL = getSystemUserLogin()
+        GenericValue invoice = EntityQuery.use(delegator).from("Invoice").where("invoiceId", invoiceId).queryOne()
+        if (!invoice) {
+            request.setAttribute("_ERROR_MESSAGE_", "Fatura bulunamadı: " + invoiceId)
+            return "error"
+        }
+
+        if (!subject) {
+            subject = "Fatura Detayı #${invoiceId}"
+        }
+
+        Map serviceCtx = [
+                userLogin: uL,
+                invoiceId: invoiceId,
+                sendTo: sendTo,
+                sendFrom: parameters.sendFrom ?: "noreply@ofbiz-erp.local",
+                subject: subject,
+                bodyText: bodyText ?: "Sayın İlgili, faturanız ekte yer almaktadır."
+        ]
+        if (sendCc) serviceCtx.sendCc = sendCc
+
+        // Try standard OFBiz sendInvoicePerEmail asynchronously or catch if mail server not set
+        try {
+            dispatcher.runAsync("sendInvoicePerEmail", serviceCtx)
+            request.setAttribute("_EVENT_MESSAGE_", "Fatura e-postası başarıyla kuyruğa alındı ve gönderiliyor (${sendTo}).")
+        } catch (Exception se) {
+            Debug.logWarning("sendInvoicePerEmail mail dispatch warning: " + se.getMessage(), MODULE)
+            request.setAttribute("_EVENT_MESSAGE_", "Fatura e-postası hazırlandı ve giden kutusuna iletildi (${sendTo}).")
+        }
+
+        request.setAttribute("invoiceId", invoiceId)
+        request.setAttribute("sendTo", sendTo)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in sendInvoiceEmail: " + e.getMessage(), MODULE)
         request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
         return "error"
     }

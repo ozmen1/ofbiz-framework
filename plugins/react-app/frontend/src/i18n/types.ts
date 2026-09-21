@@ -296,6 +296,24 @@ export interface Translations {
     deleteRoleConfirm: string;
     roleSaved: string;
     roleDeleted: string;
+    tabAttachments: string;
+    noAttachments: string;
+    addAttachment: string;
+    docName: string;
+    docType: string;
+    docDescription: string;
+    deleteAttachmentConfirm: string;
+    attachmentSaved: string;
+    attachmentDeleted: string;
+    sendEmailAction: string;
+    sendEmailModalTitle: string;
+    recipientEmail: string;
+    ccEmail: string;
+    emailSubject: string;
+    emailBody: string;
+    sendEmailSuccess: string;
+    sendEmailBtn: string;
+    sendingEmail: string;
   };
   payments: {
     paymentId: string;

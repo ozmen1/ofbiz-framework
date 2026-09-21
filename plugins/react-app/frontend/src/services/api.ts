@@ -74,6 +74,17 @@ export interface InvoiceContactMechItem {
   detailInfo?: string;
 }
 
+export interface InvoiceContentItem {
+  invoiceId: string;
+  contentId: string;
+  invoiceContentTypeId: string;
+  invoiceContentTypeDesc?: string;
+  contentName?: string;
+  description?: string;
+  contentTypeId?: string;
+  fromDate?: string;
+}
+
 export interface InvoiceRolesAndAttributesMetadataResponse {
   purposeTypes: { contactMechPurposeTypeId: string; description: string }[];
   roleTypes: { roleTypeId: string; description: string }[];
@@ -89,6 +100,10 @@ export interface InvoiceRolesAndAttributesMetadataResponse {
     label: string;
     placeholder: string;
   }[];
+  invoiceContentTypes?: {
+    invoiceContentTypeId: string;
+    description: string;
+  }[];
 }
 
 export interface InvoiceDetailResponse {
@@ -100,6 +115,7 @@ export interface InvoiceDetailResponse {
   roles?: InvoiceRoleItem[];
   attributes?: InvoiceAttributeItem[];
   contactMechs?: InvoiceContactMechItem[];
+  contents?: InvoiceContentItem[];
 }
 
 export interface InvoiceListItem {
@@ -2064,6 +2080,31 @@ export const api = {
 
   deleteInvoiceContactMech: async (payload: { invoiceId: string; contactMechId: string; contactMechPurposeTypeId: string }): Promise<{ invoiceId: string; _EVENT_MESSAGE_?: string }> => {
     return requestApi<{ invoiceId: string; _EVENT_MESSAGE_?: string }>('deleteInvoiceContactMech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  // 10c. Invoice Content & Email Delivery (Phase 5)
+  createInvoiceContent: async (payload: { invoiceId: string; contentName: string; invoiceContentTypeId?: string; description?: string }): Promise<{ contentId: string; invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ contentId: string; invoiceId: string; _EVENT_MESSAGE_?: string }>('createInvoiceContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  deleteInvoiceContent: async (payload: { invoiceId: string; contentId: string; invoiceContentTypeId?: string }): Promise<{ contentId: string; invoiceId: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ contentId: string; invoiceId: string; _EVENT_MESSAGE_?: string }>('deleteInvoiceContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: toFormData(payload),
+    });
+  },
+
+  sendInvoiceEmail: async (payload: { invoiceId: string; sendTo: string; sendCc?: string; subject?: string; bodyText?: string }): Promise<{ invoiceId: string; sendTo: string; _EVENT_MESSAGE_?: string }> => {
+    return requestApi<{ invoiceId: string; sendTo: string; _EVENT_MESSAGE_?: string }>('sendInvoiceEmail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: toFormData(payload),
