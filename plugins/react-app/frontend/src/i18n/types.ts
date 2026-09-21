@@ -253,6 +253,18 @@ export interface Translations {
     balanceDue: string;
     authorizedStamp: string;
     recipientSignature: string;
+    editItem: string;
+    applyPayment: string;
+    removeApplication: string;
+    removeApplicationConfirm: string;
+    openPayments: string;
+    noOpenPayments: string;
+    selectPayment: string;
+    applyAmount: string;
+    availableUnapplied: string;
+    paymentApplicationSuccess: string;
+    paymentApplicationRemoved: string;
+    itemUpdated: string;
   };
   payments: {
     paymentId: string;

@@ -505,6 +505,8 @@ String updateInvoiceItem() {
                 description: parameters.description
         ]
 
+        if (parameters.invoiceItemTypeId) serviceCtx.invoiceItemTypeId = parameters.invoiceItemTypeId.trim()
+        if (parameters.productId) serviceCtx.productId = parameters.productId.trim()
         if (parameters.quantity) serviceCtx.quantity = new BigDecimal(parameters.quantity.toString().trim())
         if (parameters.amount) serviceCtx.amount = new BigDecimal(parameters.amount.toString().trim())
 

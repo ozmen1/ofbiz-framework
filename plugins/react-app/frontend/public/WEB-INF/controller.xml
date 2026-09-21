@@ -151,6 +151,13 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <request-map uri="getOpenPaymentsForInvoice">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/PaymentEvents.groovy" invoke="getOpenPaymentsForInvoice"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- Financial Reports API Endpoints -->
     <request-map uri="getTrialBalance">
         <security https="false" auth="false"/>

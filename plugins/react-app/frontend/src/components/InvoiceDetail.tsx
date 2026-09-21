@@ -4,9 +4,11 @@ import {
   Calendar, AlignLeft, Plus, Trash2, Copy, AlertCircle, Check, Loader2,
   Tag, ShieldAlert, CreditCard, Printer
 } from 'lucide-react';
-import { api, InvoiceDetailResponse } from '../services/api';
+import { api, InvoiceDetailResponse, InvoiceItem } from '../services/api';
 import InvoiceNotesAndTerms from './InvoiceNotesAndTerms';
 import InvoicePrintModal from './InvoicePrintModal';
+import EditInvoiceItemModal from './EditInvoiceItemModal';
+import ApplyPaymentModal from './ApplyPaymentModal';
 import { useTranslation } from '../i18n';
 
 interface InvoiceDetailProps {
@@ -64,6 +66,12 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+
+  // Edit Item Modal State (Faz 3)
+  const [editingItem, setEditingItem] = useState<InvoiceItem | null>(null);
+
+  // Apply Payment Modal State (Faz 3)
+  const [showApplyPaymentModal, setShowApplyPaymentModal] = useState<boolean>(false);
 
   // Edit Header State
   const [isEditingHeader, setIsEditingHeader] = useState(false);
@@ -248,6 +256,25 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
       }
     } catch (err: any) {
       setError(err.message || (locale === 'tr' ? 'Fatura kopyalanamadı.' : 'Failed to copy invoice.'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Remove Payment Application (Faz 3)
+  const handleRemovePaymentApplication = async (paymentApplicationId: string) => {
+    if (!invoiceId) return;
+    if (!confirm(inv.removeApplicationConfirm)) {
+      return;
+    }
+    setActionLoading(true);
+    setError(null);
+    try {
+      await api.removePaymentApplication(paymentApplicationId);
+      flashMessage(inv.paymentApplicationRemoved);
+      loadInvoice();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : (locale === 'tr' ? 'Ödeme eşlemesi kaldırılamadı.' : 'Could not remove payment application.'));
     } finally {
       setActionLoading(false);
     }
@@ -692,14 +719,24 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
                     </td>
                     {isEditable && (
                       <td className="ds-td text-center">
-                        <button
-                          onClick={() => handleDeleteItem(it.invoiceItemSeqId)}
-                          disabled={actionLoading}
-                          title={common.delete}
-                          className="inline-flex items-center justify-center p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-40"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setEditingItem(it)}
+                            disabled={actionLoading}
+                            title={inv.editItem}
+                            className="inline-flex items-center justify-center p-2 rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors disabled:opacity-40"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(it.invoiceItemSeqId)}
+                            disabled={actionLoading}
+                            title={common.delete}
+                            className="inline-flex items-center justify-center p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -721,15 +758,26 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
 
         {/* Applied Payments */}
         <div className="ds-card animate-fade-in">
-          <h3 className="text-white text-lg font-semibold flex items-center gap-2 mb-4">
-            <CreditCard size={18} className="text-indigo-400" /> {inv.appliedPayments} ({paymentsApplied.length})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white text-lg font-semibold flex items-center gap-2">
+              <CreditCard size={18} className="text-indigo-400" /> {inv.appliedPayments} ({paymentsApplied.length})
+            </h3>
+            {invoice.statusId !== 'INVOICE_CANCELLED' && (totals.outstandingAmount ?? 0) > 0.001 && (
+              <button
+                type="button"
+                onClick={() => setShowApplyPaymentModal(true)}
+                className="ds-btn-secondary flex items-center gap-1.5 text-xs py-1 px-2.5 border-emerald-500/40 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+              >
+                <Plus size={14} /> {inv.applyPayment}
+              </button>
+            )}
+          </div>
           {paymentsApplied.length > 0 ? (
             <div className="flex flex-col gap-3">
               {paymentsApplied.map((pa) => (
                 <div
                   key={pa.paymentApplicationId}
-                  className="flex justify-between items-start p-3 bg-black/20 rounded-xl"
+                  className="flex justify-between items-center p-3 bg-black/20 rounded-xl hover:bg-slate-800/40 transition-colors"
                 >
                   <div>
                     <div
@@ -744,8 +792,20 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">{locale === 'tr' ? 'Uygulama ID: ' : 'Application ID: '}{pa.paymentApplicationId}</div>
                   </div>
-                  <div className="text-right font-semibold text-emerald-400">
-                    {formatCurrency(pa.amountApplied, invoice.currencyUomId)}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right font-semibold text-emerald-400 font-mono">
+                      {formatCurrency(pa.amountApplied, invoice.currencyUomId)}
+                    </div>
+                    {invoice.statusId !== 'INVOICE_CANCELLED' && (
+                      <button
+                        onClick={() => handleRemovePaymentApplication(pa.paymentApplicationId)}
+                        disabled={actionLoading}
+                        title={inv.removeApplication}
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -802,6 +862,37 @@ export const InvoiceDetail: React.FC<InvoiceDetailProps> = ({ invoiceId, onBack,
           isOpen={showPrintModal}
           onClose={() => setShowPrintModal(false)}
           preloadedDetail={detail}
+        />
+      )}
+
+      {/* Edit Invoice Item Modal (Faz 3) */}
+      {editingItem && (
+        <EditInvoiceItemModal
+          isOpen={!!editingItem}
+          invoiceId={invoice.invoiceId}
+          currencyUomId={invoice.currencyUomId}
+          item={editingItem}
+          itemTypes={itemTypes}
+          onClose={() => setEditingItem(null)}
+          onSaved={() => {
+            flashMessage(inv.itemUpdated);
+            loadInvoice();
+          }}
+        />
+      )}
+
+      {/* Apply Payment Modal (Faz 3) */}
+      {showApplyPaymentModal && (
+        <ApplyPaymentModal
+          isOpen={showApplyPaymentModal}
+          invoiceId={invoice.invoiceId}
+          currencyUomId={invoice.currencyUomId}
+          outstandingAmount={totals.outstandingAmount ?? 0}
+          onClose={() => setShowApplyPaymentModal(false)}
+          onApplied={() => {
+            flashMessage(inv.paymentApplicationSuccess);
+            loadInvoice();
+          }}
         />
       )}
 

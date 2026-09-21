@@ -212,6 +212,18 @@ export interface OpenInvoiceItem {
   outstandingAmount: number;
 }
 
+export interface OpenPaymentItem {
+  paymentId: string;
+  paymentTypeId: string;
+  partyIdFrom: string;
+  partyIdTo: string;
+  effectiveDate: string;
+  statusId: string;
+  amount: number;
+  unappliedAmount: number;
+  currencyUomId: string;
+}
+
 export interface CreatePaymentPayload {
   paymentTypeId: string;
   partyIdFrom: string;
@@ -2012,6 +2024,11 @@ export const api = {
   // 17. Get Open Invoices for Matching
   getOpenInvoicesForPayment: async (paymentId: string): Promise<{ openInvoices: OpenInvoiceItem[] }> => {
     return requestApi<{ openInvoices: OpenInvoiceItem[] }>(`getOpenInvoicesForPayment?paymentId=${encodeURIComponent(paymentId)}`);
+  },
+
+  // 17b. Get Open Payments for Matching to Invoice
+  getOpenPaymentsForInvoice: async (invoiceId: string): Promise<{ openPayments: OpenPaymentItem[] }> => {
+    return requestApi<{ openPayments: OpenPaymentItem[] }>(`getOpenPaymentsForInvoice?invoiceId=${encodeURIComponent(invoiceId)}`);
   },
 
   // 18. Apply Payment to Invoice

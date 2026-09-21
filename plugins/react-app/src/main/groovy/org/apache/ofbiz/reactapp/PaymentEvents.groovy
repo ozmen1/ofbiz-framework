@@ -395,6 +395,80 @@ String getOpenInvoicesForPayment() {
     }
 }
 
+String getOpenPaymentsForInvoice() {
+    def delegator = binding.getVariable("delegator")
+    def parameters = binding.getVariable("parameters")
+    def request = binding.getVariable("request")
+
+    String invoiceId = parameters.invoiceId
+    if (UtilValidate.isEmpty(invoiceId)) {
+        request.setAttribute("_ERROR_MESSAGE_", "invoiceId zorunludur.")
+        return "error"
+    }
+
+    try {
+        GenericValue invoice = EntityQuery.use(delegator).from("Invoice").where("invoiceId", invoiceId).queryOne()
+        if (!invoice) {
+            request.setAttribute("_ERROR_MESSAGE_", "Fatura bulunamadı.")
+            return "error"
+        }
+
+        String pFrom = invoice.partyIdFrom
+        String pTo = invoice.partyId
+
+        List partyConds = []
+        partyConds.add(EntityCondition.makeCondition([
+            EntityCondition.makeCondition("partyIdFrom", pFrom),
+            EntityCondition.makeCondition("partyIdTo", pTo)
+        ], EntityOperator.AND))
+        partyConds.add(EntityCondition.makeCondition([
+            EntityCondition.makeCondition("partyIdFrom", pTo),
+            EntityCondition.makeCondition("partyIdTo", pFrom)
+        ], EntityOperator.AND))
+
+        EntityCondition mainCond = EntityCondition.makeCondition([
+            EntityCondition.makeCondition(partyConds, EntityOperator.OR),
+            EntityCondition.makeCondition("statusId", EntityOperator.NOT_IN, ["PMNT_CANCELLED", "PMNT_VOID"])
+        ], EntityOperator.AND)
+
+        List<GenericValue> paymentsGv = EntityQuery.use(delegator).from("Payment")
+            .where(mainCond)
+            .orderBy("-effectiveDate")
+            .queryList()
+
+        List openPayments = []
+        paymentsGv.each { pmnt ->
+            BigDecimal notApplied = BigDecimal.ZERO
+            try {
+                notApplied = org.apache.ofbiz.accounting.payment.PaymentWorker.getPaymentNotApplied(delegator, pmnt.paymentId)
+            } catch (Exception e) {
+                Debug.logWarning("Error calculating not applied amount for payment " + pmnt.paymentId + ": " + e.getMessage(), MODULE)
+            }
+
+            if (notApplied != null && notApplied.compareTo(BigDecimal.ZERO) > 0) {
+                openPayments.add([
+                    paymentId: pmnt.paymentId,
+                    paymentTypeId: pmnt.paymentTypeId,
+                    partyIdFrom: pmnt.partyIdFrom,
+                    partyIdTo: pmnt.partyIdTo,
+                    effectiveDate: pmnt.effectiveDate ? pmnt.effectiveDate.toString().substring(0, 10) : "",
+                    statusId: pmnt.statusId,
+                    amount: pmnt.amount != null ? pmnt.amount.doubleValue() : 0.0,
+                    unappliedAmount: notApplied.doubleValue(),
+                    currencyUomId: pmnt.currencyUomId ?: "USD"
+                ])
+            }
+        }
+
+        request.setAttribute("openPayments", openPayments)
+        return "success"
+    } catch (Exception e) {
+        Debug.logError(e, "Error in getOpenPaymentsForInvoice: " + e.getMessage(), MODULE)
+        request.setAttribute("_ERROR_MESSAGE_", e.getMessage())
+        return "error"
+    }
+}
+
 String createPayment() {
     def dispatcher = binding.getVariable("dispatcher")
     def parameters = binding.getVariable("parameters")
