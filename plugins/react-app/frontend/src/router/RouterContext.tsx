@@ -73,7 +73,7 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children, onView
     const cleanAppUrl = buildAppUrl(view, id, targetParams);
     
     // Construct canonical browser URL with hash-safe SPA support:
-    // e.g. /react-app/#/app/accounting/invoices/10000?tab=attachments
+    // e.g. /react-app/#/accounting/invoices/10000?tab=attachments
     const targetBrowserUrl = `${window.location.pathname.replace(/\/+$/, '')}/#${cleanAppUrl}`;
 
     if (options?.replace) {
@@ -103,7 +103,7 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children, onView
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [queryParams, onViewChange]);
 
-  // Navigate to raw path e.g. /app/accounting/invoices/10000
+  // Navigate to raw path e.g. /accounting/invoices/10000
   const navigateToPath = useCallback((fullPath: string, options?: NavigationOptions) => {
     const [pathPart, queryPart] = fullPath.split('?');
     const matched = matchRoute(pathPart, queryPart || '');

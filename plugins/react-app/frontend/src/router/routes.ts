@@ -1,8 +1,6 @@
 import { ViewType } from '../App';
 import { RouteMatch } from './types';
 
-export const APP_BASE_PREFIX = '/app';
-
 interface RouteDefinition {
   pattern: RegExp;
   view: ViewType;
@@ -13,216 +11,216 @@ interface RouteDefinition {
 export const ROUTES: RouteDefinition[] = [
   // Dashboard
   {
-    pattern: /^\/app\/dashboard\/?$/,
+    pattern: /^(?:\/app)?\/dashboard\/?$/,
     view: 'dashboard',
-    buildPath: () => '/app/dashboard'
+    buildPath: () => '/dashboard'
   },
 
   // Invoices
   {
-    pattern: /^\/app\/accounting\/invoices\/new\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/invoices\/new\/?$/,
     view: 'create-invoice',
-    buildPath: () => '/app/accounting/invoices/new'
+    buildPath: () => '/accounting/invoices/new'
   },
   {
-    pattern: /^\/app\/accounting\/invoices\/([^/?#]+)\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/invoices\/([^/?#]+)\/?$/,
     view: 'invoice-detail',
     hasId: true,
-    buildPath: (id) => `/app/accounting/invoices/${encodeURIComponent(id || '')}`
+    buildPath: (id) => `/accounting/invoices/${encodeURIComponent(id || '')}`
   },
   {
-    pattern: /^\/app\/accounting\/invoices\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/invoices\/?$/,
     view: 'invoices',
-    buildPath: () => '/app/accounting/invoices'
+    buildPath: () => '/accounting/invoices'
   },
 
   // Payments
   {
-    pattern: /^\/app\/accounting\/payments\/new\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/payments\/new\/?$/,
     view: 'create-payment',
-    buildPath: () => '/app/accounting/payments/new'
+    buildPath: () => '/accounting/payments/new'
   },
   {
-    pattern: /^\/app\/accounting\/payments\/([^/?#]+)\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/payments\/([^/?#]+)\/?$/,
     view: 'payment-detail',
     hasId: true,
-    buildPath: (id) => `/app/accounting/payments/${encodeURIComponent(id || '')}`
+    buildPath: (id) => `/accounting/payments/${encodeURIComponent(id || '')}`
   },
   {
-    pattern: /^\/app\/accounting\/payments\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/payments\/?$/,
     view: 'payments',
-    buildPath: () => '/app/accounting/payments'
+    buildPath: () => '/accounting/payments'
   },
 
   // Payment Groups
   {
-    pattern: /^\/app\/accounting\/payment-groups\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/payment-groups\/?$/,
     view: 'payment-groups',
-    buildPath: () => '/app/accounting/payment-groups'
+    buildPath: () => '/accounting/payment-groups'
   },
 
   // Financial Accounts
   {
-    pattern: /^\/app\/accounting\/financial-accounts\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/financial-accounts\/?$/,
     view: 'financial-accounts',
-    buildPath: () => '/app/accounting/financial-accounts'
+    buildPath: () => '/accounting/financial-accounts'
   },
 
   // Deposit Slips
   {
-    pattern: /^\/app\/accounting\/deposit-slips\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/deposit-slips\/?$/,
     view: 'deposit-slips',
-    buildPath: () => '/app/accounting/deposit-slips'
+    buildPath: () => '/accounting/deposit-slips'
   },
 
   // Reports
   {
-    pattern: /^\/app\/accounting\/reports\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/reports\/?$/,
     view: 'reports',
-    buildPath: () => '/app/accounting/reports'
+    buildPath: () => '/accounting/reports'
   },
 
   // Advanced Accounting
   {
-    pattern: /^\/app\/accounting\/advanced\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/advanced\/?$/,
     view: 'advanced-accounting',
-    buildPath: () => '/app/accounting/advanced'
+    buildPath: () => '/accounting/advanced'
   },
 
   // Tax and GL Mapping
   {
-    pattern: /^\/app\/accounting\/tax-mapping\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/tax-mapping\/?$/,
     view: 'tax-and-gl-mapping',
-    buildPath: () => '/app/accounting/tax-mapping'
+    buildPath: () => '/accounting/tax-mapping'
   },
 
   // Chart of Accounts
   {
-    pattern: /^\/app\/accounting\/chart-of-accounts\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/chart-of-accounts\/?$/,
     view: 'chart-of-accounts',
-    buildPath: () => '/app/accounting/chart-of-accounts'
+    buildPath: () => '/accounting/chart-of-accounts'
   },
 
   // Journal Entries
   {
-    pattern: /^\/app\/accounting\/journal-entries\/new\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/journal-entries\/new\/?$/,
     view: 'create-journal-entry',
-    buildPath: () => '/app/accounting/journal-entries/new'
+    buildPath: () => '/accounting/journal-entries/new'
   },
   {
-    pattern: /^\/app\/accounting\/journal-entries\/([^/?#]+)\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/journal-entries\/([^/?#]+)\/?$/,
     view: 'journal-entries',
     hasId: true,
-    buildPath: (id) => `/app/accounting/journal-entries/${encodeURIComponent(id || '')}`
+    buildPath: (id) => `/accounting/journal-entries/${encodeURIComponent(id || '')}`
   },
   {
-    pattern: /^\/app\/accounting\/journal-entries\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/journal-entries\/?$/,
     view: 'journal-entries',
-    buildPath: () => '/app/accounting/journal-entries'
+    buildPath: () => '/accounting/journal-entries'
   },
 
   // Fiscal Periods
   {
-    pattern: /^\/app\/accounting\/fiscal-periods\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/fiscal-periods\/?$/,
     view: 'fiscal-periods',
-    buildPath: () => '/app/accounting/fiscal-periods'
+    buildPath: () => '/accounting/fiscal-periods'
   },
 
   // FX Rates
   {
-    pattern: /^\/app\/accounting\/fx-rates\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/fx-rates\/?$/,
     view: 'fx-rates',
-    buildPath: () => '/app/accounting/fx-rates'
+    buildPath: () => '/accounting/fx-rates'
   },
 
   // Cost Centers
   {
-    pattern: /^\/app\/accounting\/cost-centers\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/cost-centers\/?$/,
     view: 'cost-centers',
-    buildPath: () => '/app/accounting/cost-centers'
+    buildPath: () => '/accounting/cost-centers'
   },
 
   // Accounting Preferences
   {
-    pattern: /^\/app\/accounting\/preferences\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/preferences\/?$/,
     view: 'accounting-preferences',
-    buildPath: () => '/app/accounting/preferences'
+    buildPath: () => '/accounting/preferences'
   },
 
   // Payment Gateways
   {
-    pattern: /^\/app\/accounting\/payment-gateways\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/payment-gateways\/?$/,
     view: 'payment-gateways',
-    buildPath: () => '/app/accounting/payment-gateways'
+    buildPath: () => '/accounting/payment-gateways'
   },
 
   // Check Run
   {
-    pattern: /^\/app\/accounting\/check-run\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/check-run\/?$/,
     view: 'check-run',
-    buildPath: () => '/app/accounting/check-run'
+    buildPath: () => '/accounting/check-run'
   },
 
   // Commission Run
   {
-    pattern: /^\/app\/accounting\/commission-run\/?$/,
+    pattern: /^(?:\/app)?\/accounting\/commission-run\/?$/,
     view: 'commission-run',
-    buildPath: () => '/app/accounting/commission-run'
+    buildPath: () => '/accounting/commission-run'
   },
 
   // Parties
   {
-    pattern: /^\/app\/parties\/([^/?#]+)\/?$/,
+    pattern: /^(?:\/app)?\/parties\/([^/?#]+)\/?$/,
     view: 'parties',
     hasId: true,
-    buildPath: (id) => `/app/parties/${encodeURIComponent(id || '')}`
+    buildPath: (id) => `/parties/${encodeURIComponent(id || '')}`
   },
   {
-    pattern: /^\/app\/parties\/?$/,
+    pattern: /^(?:\/app)?\/parties\/?$/,
     view: 'parties',
-    buildPath: () => '/app/parties'
+    buildPath: () => '/parties'
   },
 
   // System - Users
   {
-    pattern: /^\/app\/system\/users\/?$/,
+    pattern: /^(?:\/app)?\/system\/users\/?$/,
     view: 'users',
-    buildPath: () => '/app/system/users'
+    buildPath: () => '/system/users'
   },
 
   // System - Admin
   {
-    pattern: /^\/app\/system\/admin\/?$/,
+    pattern: /^(?:\/app)?\/system\/admin\/?$/,
     view: 'system-admin',
-    buildPath: () => '/app/system/admin'
+    buildPath: () => '/system/admin'
   },
 
   // Orders
   {
-    pattern: /^\/app\/orders\/?$/,
+    pattern: /^(?:\/app)?\/orders\/?$/,
     view: 'orders',
-    buildPath: () => '/app/orders'
+    buildPath: () => '/orders'
   },
 
   // Manufacturing
   {
-    pattern: /^\/app\/manufacturing\/?$/,
+    pattern: /^(?:\/app)?\/manufacturing\/?$/,
     view: 'manufacturing',
-    buildPath: () => '/app/manufacturing'
+    buildPath: () => '/manufacturing'
   },
 
   // Inventory
   {
-    pattern: /^\/app\/inventory\/?$/,
+    pattern: /^(?:\/app)?\/inventory\/?$/,
     view: 'inventory',
-    buildPath: () => '/app/inventory'
+    buildPath: () => '/inventory'
   },
 
   // Test Page
   {
-    pattern: /^\/app\/test\/?$/,
+    pattern: /^(?:\/app)?\/test\/?$/,
     view: 'test-page',
-    buildPath: () => '/app/test'
+    buildPath: () => '/test'
   }
 ];
 
@@ -262,44 +260,52 @@ export function buildQueryString(params?: Record<string, string | null | undefin
 
 /**
  * Extract clean application route path from browser URL.
- * Handles both `/react-app/app/...` and `.../#/app/...`.
+ * Supports:
+ * - Direct paths: `/react-app/accounting/invoices/10000` -> `/accounting/invoices/10000`
+ * - Hash paths: `/react-app/#/accounting/invoices/10000` -> `/accounting/invoices/10000`
+ * - Backward compat: `#/app/accounting/...` -> `/accounting/...`
  */
 export function extractAppPath(location: Location): { path: string; queryString: string } {
-  // 1. Check hash first (#/app/...)
+  // 1. Check hash first (#/accounting/...)
   const hash = location.hash || '';
-  if (hash.startsWith('#/app') || hash.startsWith('#/')) {
+  if (hash.startsWith('#/')) {
     const withoutHash = hash.substring(1); // removes '#'
     const [hPath, hQuery] = withoutHash.split('?');
-    const normalizedPath = hPath.startsWith('/app') ? hPath : `/app${hPath}`;
+    // Strip leading /app if present for backward compatibility
+    let normalized = hPath;
+    if (normalized.startsWith('/app/')) {
+      normalized = normalized.substring(4);
+    } else if (normalized === '/app') {
+      normalized = '/dashboard';
+    }
     return {
-      path: normalizedPath,
+      path: normalized || '/dashboard',
       queryString: hQuery || ''
     };
   }
 
-  // 2. Check pathname (/react-app/app/... or /app/...)
+  // 2. Check pathname (/react-app/accounting/... or /accounting/...)
   const pathname = location.pathname || '';
   const search = location.search || '';
   
-  if (pathname.includes('/app/')) {
-    const appIndex = pathname.indexOf('/app/');
-    const appPath = pathname.substring(appIndex);
-    return {
-      path: appPath,
-      queryString: search.startsWith('?') ? search.substring(1) : search
-    };
+  let cleanPath = pathname;
+  // Remove /react-app base path if present
+  if (cleanPath.startsWith('/react-app')) {
+    cleanPath = cleanPath.substring('/react-app'.length);
+  }
+  // Strip /app prefix if present
+  if (cleanPath.startsWith('/app/')) {
+    cleanPath = cleanPath.substring(4);
+  } else if (cleanPath === '/app') {
+    cleanPath = '/dashboard';
   }
 
-  if (pathname.endsWith('/app')) {
-    return {
-      path: '/app/dashboard',
-      queryString: search.startsWith('?') ? search.substring(1) : search
-    };
+  if (!cleanPath || cleanPath === '/' || cleanPath === '') {
+    cleanPath = '/dashboard';
   }
 
-  // Default fallback
   return {
-    path: '/app/dashboard',
+    path: cleanPath,
     queryString: search.startsWith('?') ? search.substring(1) : search
   };
 }
@@ -309,7 +315,15 @@ export function extractAppPath(location: Location): { path: string; queryString:
  */
 export function matchRoute(path: string, queryString: string): RouteMatch {
   const queryParams = parseQueryString(queryString);
-  const normalizedPath = path.endsWith('/') && path.length > 5 ? path.slice(0, -1) : path;
+  let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+  if (normalizedPath.startsWith('/app/')) {
+    normalizedPath = normalizedPath.substring(4);
+  } else if (normalizedPath === '/app') {
+    normalizedPath = '/dashboard';
+  }
+  if (!normalizedPath || normalizedPath === '/') {
+    normalizedPath = '/dashboard';
+  }
 
   for (const route of ROUTES) {
     const match = normalizedPath.match(route.pattern);
@@ -328,7 +342,7 @@ export function matchRoute(path: string, queryString: string): RouteMatch {
   return {
     view: 'dashboard',
     queryParams,
-    path: '/app/dashboard'
+    path: '/dashboard'
   };
 }
 
@@ -344,7 +358,7 @@ export function buildAppUrl(view: ViewType, id?: string, queryParams?: Record<st
     return !r.hasId;
   });
 
-  const path = route ? route.buildPath(id) : '/app/dashboard';
+  const path = route ? route.buildPath(id) : '/dashboard';
   const qs = buildQueryString(queryParams);
   return `${path}${qs}`;
 }
