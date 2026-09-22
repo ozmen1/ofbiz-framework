@@ -5,7 +5,8 @@ import {
   Menu, X, Globe, Calendar, TrendingUp, Target, Building2, SlidersHorizontal,
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
   ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
-  Key, User, Shield, Share2, Check
+  Key, User, Shield, Share2, Check, Package, FolderTree, GitFork, Store,
+  Boxes, Cpu
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -91,6 +92,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
   // Accordion state for expandable modules
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
+    products: true,
     accounting: true,
     orders: false,
     manufacturing: false,
@@ -136,6 +138,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'parties':                translations.pages.parties,
     'users':                  translations.pages.users,
     'system-admin':           translations.pages.systemAdmin,
+    'products':               translations.pages.products,
+    'catalogs':               translations.pages.catalogs,
+    'variants-assocs':        translations.pages.variantsAndAssocs,
+    'pricing-promos':         translations.pages.pricingAndPromos,
+    'stores':                 translations.pages.stores,
+    'advanced-inventory':     translations.pages.advancedInventory,
+    'config-items':           translations.pages.configItems,
   }), [translations]);
 
   const meta = pageMetaMap[currentView] || { title: currentView, subtitle: '' };
@@ -436,6 +445,134 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               )}
             </div>
 
+            {/* ── MODÜL: ÜRÜN & KATALOG YÖNETİMİ (Product & Catalog) ── */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/40 overflow-hidden shadow-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  toggleModule('products');
+                  handleNavClick('products');
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
+                  ['products', 'catalogs', 'variants-assocs', 'pricing-promos', 'stores', 'advanced-inventory', 'config-items'].includes(currentView)
+                    ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10'
+                    : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                    <Package size={16} />
+                  </div>
+                  <span>{translations.nav.catalogAndProduct}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    v1 Core
+                  </span>
+                  {expandedModules.products ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {expandedModules.products && (
+                <div className="px-2 py-2 space-y-0.5 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('products')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'products'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <Package size={14} className={currentView === 'products' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.products}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('catalogs')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'catalogs'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <FolderTree size={14} className={currentView === 'catalogs' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.catalogs} & {translations.nav.categories}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('variants-assocs')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'variants-assocs'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <GitFork size={14} className={currentView === 'variants-assocs' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.variantsAndAssocs}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('pricing-promos')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'pricing-promos'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <BadgePercent size={14} className={currentView === 'pricing-promos' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.pricingAndPromos}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('stores')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'stores'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <Store size={14} className={currentView === 'stores' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.stores}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('advanced-inventory')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'advanced-inventory'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <Boxes size={14} className={currentView === 'advanced-inventory' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.advancedInventory}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('config-items')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'config-items'
+                        ? 'bg-indigo-100/80 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-medium border-l-2 border-indigo-500 dark:border-indigo-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <Cpu size={14} className={currentView === 'config-items' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.configItems}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* ── MODÜL 2: SİPARİŞ YÖNETİMİ (Order Management) ── */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/40 overflow-hidden shadow-xs">
               <button
@@ -548,10 +685,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 type="button"
                 onClick={() => {
                   toggleModule('inventory');
-                  handleNavClick('inventory');
+                  handleNavClick('advanced-inventory');
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
-                  currentView === 'inventory'
+                  currentView === 'inventory' || currentView === 'advanced-inventory'
                     ? 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/10'
                     : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
@@ -564,7 +701,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
-                    {translations.nav.comingSoon}
+                    {translations.nav.activeModule}
                   </span>
                   {expandedModules.inventory ? (
                     <ChevronDown size={16} className="text-slate-400" />
@@ -577,9 +714,9 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               {expandedModules.inventory && (
                 <div className="px-2 py-2 space-y-0.5 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
                   {[
-                    { label: translations.nav.facilities, view: 'inventory' as ViewType },
-                    { label: translations.nav.inventoryTransfers, view: 'inventory' as ViewType },
-                    { label: translations.nav.physicalInventory, view: 'inventory' as ViewType },
+                    { label: translations.nav.facilities, view: 'advanced-inventory' as ViewType },
+                    { label: translations.nav.inventoryTransfers, view: 'advanced-inventory' as ViewType },
+                    { label: translations.nav.physicalInventory, view: 'advanced-inventory' as ViewType },
                   ].map(sub => (
                     <button
                       key={sub.label}

@@ -216,6 +216,108 @@ export const ROUTES: RouteDefinition[] = [
     buildPath: () => '/inventory'
   },
 
+  // Products & Catalog
+  {
+    pattern: /^(?:\/app)?\/products\/([^/?#]+)\/?$/,
+    view: 'products',
+    hasId: true,
+    buildPath: (id) => `/products/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/products\/?$/,
+    view: 'products',
+    buildPath: () => '/products'
+  },
+
+  // Catalogs & Categories
+  {
+    pattern: /^(?:\/app)?\/catalogs\/([^/?#]+)\/?$/,
+    view: 'catalogs',
+    hasId: true,
+    buildPath: (id) => `/catalogs/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/catalogs\/?$/,
+    view: 'catalogs',
+    buildPath: () => '/catalogs'
+  },
+  {
+    pattern: /^(?:\/app)?\/categories\/([^/?#]+)\/?$/,
+    view: 'catalogs',
+    hasId: true,
+    buildPath: (id) => `/categories/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/categories\/?$/,
+    view: 'catalogs',
+    buildPath: () => '/categories'
+  },
+
+  // Variants & Associations
+  {
+    pattern: /^(?:\/app)?\/variants-assocs\/([^/?#]+)\/?$/,
+    view: 'variants-assocs',
+    hasId: true,
+    buildPath: (id) => `/variants-assocs/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/variants-assocs\/?$/,
+    view: 'variants-assocs',
+    buildPath: () => '/variants-assocs'
+  },
+
+  // Pricing & Promotions
+  {
+    pattern: /^(?:\/app)?\/pricing-promos\/([^/?#]+)\/?$/,
+    view: 'pricing-promos',
+    hasId: true,
+    buildPath: (id) => `/pricing-promos/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/pricing-promos\/?$/,
+    view: 'pricing-promos',
+    buildPath: () => '/pricing-promos'
+  },
+
+  // Stores & Catalog Distribution
+  {
+    pattern: /^(?:\/app)?\/stores\/([^/?#]+)\/?$/,
+    view: 'stores',
+    hasId: true,
+    buildPath: (id) => `/stores/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/stores\/?$/,
+    view: 'stores',
+    buildPath: () => '/stores'
+  },
+
+  // Advanced Inventory
+  {
+    pattern: /^(?:\/app)?\/advanced-inventory\/([^/?#]+)\/?$/,
+    view: 'advanced-inventory',
+    hasId: true,
+    buildPath: (id) => `/advanced-inventory/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/advanced-inventory\/?$/,
+    view: 'advanced-inventory',
+    buildPath: () => '/advanced-inventory'
+  },
+
+  // Config Items
+  {
+    pattern: /^(?:\/app)?\/config-items\/([^/?#]+)\/?$/,
+    view: 'config-items',
+    hasId: true,
+    buildPath: (id) => `/config-items/${encodeURIComponent(id || '')}`
+  },
+  {
+    pattern: /^(?:\/app)?\/config-items\/?$/,
+    view: 'config-items',
+    buildPath: () => '/config-items'
+  },
+
   // Test Page
   {
     pattern: /^(?:\/app)?\/test\/?$/,

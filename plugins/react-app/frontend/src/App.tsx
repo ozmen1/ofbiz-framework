@@ -39,9 +39,21 @@ const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
 const PartyManagement = lazy(() => import('./components/PartyManagement').then(m => ({ default: m.PartyManagement })))
 const UserManagement = lazy(() => import('./components/UserManagement'))
 const SystemAdministration = lazy(() => import('./components/SystemAdministration'))
+const ProductManagement = lazy(() => import('./components/ProductManagement').then(m => ({ default: m.ProductManagement })))
+const CatalogCategoryManagement = lazy(() => import('./components/CatalogCategoryManagement').then(m => ({ default: m.CatalogCategoryManagement })))
+const VariantAssocManagement = lazy(() => import('./components/VariantAssocManagement').then(m => ({ default: m.VariantAssocManagement })))
+const PricePromoStoreManagement = lazy(() => import('./components/PricePromoStoreManagement').then(m => ({ default: m.PricePromoStoreManagement })))
+const AdvancedInventoryManagement = lazy(() => import('./components/AdvancedInventoryManagement').then(m => ({ default: m.AdvancedInventoryManagement })))
 
 export type ViewType = 
   | 'dashboard' 
+  | 'products'
+  | 'catalogs'
+  | 'variants-assocs'
+  | 'pricing-promos'
+  | 'stores'
+  | 'advanced-inventory'
+  | 'config-items'
   | 'invoices' 
   | 'create-invoice' 
   | 'invoice-detail' 
@@ -217,6 +229,27 @@ function AppContent() {
       case 'system-admin':
         return <SystemAdministration />;
 
+      case 'products':
+        return <ProductManagement />;
+
+      case 'catalogs':
+        return <CatalogCategoryManagement />;
+
+      case 'variants-assocs':
+        return <VariantAssocManagement />;
+
+      case 'pricing-promos':
+        return <PricePromoStoreManagement initialTab="rules" />;
+
+      case 'stores':
+        return <PricePromoStoreManagement initialTab="stores" />;
+
+      case 'advanced-inventory':
+        return <AdvancedInventoryManagement initialTab="inventory" />;
+
+      case 'config-items':
+        return <AdvancedInventoryManagement initialTab="config" />;
+
       case 'orders':
         return <ModulePlaceholder moduleKey="orders" onNavigate={handleNavigate} />;
 
@@ -224,7 +257,7 @@ function AppContent() {
         return <ModulePlaceholder moduleKey="manufacturing" onNavigate={handleNavigate} />;
 
       case 'inventory':
-        return <ModulePlaceholder moduleKey="inventory" onNavigate={handleNavigate} />;
+        return <AdvancedInventoryManagement initialTab="inventory" />;
 
       default:
         return <AccountingDashboard />;
