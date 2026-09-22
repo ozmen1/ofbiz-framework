@@ -227,22 +227,22 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
+            <div className="ds-alert-error flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Section 1: Header Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="ds-card p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="ds-label">
                 {t.returnHeaderType} *
               </label>
               <select
                 value={returnHeaderTypeId}
                 onChange={(e) => setReturnHeaderTypeId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ds-select"
               >
                 {metadata?.returnHeaderTypes && metadata.returnHeaderTypes.length > 0 ? (
                   metadata.returnHeaderTypes.map((type) => (
@@ -260,14 +260,14 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="ds-label">
                 {t.party} *
               </label>
               <div className="relative">
                 <select
                   value={fromPartyId}
                   onChange={(e) => setFromPartyId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 appearance-none"
+                  className="ds-select"
                   required
                 >
                   <option value="">-- {t.selectParty} --</option>
@@ -278,7 +278,7 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="ds-label">
                 {t.orderIdOptional}
               </label>
               <div className="relative">
@@ -287,21 +287,21 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   placeholder="WSCO10000..."
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="ds-input"
                 />
                 <Package className="w-4 h-4 text-slate-500 absolute right-3 top-3 pointer-events-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="ds-label">
                 {t.currency} *
               </label>
               <div className="relative">
                 <select
                   value={currencyUomId}
                   onChange={(e) => setCurrencyUomId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="ds-select"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
@@ -313,7 +313,7 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
           </div>
 
           {/* Section 2: Line Items */}
-          <div className="border border-slate-800 rounded-xl p-4 bg-slate-950/50 space-y-4">
+          <div className="ds-card p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                 <Package className="w-4 h-4 text-amber-400" />
@@ -322,10 +322,10 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-medium transition"
+                className="ds-btn-secondary flex items-center gap-1.5 py-1 px-3 text-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                {t.addItem}
+                <span>{t.addItem}</span>
               </button>
             </div>
 
@@ -333,7 +333,7 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
               {items.map((item, idx) => (
                 <div
                   key={item.id}
-                  className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-3"
+                  className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-3"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2">
                     <span className="font-semibold text-slate-300">
@@ -353,13 +353,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                     {/* Product */}
                     <div className="md:col-span-4">
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.product}
                       </label>
                       <select
                         value={item.productId}
                         onChange={(e) => handleItemChange(item.id, 'productId', e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="ds-select text-xs py-1"
                       >
                         <option value="">-- {t.selectProduct} --</option>
                         {productOptions}
@@ -368,7 +368,7 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
 
                     {/* Description */}
                     <div className="md:col-span-3">
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.reason} / Açıklama
                       </label>
                       <input
@@ -376,13 +376,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                         value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                         placeholder="Kalem açıklaması..."
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="ds-input text-xs py-1"
                       />
                     </div>
 
                     {/* Qty */}
                     <div className="md:col-span-1">
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.returnQty}
                       </label>
                       <input
@@ -393,13 +393,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                         onChange={(e) =>
                           handleItemChange(item.id, 'returnQuantity', Math.max(1, parseInt(e.target.value) || 1))
                         }
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 text-right"
+                        className="ds-input text-xs py-1 text-right"
                       />
                     </div>
 
                     {/* Price */}
                     <div className="md:col-span-2">
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.returnPrice}
                       </label>
                       <input
@@ -410,13 +410,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                         onChange={(e) =>
                           handleItemChange(item.id, 'returnPrice', parseFloat(e.target.value) || 0)
                         }
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 text-right"
+                        className="ds-input text-xs py-1 text-right"
                       />
                     </div>
 
                     {/* Line Total */}
                     <div className="md:col-span-2">
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.lineTotal}
                       </label>
                       <div className="w-full bg-slate-800/60 border border-slate-700/40 rounded-lg px-2 py-1.5 text-xs text-slate-200 text-right font-medium">
@@ -428,13 +428,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                   {/* Return Reason and Return Type */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.returnReason}
                       </label>
                       <select
                         value={item.returnReasonId}
                         onChange={(e) => handleItemChange(item.id, 'returnReasonId', e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="ds-select text-xs py-1"
                       >
                         {(metadata?.returnReasons || []).map((r) => (
                           <option key={r.returnReasonId} value={r.returnReasonId}>
@@ -445,13 +445,13 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      <label className="ds-label">
                         {t.returnType}
                       </label>
                       <select
                         value={item.returnTypeId}
                         onChange={(e) => handleItemChange(item.id, 'returnTypeId', e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="ds-select text-xs py-1"
                       >
                         {(metadata?.returnTypes || []).map((rt) => (
                           <option key={rt.returnTypeId} value={rt.returnTypeId}>
@@ -467,7 +467,7 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
           </div>
 
           {/* Section 3: Summary Total */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+          <div className="ds-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-slate-400 text-sm">
               <Calculator className="w-4 h-4 text-amber-400" />
               <span>{t.grandTotal}</span>
@@ -482,26 +482,17 @@ export const CreateReturnModal: React.FC<CreateReturnModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+              className="ds-btn-secondary"
             >
               {common.cancel}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-sm rounded-xl shadow-lg shadow-amber-900/30 transition disabled:opacity-50"
+              className="ds-btn-primary"
             >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span>{common.loading}</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>{t.saveReturn}</span>
-                </>
-              )}
+              <Save className="w-4 h-4" />
+              <span>{loading ? common.loading : t.saveReturn}</span>
             </button>
           </div>
         </form>

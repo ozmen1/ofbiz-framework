@@ -116,19 +116,19 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                 </h2>
                 {header && (
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                    className={
                       isCompleted
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        ? 'ds-badge ds-badge-green'
                         : isAccepted
-                        ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+                        ? 'ds-badge ds-badge-blue'
                         : isCancelled
-                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                    }`}
+                        ? 'ds-badge ds-badge-red'
+                        : 'ds-badge ds-badge-yellow'
+                    }
                   >
-                    {isCompleted && <CheckCircle2 className="w-3.5 h-3.5" />}
-                    {isAccepted && <Clock className="w-3.5 h-3.5" />}
-                    {isCancelled && <XCircle className="w-3.5 h-3.5" />}
+                    {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                    {isAccepted && <Clock className="w-3.5 h-3.5 mr-1" />}
+                    {isCancelled && <XCircle className="w-3.5 h-3.5 mr-1" />}
                     {header.statusDesc || header.statusId}
                   </span>
                 )}
@@ -149,14 +149,14 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-6">
           {error && (
-            <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
+            <div className="ds-alert-error flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {actionSuccess && (
-            <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm">
+            <div className="ds-alert-success flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <span>{actionSuccess}</span>
             </div>
@@ -164,14 +164,14 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
 
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <div className="ds-spinner-sm" />
               <span className="text-sm">{common.loading}</span>
             </div>
           ) : detail ? (
             <>
               {/* Header Info Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                <div className="ds-card p-4 space-y-1">
                   <span className="text-xs text-slate-400 flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5 text-amber-400" />
                     {t.party}
@@ -181,7 +181,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                <div className="ds-card p-4 space-y-1">
                   <span className="text-xs text-slate-400 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-amber-400" />
                     {t.orderDate}
@@ -191,7 +191,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                <div className="ds-card p-4 space-y-1">
                   <span className="text-xs text-slate-400 flex items-center gap-1.5">
                     <Package className="w-3.5 h-3.5 text-amber-400" />
                     {t.itemCount}
@@ -201,7 +201,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                <div className="ds-card p-4 space-y-1">
                   <span className="text-xs text-slate-400 flex items-center gap-1.5">
                     <DollarSign className="w-3.5 h-3.5 text-amber-400" />
                     {t.grandTotal}
@@ -213,7 +213,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
               </div>
 
               {/* Status Action Workflow Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-950/40 border border-slate-800 rounded-xl">
+              <div className="ds-card p-4 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   {t.changeStatus}:
                 </span>
@@ -223,7 +223,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                       type="button"
                       disabled={actionLoading}
                       onClick={() => handleStatusUpdate('RETURN_ACCEPTED', t.confirmAcceptReturn)}
-                      className="px-3.5 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-medium transition disabled:opacity-50"
+                      className="ds-btn-primary text-xs py-1.5 px-3"
                     >
                       {t.acceptReturn}
                     </button>
@@ -234,7 +234,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                       type="button"
                       disabled={actionLoading}
                       onClick={() => handleStatusUpdate('RETURN_COMPLETED', t.confirmCompleteReturn)}
-                      className="px-3.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-medium transition disabled:opacity-50"
+                      className="ds-btn-primary text-xs py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500"
                     >
                       {t.completeReturn}
                     </button>
@@ -245,7 +245,7 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
                       type="button"
                       disabled={actionLoading}
                       onClick={() => handleStatusUpdate('RETURN_CANCELLED', t.confirmCancelReturn)}
-                      className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-medium transition disabled:opacity-50"
+                      className="ds-btn-danger text-xs py-1.5 px-3"
                     >
                       {t.cancelReturn}
                     </button>
@@ -254,50 +254,50 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
               </div>
 
               {/* Items Table */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
+              <div className="ds-card overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                      <tr>
-                        <th className="py-3 px-4 font-semibold">#</th>
-                        <th className="py-3 px-4 font-semibold">{t.product}</th>
-                        <th className="py-3 px-4 font-semibold">{t.orderId}</th>
-                        <th className="py-3 px-4 font-semibold text-right">{t.quantity}</th>
-                        <th className="py-3 px-4 font-semibold text-right">{t.unitPrice}</th>
-                        <th className="py-3 px-4 font-semibold text-right">{t.lineTotal}</th>
-                        <th className="py-3 px-4 font-semibold">{t.returnReason}</th>
-                        <th className="py-3 px-4 font-semibold">{t.returnType}</th>
+                  <table className="ds-table">
+                    <thead>
+                      <tr className="ds-thead-row">
+                        <th className="ds-th">#</th>
+                        <th className="ds-th">{t.product}</th>
+                        <th className="ds-th">{t.orderId}</th>
+                        <th className="ds-th-right">{t.quantity}</th>
+                        <th className="ds-th-right">{t.unitPrice}</th>
+                        <th className="ds-th-right">{t.lineTotal}</th>
+                        <th className="ds-th">{t.returnReason}</th>
+                        <th className="ds-th">{t.returnType}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody>
                       {detail.returnItems.map((item, idx) => (
-                        <tr key={item.returnItemSeqId || idx} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3 px-4 text-xs text-slate-500">{item.returnItemSeqId || idx + 1}</td>
-                          <td className="py-3 px-4">
+                        <tr key={item.returnItemSeqId || idx} className="ds-tbody-row">
+                          <td className="ds-td text-xs text-slate-500">{item.returnItemSeqId || idx + 1}</td>
+                          <td className="ds-td">
                             <span className="font-medium text-white">{item.productId || '-'}</span>
                             {item.description && (
                               <p className="text-xs text-slate-400">{item.description}</p>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-xs text-amber-400 font-mono">
+                          <td className="ds-td-mono font-bold text-amber-400">
                             {item.orderId ? `#${item.orderId}` : '-'}
                           </td>
-                          <td className="py-3 px-4 text-right text-slate-300 font-semibold">
+                          <td className="ds-td-right text-slate-300 font-semibold">
                             {item.returnQuantity}
                           </td>
-                          <td className="py-3 px-4 text-right text-slate-300">
+                          <td className="ds-td-right text-slate-300">
                             {formatCurrency(item.returnPrice, header?.currencyUomId)}
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-emerald-400">
+                          <td className="ds-td-right text-emerald-400">
                             {formatCurrency(item.lineTotal || (item.returnQuantity * item.returnPrice), header?.currencyUomId)}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-300">
-                            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                          <td className="ds-td">
+                            <span className="ds-badge ds-badge-slate">
                               {item.returnReasonId || '-'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-300">
-                            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                          <td className="ds-td">
+                            <span className="ds-badge ds-badge-slate">
                               {item.returnTypeId || '-'}
                             </span>
                           </td>
@@ -312,11 +312,11 @@ export const ReturnDetailModal: React.FC<ReturnDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-end px-6 py-4 border-t border-slate-800 bg-slate-900 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
+            className="ds-btn-secondary"
           >
             {common.close}
           </button>

@@ -54,6 +54,7 @@ export const tr: Translations = {
     darkMode: 'Gece Modu',
     copyLink: 'Bağlantıyı Kopyala',
     linkCopied: 'Kopyalandı!',
+    id: 'ID',
   },
   nav: {
     appName: 'OFBiz ERP',
@@ -2863,5 +2864,6 @@ export const tr: Translations = {
     confirmCancelReturn: 'Bu iade talebini iptal etmek istediğinize emin misiniz?',
     returnCreatedSuccess: 'İade talebi başarıyla oluşturuldu.',
     saveReturn: 'İadeyi Kaydet',
+    partyId: 'Cari No',
   },
 };

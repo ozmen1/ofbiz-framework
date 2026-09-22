@@ -233,13 +233,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         {/* Modal Body - Single Unified Vertical Scroll */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
-              {error}
+            <div className="ds-alert-error flex items-center gap-2">
+              <span>{error}</span>
             </div>
           )}
 
           {quickSuccess && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center justify-between">
+            <div className="ds-alert-success flex items-center justify-between">
               <span>{quickSuccess}</span>
               <button
                 type="button"
@@ -253,14 +253,14 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
           {loading ? (
             <div className="py-16 flex items-center justify-center text-slate-400">
-              <div className="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mr-3" />
+              <div className="ds-spinner-sm mr-3" />
               <span>{common.loading}</span>
             </div>
           ) : (
             <>
               {/* Summary Overview Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
                     <DollarSign className="w-5 h-5" />
                   </div>
@@ -272,7 +272,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
                     <Package className="w-5 h-5" />
                   </div>
@@ -284,7 +284,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
                     <Store className="w-5 h-5" />
                   </div>
@@ -296,7 +296,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
                     <Building className="w-5 h-5" />
                   </div>
@@ -310,7 +310,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               </div>
 
               {/* Status Action Toolbar */}
-              <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="ds-card p-4 flex flex-col md:flex-row items-center justify-between gap-3">
                 <div className="flex-1 w-full md:w-auto">
                   <input
                     type="text"
@@ -320,7 +320,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     className="ds-input text-xs"
                   />
                 </div>
-                <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
+                <div className="flex items-center space-x-2 w-full md:w-auto justify-end flex-wrap gap-y-2">
                   {/* Durum butonları */}
                   {(currentStatusId === 'ORDER_CREATED' || currentStatusId === 'ORDER_PROCESSING' || currentStatusId === 'ORDER_HOLD') && (
                     <button
@@ -377,10 +377,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     type="button"
                     disabled={isChangingStatus}
                     onClick={handleQuickInvoice}
-                    className="flex items-center space-x-1.5 text-xs py-2 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-semibold transition"
+                    className="ds-btn-secondary flex items-center space-x-1.5 text-xs py-2 px-3"
                     title={t.createInvoiceQuick}
                   >
-                    <FileText className="w-4 h-4 text-emerald-300" />
+                    <FileText className="w-4 h-4 text-emerald-400" />
                     <span>{t.createInvoiceQuick}</span>
                   </button>
 
@@ -389,25 +389,21 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     type="button"
                     disabled={isChangingStatus}
                     onClick={handleQuickShipment}
-                    className="flex items-center space-x-1.5 text-xs py-2 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 font-semibold transition"
+                    className="ds-btn-secondary flex items-center space-x-1.5 text-xs py-2 px-3"
                     title={t.createShipmentQuick}
                   >
-                    <Truck className="w-4 h-4 text-blue-300" />
+                    <Truck className="w-4 h-4 text-blue-400" />
                     <span>{t.createShipmentQuick}</span>
                   </button>
                 </div>
               </div>
 
               {/* Tab Navigation */}
-              <div className="border-b border-slate-800 flex space-x-2">
+              <div className="ds-tab-bar">
                 <button
                   type="button"
                   onClick={() => setActiveTab('items')}
-                  className={`pb-3 px-3 text-xs font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
-                    activeTab === 'items'
-                      ? 'border-indigo-500 text-white'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`ds-tab ${activeTab === 'items' ? 'ds-tab-active' : ''}`}
                 >
                   <Package className="w-4 h-4" />
                   <span>{t.items} ({detail?.orderItems?.length || 0})</span>
@@ -416,11 +412,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('adjustments')}
-                  className={`pb-3 px-3 text-xs font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
-                    activeTab === 'adjustments'
-                      ? 'border-indigo-500 text-white'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`ds-tab ${activeTab === 'adjustments' ? 'ds-tab-active' : ''}`}
                 >
                   <Layers className="w-4 h-4" />
                   <span>{t.adjustments} ({detail?.orderAdjustments?.length || 0})</span>
@@ -429,11 +421,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('roles')}
-                  className={`pb-3 px-3 text-xs font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
-                    activeTab === 'roles'
-                      ? 'border-indigo-500 text-white'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`ds-tab ${activeTab === 'roles' ? 'ds-tab-active' : ''}`}
                 >
                   <Users className="w-4 h-4" />
                   <span>{t.roles} ({detail?.orderRoles?.length || 0})</span>
@@ -442,195 +430,199 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('history')}
-                  className={`pb-3 px-3 text-xs font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
-                    activeTab === 'history'
-                      ? 'border-indigo-500 text-white'
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`ds-tab ${activeTab === 'history' ? 'ds-tab-active' : ''}`}
                 >
                   <History className="w-4 h-4" />
                   <span>{t.statusHistory} ({detail?.orderStatuses?.length || 0})</span>
                 </button>
               </div>
 
-              {/* Tab 1: Order Items */}
+              {/* Tab 1: Items */}
               {activeTab === 'items' && (
-                <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                  <table className="ds-table">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="ds-thead-row bg-slate-900">
-                        <th className="ds-th">Sıra</th>
-                        <th className="ds-th">{t.product}</th>
-                        <th className="ds-th">{common.description}</th>
-                        <th className="ds-th-right">{t.quantity}</th>
-                        <th className="ds-th-right">{t.unitPrice}</th>
-                        <th className="ds-th-right">{t.lineTotal}</th>
-                        <th className="ds-th">{t.status}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail?.orderItems && detail.orderItems.length > 0 ? (
-                        detail.orderItems.map((item) => (
-                          <tr key={item.orderItemSeqId} className="ds-tbody-row">
-                            <td className="ds-td-mono text-slate-400">
-                              {item.orderItemSeqId}
-                            </td>
-                            <td className="ds-td-mono font-bold text-indigo-300">
-                              {item.productId || '-'}
-                            </td>
-                            <td className="ds-td text-white font-medium">
-                              {item.itemDescription || '-'}
-                            </td>
-                            <td className="ds-td-right font-mono text-white">
-                              {item.quantity}
-                              {item.cancelQuantity > 0 && (
-                                <span className="text-xs text-rose-400 block">(-{item.cancelQuantity})</span>
-                              )}
-                            </td>
-                            <td className="ds-td-right font-mono text-slate-300">
-                              {formatCurrency(item.unitPrice, header?.currencyUom)}
-                            </td>
-                            <td className="ds-td-right font-mono font-bold text-emerald-400">
-                              {formatCurrency(item.itemTotal, header?.currencyUom)}
-                            </td>
-                            <td className="ds-td">
-                              {getStatusBadge(item.statusId, item.statusDesc)}
+                <div className="ds-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">#</th>
+                          <th className="ds-th">{t.product}</th>
+                          <th className="ds-th">{common.description}</th>
+                          <th className="ds-th-right">{t.quantity}</th>
+                          <th className="ds-th-right">{t.unitPrice}</th>
+                          <th className="ds-th-right">{t.lineTotal}</th>
+                          <th className="ds-th">{t.status}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail?.orderItems && detail.orderItems.length > 0 ? (
+                          detail.orderItems.map((item) => (
+                            <tr key={item.orderItemSeqId} className="ds-tbody-row">
+                              <td className="ds-td-mono text-slate-400">
+                                {item.orderItemSeqId}
+                              </td>
+                              <td className="ds-td-mono font-bold text-indigo-300">
+                                {item.productId || '-'}
+                              </td>
+                              <td className="ds-td text-white font-medium">
+                                {item.itemDescription || '-'}
+                              </td>
+                              <td className="ds-td-right font-mono text-white">
+                                {item.quantity}
+                                {item.cancelQuantity > 0 && (
+                                  <span className="text-xs text-rose-400 block">(-{item.cancelQuantity})</span>
+                                )}
+                              </td>
+                              <td className="ds-td-right font-mono text-slate-300">
+                                {formatCurrency(item.unitPrice, header?.currencyUom)}
+                              </td>
+                              <td className="ds-td-right font-mono font-bold text-emerald-400">
+                                {formatCurrency(item.itemTotal, header?.currencyUom)}
+                              </td>
+                              <td className="ds-td">
+                                {getStatusBadge(item.statusId, item.statusDesc)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-slate-500 italic">
+                              {common.noData}
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center text-slate-500 italic">
-                            {common.noData}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
               {/* Tab 2: Adjustments */}
               {activeTab === 'adjustments' && (
-                <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                  <table className="ds-table">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="ds-thead-row bg-slate-900">
-                        <th className="ds-th">ID</th>
-                        <th className="ds-th">{t.type}</th>
-                        <th className="ds-th">{common.description}</th>
-                        <th className="ds-th-right">{t.amount}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail?.orderAdjustments && detail.orderAdjustments.length > 0 ? (
-                        detail.orderAdjustments.map((adj) => (
-                          <tr key={adj.orderAdjustmentId} className="ds-tbody-row">
-                            <td className="ds-td-mono text-slate-400">
-                              {adj.orderAdjustmentId}
-                            </td>
-                            <td className="ds-td font-semibold text-slate-200">
-                              {adj.orderAdjustmentTypeId}
-                            </td>
-                            <td className="ds-td text-slate-400">
-                              {adj.description || adj.comments || '-'}
-                            </td>
-                            <td className={`ds-td-right font-mono font-bold ${
-                              adj.amount < 0 ? 'text-rose-400' : 'text-emerald-400'
-                            }`}>
-                              {formatCurrency(adj.amount, header?.currencyUom)}
+                <div className="ds-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">ID</th>
+                          <th className="ds-th">{t.type}</th>
+                          <th className="ds-th">{common.description}</th>
+                          <th className="ds-th-right">{t.amount}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail?.orderAdjustments && detail.orderAdjustments.length > 0 ? (
+                          detail.orderAdjustments.map((adj) => (
+                            <tr key={adj.orderAdjustmentId} className="ds-tbody-row">
+                              <td className="ds-td-mono text-slate-400">
+                                {adj.orderAdjustmentId}
+                              </td>
+                              <td className="ds-td font-semibold text-slate-200">
+                                {adj.orderAdjustmentTypeId}
+                              </td>
+                              <td className="ds-td text-slate-400">
+                                {adj.description || adj.comments || '-'}
+                              </td>
+                              <td className={`ds-td-right font-mono font-bold ${
+                                adj.amount < 0 ? 'text-rose-400' : 'text-emerald-400'
+                              }`}>
+                                {formatCurrency(adj.amount, header?.currencyUom)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-8 text-center text-slate-500 italic">
+                              {common.noData}
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-slate-500 italic">
-                            Herhangi bir vergi, indirim veya ek masraf bulunmuyor.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
               {/* Tab 3: Roles */}
               {activeTab === 'roles' && (
-                <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                  <table className="ds-table">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="ds-thead-row bg-slate-900">
-                        <th className="ds-th">{t.role}</th>
-                        <th className="ds-th">Cari ID</th>
-                        <th className="ds-th">{t.party}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail?.orderRoles && detail.orderRoles.length > 0 ? (
-                        detail.orderRoles.map((role, idx) => (
-                          <tr key={`${role.partyId}-${role.roleTypeId}-${idx}`} className="ds-tbody-row">
-                            <td className="ds-td font-semibold text-indigo-300">
-                              {role.roleTypeId}
-                            </td>
-                            <td className="ds-td-mono text-slate-400">
-                              {role.partyId}
-                            </td>
-                            <td className="ds-td text-white font-medium">
-                              {role.partyName || role.partyId}
+                <div className="ds-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">{t.role}</th>
+                          <th className="ds-th">{t.partyId}</th>
+                          <th className="ds-th">{t.party}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail?.orderRoles && detail.orderRoles.length > 0 ? (
+                          detail.orderRoles.map((role, idx) => (
+                            <tr key={`${role.partyId}-${role.roleTypeId}-${idx}`} className="ds-tbody-row">
+                              <td className="ds-td font-semibold text-indigo-300">
+                                {role.roleTypeId}
+                              </td>
+                              <td className="ds-td-mono text-slate-400">
+                                {role.partyId}
+                              </td>
+                              <td className="ds-td text-white font-medium">
+                                {role.partyName || role.partyId}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-slate-500 italic">
+                              {common.noData}
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-slate-500 italic">
-                            Tanımlı taraf rolü bulunamadı.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
               {/* Tab 4: History */}
               {activeTab === 'history' && (
-                <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                  <table className="ds-table">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="ds-thead-row bg-slate-900">
-                        <th className="ds-th">{t.status}</th>
-                        <th className="ds-th"><Clock className="w-3.5 h-3.5 inline mr-1" />{common.date}</th>
-                        <th className="ds-th">{t.user}</th>
-                        <th className="ds-th">{t.reason}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail?.orderStatuses && detail.orderStatuses.length > 0 ? (
-                        detail.orderStatuses.map((st) => (
-                          <tr key={st.orderStatusId} className="ds-tbody-row">
-                            <td className="ds-td">
-                              {getStatusBadge(st.statusId, st.statusDesc)}
-                            </td>
-                            <td className="ds-td-mono text-slate-300">
-                              {formatDate(st.statusDatetime)}
-                            </td>
-                            <td className="ds-td font-mono text-indigo-300">
-                              {st.statusUserLogin || '-'}
-                            </td>
-                            <td className="ds-td text-slate-400 italic">
-                              {st.changeReason || '-'}
+                <div className="ds-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">{t.status}</th>
+                          <th className="ds-th"><Clock className="w-3.5 h-3.5 inline mr-1" />{common.date}</th>
+                          <th className="ds-th">{t.user}</th>
+                          <th className="ds-th">{t.reason}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail?.orderStatuses && detail.orderStatuses.length > 0 ? (
+                          detail.orderStatuses.map((st) => (
+                            <tr key={st.orderStatusId} className="ds-tbody-row">
+                              <td className="ds-td">
+                                {getStatusBadge(st.statusId, st.statusDesc)}
+                              </td>
+                              <td className="ds-td-mono text-slate-300">
+                                {formatDate(st.statusDatetime)}
+                              </td>
+                              <td className="ds-td font-mono text-indigo-300">
+                                {st.statusUserLogin || '-'}
+                              </td>
+                              <td className="ds-td text-slate-400 italic">
+                                {st.changeReason || '-'}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-8 text-center text-slate-500 italic">
+                              {common.noData}
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-slate-500 italic">
-                            Durum geçmişi kaydı bulunamadı.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </>

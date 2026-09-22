@@ -54,6 +54,7 @@ export const en: Translations = {
     darkMode: 'Dark Mode',
     copyLink: 'Copy Link',
     linkCopied: 'Copied!',
+    id: 'ID',
   },
   nav: {
     appName: 'OFBiz ERP',
@@ -2863,5 +2864,6 @@ export const en: Translations = {
     confirmCancelReturn: 'Are you sure you want to cancel this return?',
     returnCreatedSuccess: 'Return request successfully created.',
     saveReturn: 'Save Return',
+    partyId: 'Party ID',
   },
 };

@@ -54,6 +54,7 @@ export interface Translations {
     darkMode: string;
     copyLink: string;
     linkCopied: string;
+    id: string;
   };
   nav: {
     appName: string;
@@ -2728,5 +2729,6 @@ export interface Translations {
     confirmCancelReturn: string;
     returnCreatedSuccess: string;
     saveReturn: string;
+    partyId: string;
   };
 }

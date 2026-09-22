@@ -192,13 +192,13 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
-              {error}
+            <div className="ds-alert-error flex items-center gap-3">
+              <span>{error}</span>
             </div>
           )}
 
           {actionSuccess && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center justify-between">
+            <div className="ds-alert-success flex items-center justify-between">
               <span>{actionSuccess}</span>
               <button
                 type="button"
@@ -212,14 +212,14 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
 
           {loading ? (
             <div className="py-16 flex items-center justify-center text-slate-400">
-              <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mr-3" />
+              <div className="ds-spinner-sm mr-3" />
               <span>{common.loading}</span>
             </div>
           ) : (
             <>
               {/* Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
                     <DollarSign className="w-5 h-5" />
                   </div>
@@ -231,7 +231,7 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
                     <Package className="w-5 h-5" />
                   </div>
@@ -243,7 +243,7 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center space-x-3">
+                <div className="ds-card p-4 flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
                     <Building className="w-5 h-5" />
                   </div>
@@ -257,7 +257,7 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
               </div>
 
               {/* Action Toolbar */}
-              <div className="p-4 bg-slate-800/40 border border-slate-700/60 rounded-xl flex flex-wrap items-center justify-between gap-3">
+              <div className="ds-card p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-slate-400">
                   {q?.description && <p className="italic">"{q.description}"</p>}
                 </div>
@@ -292,7 +292,7 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
                       type="button"
                       disabled={actionLoading}
                       onClick={handleConvertToOrder}
-                      className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition"
+                      className="ds-btn-primary text-xs"
                     >
                       <ArrowRight className="w-4 h-4" />
                       <span>{t.convertToOrder}</span>
@@ -307,34 +307,36 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
                   <Package className="w-4 h-4 text-purple-400" />
                   {t.items}
                 </h3>
-                <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/20">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-900">
-                        <th className="py-2.5 px-3">#</th>
-                        <th className="py-2.5 px-3">{t.product}</th>
-                        <th className="py-2.5 px-3">{t.quantity}</th>
-                        <th className="py-2.5 px-3">{t.unitPrice}</th>
-                        <th className="py-2.5 px-3 text-right">{t.lineTotal}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {detail?.quoteItems?.map((it) => (
-                        <tr key={it.quoteItemSeqId} className="hover:bg-slate-800/30 transition">
-                          <td className="p-3 text-xs font-mono text-slate-500">{it.quoteItemSeqId}</td>
-                          <td className="p-3">
-                            <span className="font-semibold text-slate-200">{it.productName || it.productId}</span>
-                            {it.comments && <p className="text-xs text-slate-400 mt-0.5">{it.comments}</p>}
-                          </td>
-                          <td className="p-3 font-mono text-slate-300">{it.quantity}</td>
-                          <td className="p-3 font-mono text-slate-300">{formatCurrency(it.quoteUnitPrice, q?.currencyUomId)}</td>
-                          <td className="p-3 font-mono font-semibold text-right text-emerald-400">
-                            {formatCurrency(it.lineTotal, q?.currencyUomId)}
-                          </td>
+                <div className="ds-card overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="ds-table">
+                      <thead>
+                        <tr className="ds-thead-row">
+                          <th className="ds-th">#</th>
+                          <th className="ds-th">{t.product}</th>
+                          <th className="ds-th-right">{t.quantity}</th>
+                          <th className="ds-th-right">{t.unitPrice}</th>
+                          <th className="ds-th-right">{t.lineTotal}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {detail?.quoteItems?.map((it) => (
+                          <tr key={it.quoteItemSeqId} className="ds-tbody-row">
+                            <td className="ds-td text-xs font-mono text-slate-500">{it.quoteItemSeqId}</td>
+                            <td className="ds-td">
+                              <span className="font-semibold text-slate-200">{it.productName || it.productId}</span>
+                              {it.comments && <p className="text-xs text-slate-400 mt-0.5">{it.comments}</p>}
+                            </td>
+                            <td className="ds-td-right font-mono text-slate-300">{it.quantity}</td>
+                            <td className="ds-td-right font-mono text-slate-300">{formatCurrency(it.quoteUnitPrice, q?.currencyUomId)}</td>
+                            <td className="ds-td-right font-mono font-semibold text-emerald-400">
+                              {formatCurrency(it.lineTotal, q?.currencyUomId)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </>
@@ -346,7 +348,7 @@ export const QuoteDetailModal: React.FC<QuoteDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-sm font-semibold transition"
+            className="ds-btn-secondary"
           >
             {common.cancel}
           </button>

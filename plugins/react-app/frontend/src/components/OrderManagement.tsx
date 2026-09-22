@@ -300,24 +300,24 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-3 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl">
+      <div className="ds-page-header">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
             <ShoppingCart className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">{t.title}</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h1 className="ds-page-title">{t.title}</h1>
+            <p className="ds-page-subtitle">
               OFBiz Kurumsal Sipariş, Teklif ve İade (OMS / RMA) Yönetim Merkezi
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={refreshActiveData}
             disabled={loading}
-            className="ds-btn-secondary flex items-center space-x-2 text-xs"
+            className="ds-btn-secondary text-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>{common.refresh}</span>
@@ -326,7 +326,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           {mainTab === 'orders' && (
             <button
               onClick={() => setIsCreateOrderOpen(true)}
-              className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition"
+              className="ds-btn-primary text-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t.createNewOrder}</span>
@@ -336,7 +336,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           {mainTab === 'quotes' && (
             <button
               onClick={() => setIsCreateQuoteOpen(true)}
-              className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 transition"
+              className="ds-btn-primary text-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t.createNewQuote}</span>
@@ -346,7 +346,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           {mainTab === 'returns' && (
             <button
               onClick={() => setIsCreateReturnOpen(true)}
-              className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-lg shadow-amber-600/30 transition"
+              className="ds-btn-primary text-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t.createNewReturn}</span>
@@ -553,17 +553,13 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
       {/* Orders Sub-tabs (All / Sales / Purchase) */}
       {mainTab === 'orders' && (
-        <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
+        <div className="ds-pill-tab-bar mb-4 inline-flex">
           <button
             onClick={() => {
               setOrderSubTab('all');
               setViewIndex(0);
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              orderSubTab === 'all'
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`ds-pill-tab ${orderSubTab === 'all' ? 'ds-pill-tab-active' : ''}`}
           >
             {t.allOrders}
           </button>
@@ -572,11 +568,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
               setOrderSubTab('sales');
               setViewIndex(0);
             }}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              orderSubTab === 'sales'
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`ds-pill-tab ${orderSubTab === 'sales' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t.salesOrders}</span>
@@ -586,11 +578,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
               setOrderSubTab('purchase');
               setViewIndex(0);
             }}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              orderSubTab === 'purchase'
-                ? 'bg-slate-800 text-white font-semibold'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className={`ds-pill-tab ${orderSubTab === 'purchase' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowDownLeft className="w-3.5 h-3.5 text-blue-400" />
             <span>{t.purchaseOrders}</span>
@@ -599,7 +587,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       )}
 
       {/* Filter Bar */}
-      <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="ds-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Search */}
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
@@ -705,39 +693,38 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-sm">
-          {error}
+        <div className="ds-alert-error flex items-center gap-2">
+          <span>{error}</span>
         </div>
       )}
 
       {/* TAB 1: ORDERS TABLE */}
       {mainTab === 'orders' && (
-        <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900 shadow-xl">
-          <table className="ds-table">
-            <thead>
-              <tr className="ds-thead-row">
-                <th className="ds-th">{t.orderId}</th>
-                <th className="ds-th">{t.orderType}</th>
-                <th className="ds-th">{t.orderName}</th>
-                <th className="ds-th">{t.customerOrVendor}</th>
-                <th className="ds-th">{t.orderDate}</th>
-                <th className="ds-th-right">{t.itemCount}</th>
-                <th className="ds-th-right">{t.totalAmount}</th>
-                <th className="ds-th">{t.status}</th>
-                <th className="ds-th-right">{common.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center text-slate-400">
-                    <div className="inline-flex items-center space-x-3">
-                      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                      <span>{common.loading}</span>
-                    </div>
-                  </td>
+        <div className="ds-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="ds-table">
+              <thead>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">{t.orderId}</th>
+                  <th className="ds-th">{t.orderType}</th>
+                  <th className="ds-th">{t.orderName}</th>
+                  <th className="ds-th">{t.customerOrVendor}</th>
+                  <th className="ds-th">{t.orderDate}</th>
+                  <th className="ds-th-right">{t.itemCount}</th>
+                  <th className="ds-th-right">{t.totalAmount}</th>
+                  <th className="ds-th">{t.status}</th>
+                  <th className="ds-th-right">{common.actions}</th>
                 </tr>
-              ) : orders.length > 0 ? (
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-16 text-center text-slate-400">
+                      <div className="ds-spinner mx-auto mb-2" />
+                      <span>{common.loading}</span>
+                    </td>
+                  </tr>
+                ) : orders.length > 0 ? (
                 orders.map((ord) => (
                   <tr
                     key={ord.orderId}
@@ -801,172 +788,173 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* TAB 2: QUOTES TABLE */}
       {mainTab === 'quotes' && (
-        <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900 shadow-xl">
-          <table className="ds-table">
-            <thead>
-              <tr className="ds-thead-row">
-                <th className="ds-th">{t.quoteId}</th>
-                <th className="ds-th">{t.quoteName}</th>
-                <th className="ds-th">{t.quoteType}</th>
-                <th className="ds-th">{t.party}</th>
-                <th className="ds-th">{t.issueDate}</th>
-                <th className="ds-th">{t.validThru}</th>
-                <th className="ds-th-right">{t.itemCount}</th>
-                <th className="ds-th-right">{t.totalAmount}</th>
-                <th className="ds-th">{t.status}</th>
-                <th className="ds-th-right">{common.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-slate-400">
-                    <div className="inline-flex items-center space-x-3">
-                      <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                      <span>{common.loading}</span>
-                    </div>
-                  </td>
+        <div className="ds-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="ds-table">
+              <thead>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">{t.quoteId}</th>
+                  <th className="ds-th">{t.quoteName}</th>
+                  <th className="ds-th">{t.quoteType}</th>
+                  <th className="ds-th">{t.party}</th>
+                  <th className="ds-th">{t.issueDate}</th>
+                  <th className="ds-th">{t.validThru}</th>
+                  <th className="ds-th-right">{t.itemCount}</th>
+                  <th className="ds-th-right">{t.totalAmount}</th>
+                  <th className="ds-th">{t.status}</th>
+                  <th className="ds-th-right">{common.actions}</th>
                 </tr>
-              ) : quotes.length > 0 ? (
-                quotes.map((q) => (
-                  <tr
-                    key={q.quoteId}
-                    onClick={() => {
-                      setSelectedQuoteId(q.quoteId);
-                      setIsQuoteDetailOpen(true);
-                    }}
-                    className="ds-tbody-row cursor-pointer"
-                  >
-                    <td className="ds-td-mono font-bold text-sky-400">{q.quoteId}</td>
-                    <td className="ds-td text-white font-medium">{q.quoteName || '-'}</td>
-                    <td className="ds-td text-slate-300">{q.quoteTypeDesc || q.quoteTypeId}</td>
-                    <td className="ds-td text-slate-300">
-                      <div className="flex items-center space-x-1.5">
-                        <Building className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <span className="truncate max-w-[200px]" title={q.partyName || q.partyId}>
-                          {q.partyName || q.partyId || '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="ds-td-mono text-slate-400">{formatDate(q.issueDate)}</td>
-                    <td className="ds-td-mono text-slate-400">{formatDate(q.validThruDate)}</td>
-                    <td className="ds-td-right font-mono text-slate-300">{q.itemCount}</td>
-                    <td className="ds-td-right font-mono font-bold text-emerald-400">
-                      {formatCurrency(q.totalAmount, q.currencyUomId)}
-                    </td>
-                    <td className="ds-td">{getStatusBadge(q.statusId, q.statusDesc)}</td>
-                    <td className="ds-td-right" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedQuoteId(q.quoteId);
-                          setIsQuoteDetailOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                        title={t.quoteDetail}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-16 text-center text-slate-400">
+                      <div className="ds-spinner mx-auto mb-2" />
+                      <span>{common.loading}</span>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-slate-500 italic">
-                    {t.noQuotesFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : quotes.length > 0 ? (
+                  quotes.map((q) => (
+                    <tr
+                      key={q.quoteId}
+                      onClick={() => {
+                        setSelectedQuoteId(q.quoteId);
+                        setIsQuoteDetailOpen(true);
+                      }}
+                      className="ds-tbody-row cursor-pointer"
+                    >
+                      <td className="ds-td-mono font-bold text-sky-400">{q.quoteId}</td>
+                      <td className="ds-td text-white font-medium">{q.quoteName || '-'}</td>
+                      <td className="ds-td text-slate-300">{q.quoteTypeDesc || q.quoteTypeId}</td>
+                      <td className="ds-td text-slate-300">
+                        <div className="flex items-center space-x-1.5">
+                          <Building className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                          <span className="truncate max-w-[200px]" title={q.partyName || q.partyId}>
+                            {q.partyName || q.partyId || '-'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="ds-td-mono text-slate-400">{formatDate(q.issueDate)}</td>
+                      <td className="ds-td-mono text-slate-400">{formatDate(q.validThruDate)}</td>
+                      <td className="ds-td-right font-mono text-slate-300">{q.itemCount}</td>
+                      <td className="ds-td-right font-mono font-bold text-emerald-400">
+                        {formatCurrency(q.totalAmount, q.currencyUomId)}
+                      </td>
+                      <td className="ds-td">{getStatusBadge(q.statusId, q.statusDesc)}</td>
+                      <td className="ds-td-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedQuoteId(q.quoteId);
+                            setIsQuoteDetailOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                          title={t.quoteDetail}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-16 text-center text-slate-500 italic">
+                      {t.noQuotesFound}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* TAB 3: RETURNS TABLE */}
       {mainTab === 'returns' && (
-        <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900 shadow-xl">
-          <table className="ds-table">
-            <thead>
-              <tr className="ds-thead-row">
-                <th className="ds-th">{t.returnId}</th>
-                <th className="ds-th">{t.returnHeaderType}</th>
-                <th className="ds-th">{t.party}</th>
-                <th className="ds-th">{t.orderDate}</th>
-                <th className="ds-th-right">{t.itemCount}</th>
-                <th className="ds-th-right">{t.totalAmount}</th>
-                <th className="ds-th">{t.status}</th>
-                <th className="ds-th-right">{common.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-slate-400">
-                    <div className="inline-flex items-center space-x-3">
-                      <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                      <span>{common.loading}</span>
-                    </div>
-                  </td>
+        <div className="ds-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="ds-table">
+              <thead>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">{t.returnId}</th>
+                  <th className="ds-th">{t.returnHeaderType}</th>
+                  <th className="ds-th">{t.party}</th>
+                  <th className="ds-th">{t.orderDate}</th>
+                  <th className="ds-th-right">{t.itemCount}</th>
+                  <th className="ds-th-right">{t.totalAmount}</th>
+                  <th className="ds-th">{t.status}</th>
+                  <th className="ds-th-right">{common.actions}</th>
                 </tr>
-              ) : returnsList.length > 0 ? (
-                returnsList.map((ret) => (
-                  <tr
-                    key={ret.returnId}
-                    onClick={() => {
-                      setSelectedReturnId(ret.returnId);
-                      setIsReturnDetailOpen(true);
-                    }}
-                    className="ds-tbody-row cursor-pointer"
-                  >
-                    <td className="ds-td-mono font-bold text-amber-400">{ret.returnId}</td>
-                    <td className="ds-td text-slate-300">
-                      <span className="font-medium text-white">
-                        {ret.returnHeaderTypeId === 'CUSTOMER_RETURN' ? t.customerReturn : t.vendorReturn}
-                      </span>
-                    </td>
-                    <td className="ds-td text-slate-300">
-                      <div className="flex items-center space-x-1.5">
-                        <Building className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <span className="truncate max-w-[200px]" title={ret.fromPartyName || ret.fromPartyId}>
-                          {ret.fromPartyName || ret.fromPartyId || '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="ds-td-mono text-slate-400">{formatDate(ret.entryDate)}</td>
-                    <td className="ds-td-right font-mono text-slate-300">{ret.itemCount}</td>
-                    <td className="ds-td-right font-mono font-bold text-emerald-400">
-                      {formatCurrency(ret.totalAmount, ret.currencyUomId)}
-                    </td>
-                    <td className="ds-td">{getStatusBadge(ret.statusId, ret.statusDesc)}</td>
-                    <td className="ds-td-right" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedReturnId(ret.returnId);
-                          setIsReturnDetailOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                        title={t.returnDetail}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-16 text-center text-slate-400">
+                      <div className="ds-spinner mx-auto mb-2" />
+                      <span>{common.loading}</span>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-slate-500 italic">
-                    {t.noReturnsFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : returnsList.length > 0 ? (
+                  returnsList.map((ret) => (
+                    <tr
+                      key={ret.returnId}
+                      onClick={() => {
+                        setSelectedReturnId(ret.returnId);
+                        setIsReturnDetailOpen(true);
+                      }}
+                      className="ds-tbody-row cursor-pointer"
+                    >
+                      <td className="ds-td-mono font-bold text-amber-400">{ret.returnId}</td>
+                      <td className="ds-td text-slate-300">
+                        <span className="font-medium text-white">
+                          {ret.returnHeaderTypeId === 'CUSTOMER_RETURN' ? t.customerReturn : t.vendorReturn}
+                        </span>
+                      </td>
+                      <td className="ds-td text-slate-300">
+                        <div className="flex items-center space-x-1.5">
+                          <Building className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                          <span className="truncate max-w-[200px]" title={ret.fromPartyName || ret.fromPartyId}>
+                            {ret.fromPartyName || ret.fromPartyId || '-'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="ds-td-mono text-slate-400">{formatDate(ret.entryDate)}</td>
+                      <td className="ds-td-right font-mono text-slate-300">{ret.itemCount}</td>
+                      <td className="ds-td-right font-mono font-bold text-emerald-400">
+                        {formatCurrency(ret.totalAmount, ret.currencyUomId)}
+                      </td>
+                      <td className="ds-td">{getStatusBadge(ret.statusId, ret.statusDesc)}</td>
+                      <td className="ds-td-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedReturnId(ret.returnId);
+                            setIsReturnDetailOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                          title={t.returnDetail}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-16 text-center text-slate-500 italic">
+                      {t.noReturnsFound}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

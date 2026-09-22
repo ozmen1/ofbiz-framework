@@ -220,22 +220,22 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6 flex-1">
           {error && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-start gap-3">
-              <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-400" />
+            <div className="ds-alert-error flex items-start gap-3">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Section 1: Quote Header Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+          <div className="ds-card p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="ds-label">
                 {t.quoteType}
               </label>
               <select
                 value={quoteTypeId}
                 onChange={(e) => setQuoteTypeId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="ds-select"
               >
                 {(metadata?.quoteTypes || [
                   { quoteTypeId: 'PRODUCT_QUOTE', description: 'Product' },
@@ -249,14 +249,14 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="ds-label flex items-center gap-1.5">
                 <Building2 size={13} className="text-indigo-400" />
                 {t.customerOrVendor} *
               </label>
               <select
                 value={partyId}
                 onChange={(e) => setPartyId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="ds-select"
                 required
               >
                 <option value="">-- {t.selectParty} --</option>
@@ -265,7 +265,7 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="ds-label flex items-center gap-1.5">
                 <Calendar size={13} className="text-indigo-400" />
                 {t.validThru}
               </label>
@@ -273,12 +273,12 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
                 type="date"
                 value={validThruDate}
                 onChange={(e) => setValidThruDate(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="ds-input"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="ds-label">
                 {t.quoteName}
               </label>
               <input
@@ -286,19 +286,19 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
                 value={quoteName}
                 onChange={(e) => setQuoteName(e.target.value)}
                 placeholder="Örn: 2026/Q4 Kurumsal Donanım Teklifi"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="ds-input"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="ds-label flex items-center gap-1.5">
                 <DollarSign size={13} className="text-indigo-400" />
                 {t.currency}
               </label>
               <select
                 value={currencyUomId}
                 onChange={(e) => setCurrencyUomId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="ds-select"
               >
                 {(metadata?.currencyUoms || [{ uomId: 'USD', description: 'USD' }]).map((c) => (
                   <option key={c.uomId} value={c.uomId}>
@@ -309,13 +309,13 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="ds-label">
                 {t.initialStatus}
               </label>
               <select
                 value={statusId}
                 onChange={(e) => setStatusId(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="ds-select"
               >
                 <option value="QUO_CREATED">{t.kpiPending} (Created)</option>
                 <option value="QUO_APPROVED">{t.kpiApproved} (Approved)</option>
@@ -323,7 +323,7 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="ds-label">
                 {t.reason}
               </label>
               <input
@@ -331,7 +331,7 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Teklif genel notları veya özel ticari koşullar..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="ds-input"
               />
             </div>
           </div>
@@ -346,100 +346,102 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 text-xs font-semibold transition"
+                className="ds-btn-secondary flex items-center gap-1.5 py-1 px-3 text-xs"
               >
                 <Plus size={14} />
-                {t.addItem}
+                <span>{t.addItem}</span>
               </button>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/20">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-900">
-                    <th className="py-2.5 px-3">{t.product} *</th>
-                    <th className="py-2.5 px-3 w-40">{t.quantity}</th>
-                    <th className="py-2.5 px-3 w-44">{t.unitPrice} ({currencyUomId})</th>
-                    <th className="py-2.5 px-3 w-40 text-right">{t.lineTotal}</th>
-                    <th className="py-2.5 px-2 w-12 text-center"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {items.map((item) => {
-                    const lineTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                        <td className="p-2.5">
-                          <div className="space-y-1.5">
-                            <select
-                              value={item.productId}
-                              onChange={(e) => handleItemChange(item.id, 'productId', e.target.value)}
-                              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                              required
-                            >
-                              <option value="">-- {t.selectProduct} --</option>
-                              {productOptions}
-                            </select>
+            <div className="ds-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="ds-table">
+                  <thead>
+                    <tr className="ds-thead-row">
+                      <th className="ds-th">{t.product} *</th>
+                      <th className="ds-th w-36">{t.quantity}</th>
+                      <th className="ds-th w-40">{t.unitPrice} ({currencyUomId})</th>
+                      <th className="ds-th-right w-36">{t.lineTotal}</th>
+                      <th className="ds-th w-12 text-center"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => {
+                      const lineTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+                      return (
+                        <tr key={item.id} className="ds-tbody-row">
+                          <td className="ds-td">
+                            <div className="space-y-1.5">
+                              <select
+                                value={item.productId}
+                                onChange={(e) => handleItemChange(item.id, 'productId', e.target.value)}
+                                className="ds-select text-xs py-1"
+                                required
+                              >
+                                <option value="">-- {t.selectProduct} --</option>
+                                {productOptions}
+                              </select>
+                              <input
+                                type="text"
+                                value={item.itemDescription}
+                                onChange={(e) => handleItemChange(item.id, 'itemDescription', e.target.value)}
+                                placeholder="Kalem açıklaması (opsiyonel)"
+                                className="ds-input text-xs py-1"
+                              />
+                            </div>
+                          </td>
+                          <td className="ds-td align-top">
                             <input
-                              type="text"
-                              value={item.itemDescription}
-                              onChange={(e) => handleItemChange(item.id, 'itemDescription', e.target.value)}
-                              placeholder="Kalem açıklaması (opsiyonel)"
-                              className="w-full bg-slate-800/60 border border-slate-700/60 rounded-lg px-2.5 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                              type="number"
+                              min="0.01"
+                              step="any"
+                              value={item.quantity}
+                              onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                              className="ds-input text-xs py-1 text-right"
+                              required
                             />
-                          </div>
-                        </td>
-                        <td className="p-2.5 align-top">
-                          <input
-                            type="number"
-                            min="0.01"
-                            step="any"
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                            required
-                          />
-                        </td>
-                        <td className="p-2.5 align-top">
-                          <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            value={item.unitPrice}
-                            onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                            required
-                          />
-                        </td>
-                        <td className="p-2.5 align-top text-right font-mono font-semibold text-slate-200 pt-3">
-                          {formatCurrency(lineTotal)}
-                        </td>
-                        <td className="p-2.5 align-top text-center pt-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(item.id)}
-                            disabled={items.length <= 1}
-                            className={`p-1.5 rounded-lg transition ${
-                              items.length <= 1
-                                ? 'text-slate-600 cursor-not-allowed'
-                                : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800'
-                            }`}
-                            title={t.removeItem}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="ds-td align-top">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={item.unitPrice}
+                              onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                              className="ds-input text-xs py-1 text-right"
+                              required
+                            />
+                          </td>
+                          <td className="ds-td-right align-top pt-3 font-mono text-emerald-400">
+                            {formatCurrency(lineTotal)}
+                          </td>
+                          <td className="ds-td align-top text-center pt-2.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(item.id)}
+                              disabled={items.length <= 1}
+                              className={`p-1.5 rounded-lg transition ${
+                                items.length <= 1
+                                  ? 'text-slate-600 cursor-not-allowed'
+                                  : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800'
+                              }`}
+                              title={t.removeItem}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
           {/* Section 3: Summary */}
           <div className="flex justify-end pt-2">
-            <div className="w-full sm:w-72 bg-slate-950/40 p-4 rounded-xl border border-slate-800 space-y-2">
+            <div className="w-full sm:w-72 ds-card p-4 space-y-2">
               <div className="flex justify-between text-base font-bold text-slate-100">
                 <span>{t.grandTotal}:</span>
                 <span className="font-mono text-emerald-400">{formatCurrency(subtotal)}</span>
@@ -454,7 +456,7 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-sm font-semibold transition"
+            className="ds-btn-secondary"
           >
             {common.cancel}
           </button>
@@ -462,10 +464,10 @@ export const CreateQuoteModal: React.FC<CreateQuoteModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold shadow-lg shadow-purple-600/30 transition"
+            className="ds-btn-primary"
           >
             <Save size={16} />
-            {loading ? common.loading : t.saveOrder}
+            <span>{loading ? common.loading : t.saveOrder}</span>
           </button>
         </div>
 
