@@ -197,6 +197,22 @@ export const ROUTES: RouteDefinition[] = [
 
   // Orders
   {
+    pattern: /^(?:\/app)?\/orders\/sales\/?$/,
+    view: 'sales-orders',
+    buildPath: () => '/orders/sales'
+  },
+  {
+    pattern: /^(?:\/app)?\/orders\/purchase\/?$/,
+    view: 'purchase-orders',
+    buildPath: () => '/orders/purchase'
+  },
+  {
+    pattern: /^(?:\/app)?\/orders\/([^/?#]+)\/?$/,
+    view: 'orders',
+    hasId: true,
+    buildPath: (id) => `/orders/${encodeURIComponent(id || '')}`
+  },
+  {
     pattern: /^(?:\/app)?\/orders\/?$/,
     view: 'orders',
     buildPath: () => '/orders'

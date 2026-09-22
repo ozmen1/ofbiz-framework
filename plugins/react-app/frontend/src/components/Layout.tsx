@@ -133,6 +133,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'commission-run':         translations.pages.commissionRun,
     'test-page':              translations.pages.testPage,
     'orders':                 translations.pages.orders,
+    'sales-orders':           { title: translations.orders.salesOrders, subtitle: translations.orders.title },
+    'purchase-orders':        { title: translations.orders.purchaseOrders, subtitle: translations.orders.title },
     'manufacturing':          translations.pages.manufacturing,
     'inventory':              translations.pages.inventory,
     'parties':                translations.pages.parties,
@@ -582,7 +584,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   handleNavClick('orders');
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
-                  currentView === 'orders'
+                  currentView === 'orders' || currentView === 'sales-orders' || currentView === 'purchase-orders'
                     ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10'
                     : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
@@ -594,8 +596,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   <span>{translations.nav.orderManagement}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                    {translations.nav.comingSoon}
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    {translations.nav.activeModule}
                   </span>
                   {expandedModules.orders ? (
                     <ChevronDown size={16} className="text-slate-400" />
@@ -607,21 +609,44 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
 
               {expandedModules.orders && (
                 <div className="px-2 py-2 space-y-0.5 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
-                  {[
-                    { label: translations.nav.salesOrders, view: 'orders' as ViewType },
-                    { label: translations.nav.purchaseOrders, view: 'orders' as ViewType },
-                    { label: translations.nav.orderQuotes, view: 'orders' as ViewType },
-                  ].map(sub => (
-                    <button
-                      key={sub.label}
-                      type="button"
-                      onClick={() => handleNavClick(sub.view)}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs bg-transparent text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-left transition-all cursor-pointer"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500/60"></span>
-                      <span className="truncate">{sub.label}</span>
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('orders')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'orders'
+                        ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    <span className="truncate">{translations.orders.allOrders}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('sales-orders')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'sales-orders'
+                        ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span className="truncate">{translations.orders.salesOrders}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('purchase-orders')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'purchase-orders'
+                        ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <span className="truncate">{translations.orders.purchaseOrders}</span>
+                  </button>
                 </div>
               )}
             </div>
