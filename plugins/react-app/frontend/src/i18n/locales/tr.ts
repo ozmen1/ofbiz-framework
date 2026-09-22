@@ -70,6 +70,10 @@ export const tr: Translations = {
     salesOrders: 'Satış Siparişleri',
     purchaseOrders: 'Satınalma Siparişleri',
     orderQuotes: 'Teklifler & Talepler',
+    orderReturns: 'İadeler (RMA)',
+    salesCycle: 'Satış Döngüsü',
+    purchasingAndReturns: 'Satınalma & İadeler',
+    overview: 'Genel Bakış',
     manufacturing: 'Üretim Yönetimi',
     productionRuns: 'Üretim İş Emirleri',
     billOfMaterials: 'Ürün Reçeteleri (BOM)',
@@ -218,6 +222,22 @@ export const tr: Translations = {
     orders: {
       title: 'Sipariş Yönetimi',
       subtitle: 'Satış ve satınalma siparişleri, teklifler, onay mekanizmaları ve sevkiyat takibi.',
+    },
+    salesOrders: {
+      title: 'Satış Siparişleri',
+      subtitle: 'Müşteri siparişleri, onay aşamaları ve fatura/sevkiyat oluşturma.',
+    },
+    purchaseOrders: {
+      title: 'Satınalma Siparişleri',
+      subtitle: 'Tedarikçi siparişleri, onaylar ve stok kabul entegrasyonu.',
+    },
+    orderQuotes: {
+      title: 'Teklif & Fiyat Talepleri (Quotes & RFQ)',
+      subtitle: 'Satış ve satınalma teklifleri, geçerlilik tarihleri ve tek tıkla siparişe dönüştürme.',
+    },
+    orderReturns: {
+      title: 'İade Yönetimi (Returns & RMA)',
+      subtitle: 'Müşteri ve tedarikçi iade talepleri, iade onay ve tamamlama süreçleri.',
     },
     manufacturing: {
       title: 'Üretim Yönetimi',

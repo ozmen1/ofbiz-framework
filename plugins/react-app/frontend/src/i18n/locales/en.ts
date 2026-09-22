@@ -69,7 +69,11 @@ export const en: Translations = {
     orderManagement: 'Order Management',
     salesOrders: 'Sales Orders',
     purchaseOrders: 'Purchase Orders',
-    orderQuotes: 'Quotes & Requests',
+    orderQuotes: 'Quotes & RFQ',
+    orderReturns: 'Returns (RMA)',
+    salesCycle: 'Sales Cycle',
+    purchasingAndReturns: 'Purchasing & Returns',
+    overview: 'Overview',
     manufacturing: 'Manufacturing',
     productionRuns: 'Production Runs',
     billOfMaterials: 'Bills of Materials (BOM)',
@@ -218,6 +222,22 @@ export const en: Translations = {
     orders: {
       title: 'Order Management',
       subtitle: 'Sales and purchase orders, quotes, approval workflows, and shipment fulfillment.',
+    },
+    salesOrders: {
+      title: 'Sales Orders',
+      subtitle: 'Customer sales orders, approval flows, and quick invoice/shipment generation.',
+    },
+    purchaseOrders: {
+      title: 'Purchase Orders',
+      subtitle: 'Vendor purchase orders, approval stages, and goods receipt tracking.',
+    },
+    orderQuotes: {
+      title: 'Quotes & Price Requests (RFQ)',
+      subtitle: 'Commercial proposals, quotation validity, and one-click order conversion.',
+    },
+    orderReturns: {
+      title: 'Return Management (RMA)',
+      subtitle: 'Customer and vendor return requests, inspections, and resolution processing.',
     },
     manufacturing: {
       title: 'Manufacturing Management',

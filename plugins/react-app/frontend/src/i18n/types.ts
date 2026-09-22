@@ -71,6 +71,10 @@ export interface Translations {
     salesOrders: string;
     purchaseOrders: string;
     orderQuotes: string;
+    orderReturns: string;
+    salesCycle: string;
+    purchasingAndReturns: string;
+    overview: string;
     manufacturing: string;
     productionRuns: string;
     billOfMaterials: string;
@@ -144,6 +148,10 @@ export interface Translations {
     commissionRun: { title: string; subtitle: string };
     testPage: { title: string; subtitle: string };
     orders: { title: string; subtitle: string };
+    salesOrders: { title: string; subtitle: string };
+    purchaseOrders: { title: string; subtitle: string };
+    orderQuotes: { title: string; subtitle: string };
+    orderReturns: { title: string; subtitle: string };
     manufacturing: { title: string; subtitle: string };
     inventory: { title: string; subtitle: string };
     parties: { title: string; subtitle: string };

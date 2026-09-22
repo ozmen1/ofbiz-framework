@@ -43,24 +43,57 @@ import { ReturnDetailModal } from './ReturnDetailModal';
 
 type MainTab = 'orders' | 'quotes' | 'returns';
 type OrderSubTab = 'all' | 'sales' | 'purchase';
+export type OrderTabOption = OrderSubTab | 'quotes' | 'returns';
 
 interface OrderManagementProps {
-  initialTab?: OrderSubTab;
+  initialTab?: OrderTabOption;
   onNavigate?: (view: ViewType, id?: string) => void;
 }
 
 export const OrderManagement: React.FC<OrderManagementProps> = ({
   initialTab = 'all',
+  onNavigate,
 }) => {
   const { translations, locale } = useTranslation();
   const t = translations.orders;
   const common = translations.common;
 
   // Active Main Tab
-  const [mainTab, setMainTab] = useState<MainTab>('orders');
+  const [mainTab, setMainTab] = useState<MainTab>(() => {
+    if (initialTab === 'quotes') return 'quotes';
+    if (initialTab === 'returns') return 'returns';
+    return 'orders';
+  });
 
   // Sub Tab for Orders
-  const [orderSubTab, setOrderSubTab] = useState<OrderSubTab>(initialTab);
+  const [orderSubTab, setOrderSubTab] = useState<OrderSubTab>(() => {
+    if (initialTab === 'sales') return 'sales';
+    if (initialTab === 'purchase') return 'purchase';
+    return 'all';
+  });
+
+  // Sync with initialTab prop changes
+  useEffect(() => {
+    if (initialTab === 'quotes') {
+      setMainTab('quotes');
+      setViewIndex(0);
+    } else if (initialTab === 'returns') {
+      setMainTab('returns');
+      setViewIndex(0);
+    } else if (initialTab === 'sales') {
+      setMainTab('orders');
+      setOrderSubTab('sales');
+      setViewIndex(0);
+    } else if (initialTab === 'purchase') {
+      setMainTab('orders');
+      setOrderSubTab('purchase');
+      setViewIndex(0);
+    } else {
+      setMainTab('orders');
+      setOrderSubTab('all');
+      setViewIndex(0);
+    }
+  }, [initialTab]);
 
   // Common Pagination
   const [viewIndex, setViewIndex] = useState(0);
@@ -238,6 +271,25 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
     setSelectedStatusId('');
     setSelectedPartyId('');
     setSelectedHeaderTypeId('');
+    if (onNavigate) {
+      if (tab === 'quotes') onNavigate('order-quotes');
+      else if (tab === 'returns') onNavigate('order-returns');
+      else {
+        if (orderSubTab === 'sales') onNavigate('sales-orders');
+        else if (orderSubTab === 'purchase') onNavigate('purchase-orders');
+        else onNavigate('orders');
+      }
+    }
+  };
+
+  const handleOrderSubTabChange = (sub: OrderSubTab) => {
+    setOrderSubTab(sub);
+    setViewIndex(0);
+    if (onNavigate) {
+      if (sub === 'sales') onNavigate('sales-orders');
+      else if (sub === 'purchase') onNavigate('purchase-orders');
+      else onNavigate('orders');
+    }
   };
 
   // Formatters
@@ -555,29 +607,20 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       {mainTab === 'orders' && (
         <div className="ds-pill-tab-bar mb-4 inline-flex">
           <button
-            onClick={() => {
-              setOrderSubTab('all');
-              setViewIndex(0);
-            }}
+            onClick={() => handleOrderSubTabChange('all')}
             className={`ds-pill-tab ${orderSubTab === 'all' ? 'ds-pill-tab-active' : ''}`}
           >
             {t.allOrders}
           </button>
           <button
-            onClick={() => {
-              setOrderSubTab('sales');
-              setViewIndex(0);
-            }}
+            onClick={() => handleOrderSubTabChange('sales')}
             className={`ds-pill-tab ${orderSubTab === 'sales' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t.salesOrders}</span>
           </button>
           <button
-            onClick={() => {
-              setOrderSubTab('purchase');
-              setViewIndex(0);
-            }}
+            onClick={() => handleOrderSubTabChange('purchase')}
             className={`ds-pill-tab ${orderSubTab === 'purchase' ? 'ds-pill-tab-active' : ''}`}
           >
             <ArrowDownLeft className="w-3.5 h-3.5 text-blue-400" />

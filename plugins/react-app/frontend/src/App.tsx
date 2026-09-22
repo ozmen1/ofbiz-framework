@@ -81,6 +81,8 @@ export type ViewType =
   | 'orders'
   | 'sales-orders'
   | 'purchase-orders'
+  | 'order-quotes'
+  | 'order-returns'
   | 'manufacturing'
   | 'inventory'
   | 'parties'
@@ -261,6 +263,12 @@ function AppContent() {
 
       case 'purchase-orders':
         return <OrderManagement initialTab="purchase" onNavigate={handleNavigate} />;
+
+      case 'order-quotes':
+        return <OrderManagement initialTab="quotes" onNavigate={handleNavigate} />;
+
+      case 'order-returns':
+        return <OrderManagement initialTab="returns" onNavigate={handleNavigate} />;
 
       case 'manufacturing':
         return <ModulePlaceholder moduleKey="manufacturing" onNavigate={handleNavigate} />;
