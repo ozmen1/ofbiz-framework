@@ -6,7 +6,7 @@ import {
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
   ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
   Key, User, Shield, Share2, Check, Package, FolderTree, GitFork, Store,
-  Boxes, Cpu, RotateCcw
+  Boxes, Cpu
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -104,7 +104,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
     products: true,
     accounting: true,
-    orders: true,
     manufacturing: false,
     inventory: false,
   });
@@ -587,132 +586,27 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               )}
             </div>
 
-            {/* ── MODÜL 2: SİPARİŞ YÖNETİMİ (Order & Commercial Operations) ── */}
+            {/* ── MODÜL: SİPARİŞ YÖNETİMİ (Order Management - Kompakt & Minimal) ── */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/40 overflow-hidden shadow-xs">
               <button
                 type="button"
-                onClick={() => {
-                  toggleModule('orders');
-                  handleNavClick('orders');
-                }}
+                onClick={() => handleNavClick('orders')}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   isOrderView(currentView)
-                    ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10'
-                    : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-500/30'
+                    : 'bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-500 dark:text-amber-400">
+                  <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
                     <ShoppingCart size={16} />
                   </div>
                   <span>{translations.nav.orderManagement}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    {translations.nav.activeModule}
-                  </span>
-                  {expandedModules.orders ? (
-                    <ChevronDown size={16} className="text-slate-400" />
-                  ) : (
-                    <ChevronRight size={16} className="text-slate-400" />
-                  )}
-                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/25">
+                  {translations.nav.activeModule}
+                </span>
               </button>
-
-              {expandedModules.orders && (
-                <div className="px-2 py-2 space-y-3 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
-                  {/* 1. Genel Bakış */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-1">
-                      {translations.nav.overview}
-                    </p>
-                    <div className="space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleNavClick('orders')}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
-                          currentView === 'orders'
-                            ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 dark:border-amber-400 pl-2'
-                            : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
-                        }`}
-                      >
-                        <Layers size={14} className={currentView === 'orders' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'} />
-                        <span className="truncate">{translations.orders.allOrders}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 2. Satış Döngüsü (Sales & Distribution) */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center justify-between">
-                      <span>{translations.nav.salesCycle}</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    </p>
-                    <div className="space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleNavClick('sales-orders')}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
-                          currentView === 'sales-orders'
-                            ? 'bg-emerald-100/80 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 font-medium border-l-2 border-emerald-500 dark:border-emerald-400 pl-2'
-                            : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
-                        }`}
-                      >
-                        <ShoppingCart size={14} className={currentView === 'sales-orders' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} />
-                        <span className="truncate">{translations.orders.salesOrders}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleNavClick('order-quotes')}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
-                          currentView === 'order-quotes'
-                            ? 'bg-sky-100/80 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 font-medium border-l-2 border-sky-500 dark:border-sky-400 pl-2'
-                            : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
-                        }`}
-                      >
-                        <FileCheck size={14} className={currentView === 'order-quotes' ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'} />
-                        <span className="truncate">{translations.orders.quotesTab}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 3. Satınalma & İadeler (Purchasing & Returns) */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center justify-between">
-                      <span>{translations.nav.purchasingAndReturns}</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    </p>
-                    <div className="space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleNavClick('purchase-orders')}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
-                          currentView === 'purchase-orders'
-                            ? 'bg-blue-100/80 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 font-medium border-l-2 border-blue-500 dark:border-blue-400 pl-2'
-                            : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
-                        }`}
-                      >
-                        <Building2 size={14} className={currentView === 'purchase-orders' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} />
-                        <span className="truncate">{translations.orders.purchaseOrders}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleNavClick('order-returns')}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
-                          currentView === 'order-returns'
-                            ? 'bg-rose-100/80 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 font-medium border-l-2 border-rose-500 dark:border-rose-400 pl-2'
-                            : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
-                        }`}
-                      >
-                        <RotateCcw size={14} className={currentView === 'order-returns' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'} />
-                        <span className="truncate">{translations.orders.returnsTab}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ── MODÜL 3: ÜRETİM YÖNETİMİ (Manufacturing) ── */}

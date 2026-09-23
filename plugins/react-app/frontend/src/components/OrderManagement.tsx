@@ -52,7 +52,6 @@ interface OrderManagementProps {
 
 export const OrderManagement: React.FC<OrderManagementProps> = ({
   initialTab = 'all',
-  onNavigate,
 }) => {
   const { translations, locale } = useTranslation();
   const t = translations.orders;
@@ -271,25 +270,11 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
     setSelectedStatusId('');
     setSelectedPartyId('');
     setSelectedHeaderTypeId('');
-    if (onNavigate) {
-      if (tab === 'quotes') onNavigate('order-quotes');
-      else if (tab === 'returns') onNavigate('order-returns');
-      else {
-        if (orderSubTab === 'sales') onNavigate('sales-orders');
-        else if (orderSubTab === 'purchase') onNavigate('purchase-orders');
-        else onNavigate('orders');
-      }
-    }
   };
 
   const handleOrderSubTabChange = (sub: OrderSubTab) => {
     setOrderSubTab(sub);
     setViewIndex(0);
-    if (onNavigate) {
-      if (sub === 'sales') onNavigate('sales-orders');
-      else if (sub === 'purchase') onNavigate('purchase-orders');
-      else onNavigate('orders');
-    }
   };
 
   // Formatters
