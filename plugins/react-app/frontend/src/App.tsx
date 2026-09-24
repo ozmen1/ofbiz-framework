@@ -87,6 +87,8 @@ export type ViewType =
   | 'shipments'
   | 'manufacturing'
   | 'inventory'
+  | 'physical-inventory'
+  | 'facilities'
   | 'picklists'
   | 'lots'
   | 'inventory-transfers'
@@ -258,6 +260,12 @@ function AppContent() {
       case 'advanced-inventory':
       case 'inventory':
         return <AdvancedInventoryManagement initialTab="inventory" />;
+
+      case 'physical-inventory':
+        return <AdvancedInventoryManagement initialTab="physical-inventory" />;
+
+      case 'facilities':
+        return <AdvancedInventoryManagement initialTab="facilities" />;
 
       case 'picklists':
         return <AdvancedInventoryManagement initialTab="picklists" />;

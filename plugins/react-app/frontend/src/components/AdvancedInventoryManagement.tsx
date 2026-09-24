@@ -16,6 +16,9 @@ import {
   ShoppingCart,
   Tag,
   History,
+  ClipboardCheck,
+  Building2,
+  ArrowDownToLine,
 } from 'lucide-react';
 import {
   InventoryMediaConfigMetadata,
@@ -41,6 +44,16 @@ import {
   fetchPicklists,
   fetchLots,
 } from '../services/wmsService';
+import {
+  PhysicalInventoryItem,
+  VarianceReasonItem,
+  FacilityItem,
+  FacilityTypeItem,
+  fetchPhysicalInventoryList,
+  fetchVarianceReasons,
+  fetchFacilityList,
+  fetchFacilityTypes,
+} from '../services/facilityInventoryService';
 
 import { InventoryVarianceModal } from './InventoryVarianceModal';
 import { CreateInventoryTransferModal } from './CreateInventoryTransferModal';
@@ -54,8 +67,12 @@ import { CreateLotModal } from './CreateLotModal';
 import { InventoryItemHistoryModal } from './InventoryItemHistoryModal';
 import { EditInventoryTrackingModal } from './EditInventoryTrackingModal';
 
+import { CreatePhysicalInventoryModal } from './CreatePhysicalInventoryModal';
+import { ReceiveDirectInventoryModal } from './ReceiveDirectInventoryModal';
+import { FacilityModal } from './FacilityModal';
+
 interface AdvancedInventoryManagementProps {
-  initialTab?: 'inventory' | 'picklists' | 'lots' | 'transfers' | 'locations' | 'config';
+  initialTab?: 'inventory' | 'physical-inventory' | 'facilities' | 'picklists' | 'lots' | 'transfers' | 'locations' | 'config';
 }
 
 export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementProps> = ({
@@ -66,7 +83,7 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
   const common = translations.common;
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'inventory' | 'picklists' | 'lots' | 'transfers' | 'locations' | 'config'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'inventory' | 'physical-inventory' | 'facilities' | 'picklists' | 'lots' | 'transfers' | 'locations' | 'config'>(initialTab);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -79,6 +96,26 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
   const [transfers, setTransfers] = useState<InventoryTransferRow[]>([]);
   const [locations, setLocations] = useState<FacilityLocationItem[]>([]);
   const [configItems, setConfigItems] = useState<ProductConfigItemRow[]>([]);
+
+  // Physical Inventory & Facilities states
+  const [physicalInventories, setPhysicalInventories] = useState<PhysicalInventoryItem[]>([]);
+  const [facilityList, setFacilityList] = useState<FacilityItem[]>([]);
+  const [varianceReasons, setVarianceReasons] = useState<VarianceReasonItem[]>([]);
+  const [facilityTypes, setFacilityTypes] = useState<FacilityTypeItem[]>([]);
+
+  const [searchPhysicalInventory, setSearchPhysicalInventory] = useState('');
+  const [selectedPhysicalFacilityFilter, setSelectedPhysicalFacilityFilter] = useState('');
+  const [selectedVarianceReasonFilter, setSelectedVarianceReasonFilter] = useState('');
+
+  const [searchFacility, setSearchFacility] = useState('');
+  const [selectedFacilityTypeFilter, setSelectedFacilityTypeFilter] = useState('');
+
+  // Modals for Physical Count & Facilities
+  const [isPhysicalCountModalOpen, setIsPhysicalCountModalOpen] = useState(false);
+  const [preselectedItemForAdjustment, setPreselectedItemForAdjustment] = useState<any | null>(null);
+  const [isDirectReceiveModalOpen, setIsDirectReceiveModalOpen] = useState(false);
+  const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
+  const [facilityToEdit, setFacilityToEdit] = useState<FacilityItem | null>(null);
 
   // WMS Picklists & Lots states
   const [picklists, setPicklists] = useState<PicklistRow[]>([]);
@@ -250,16 +287,66 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
     }
   }, [searchLot]);
 
+  // 8. Physical Inventories Loader
+  const loadPhysicalInventories = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetchPhysicalInventoryList({
+        facilityId: selectedPhysicalFacilityFilter || undefined,
+        varianceReasonId: selectedVarianceReasonFilter || undefined,
+      });
+      setPhysicalInventories(res.physicalInventories || []);
+    } catch (err: unknown) {
+      console.error('Error loading physical inventories:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedPhysicalFacilityFilter, selectedVarianceReasonFilter]);
+
+  // 9. Facilities Loader
+  const loadFacilities = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetchFacilityList();
+      setFacilityList(res || []);
+    } catch (err: unknown) {
+      console.error('Error loading facilities:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 10. Load Variance Reasons & Facility Types
+  const loadTypesAndReasons = useCallback(async () => {
+    try {
+      const [reasonsRes, typesRes] = await Promise.all([
+        fetchVarianceReasons().catch(() => []),
+        fetchFacilityTypes().catch(() => []),
+      ]);
+      setVarianceReasons(reasonsRes || []);
+      setFacilityTypes(typesRes || []);
+    } catch (err: unknown) {
+      console.error('Error loading variance reasons and facility types:', err);
+    }
+  }, []);
+
   // Initial Load
   useEffect(() => {
     loadMetadata();
-  }, [loadMetadata]);
+    loadTypesAndReasons();
+  }, [loadMetadata, loadTypesAndReasons]);
 
   // Load active tab data
   useEffect(() => {
     switch (activeTab) {
       case 'inventory':
         loadInventory();
+        break;
+      case 'physical-inventory':
+        loadPhysicalInventories();
+        break;
+      case 'facilities':
+        loadFacilities();
         break;
       case 'picklists':
         loadPicklists();
@@ -279,13 +366,20 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
       default:
         break;
     }
-  }, [activeTab, loadInventory, loadPicklists, loadLots, loadTransfers, loadLocations, loadConfigItems]);
+  }, [activeTab, loadInventory, loadPhysicalInventories, loadFacilities, loadPicklists, loadLots, loadTransfers, loadLocations, loadConfigItems]);
 
   const refreshAll = () => {
     loadMetadata();
+    loadTypesAndReasons();
     switch (activeTab) {
       case 'inventory':
         loadInventory();
+        break;
+      case 'physical-inventory':
+        loadPhysicalInventories();
+        break;
+      case 'facilities':
+        loadFacilities();
         break;
       case 'picklists':
         loadPicklists();
@@ -377,6 +471,32 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
     );
   }, [locations, searchLocation]);
 
+  // Filtered physical inventories for table
+  const filteredPhysicalInventories = useMemo(() => {
+    if (!searchPhysicalInventory) return physicalInventories;
+    const kw = searchPhysicalInventory.toLowerCase();
+    return physicalInventories.filter(
+      (p) =>
+        p.physicalInventoryId.toLowerCase().includes(kw) ||
+        (p.productId && p.productId.toLowerCase().includes(kw)) ||
+        (p.productName && p.productName.toLowerCase().includes(kw)) ||
+        (p.facilityName && p.facilityName.toLowerCase().includes(kw)) ||
+        (p.inventoryItemId && p.inventoryItemId.toLowerCase().includes(kw))
+    );
+  }, [physicalInventories, searchPhysicalInventory]);
+
+  // Filtered facilities for table
+  const filteredFacilityList = useMemo(() => {
+    if (!searchFacility) return facilityList;
+    const kw = searchFacility.toLowerCase();
+    return facilityList.filter(
+      (f) =>
+        f.facilityId.toLowerCase().includes(kw) ||
+        (f.facilityName && f.facilityName.toLowerCase().includes(kw)) ||
+        (f.facilityTypeDesc && f.facilityTypeDesc.toLowerCase().includes(kw))
+    );
+  }, [facilityList, searchFacility]);
+
   const getPicklistStatusBadgeClass = (statusId: string) => {
     switch (statusId) {
       case 'PICKLIST_INPUT':
@@ -412,7 +532,11 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              {activeTab === 'picklists'
+              {activeTab === 'physical-inventory'
+                ? (t.physicalInventoryTitle || 'Fiziksel Sayım & Varyans Düzeltme')
+                : activeTab === 'facilities'
+                ? (t.facilityManagementTitle || 'Depo & Tesis Yönetimi')
+                : activeTab === 'picklists'
                 ? (t.picklistsTab || 'Toplama Listeleri & WMS')
                 : activeTab === 'lots'
                 ? (t.lotsTab || 'Lot, Parti & SKT Takibi')
@@ -437,6 +561,60 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{common.refresh}</span>
           </button>
+
+          {activeTab === 'inventory' && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDirectReceiveModalOpen(true)}
+                className="ds-btn-secondary flex items-center gap-2 py-2 px-3 text-xs font-semibold"
+                title={t.directReceiveStock || 'Doğrudan Depo Stok Kabulü'}
+              >
+                <ArrowDownToLine className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline">{t.directReceiveStock || 'Stok Kabulü'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreselectedItemForAdjustment(null);
+                  setIsPhysicalCountModalOpen(true);
+                }}
+                className="ds-btn-primary flex items-center gap-2 py-2 px-3.5 text-xs font-semibold shadow-lg shadow-emerald-600/25"
+                title={t.physicalCountAdjustment || 'Fiziksel Stok Sayımı ve Varyans'}
+              >
+                <ClipboardCheck className="w-4 h-4" />
+                <span>{t.physicalCountAdjustment || 'Sayım / Varyans'}</span>
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'physical-inventory' && (
+            <button
+              type="button"
+              onClick={() => {
+                setPreselectedItemForAdjustment(null);
+                setIsPhysicalCountModalOpen(true);
+              }}
+              className="ds-btn-primary flex items-center gap-2 py-2 px-4 text-xs font-semibold shadow-lg shadow-emerald-600/25"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t.newPhysicalCount || 'Yeni Sayım / Düzeltme'}</span>
+            </button>
+          )}
+
+          {activeTab === 'facilities' && (
+            <button
+              type="button"
+              onClick={() => {
+                setFacilityToEdit(null);
+                setIsFacilityModalOpen(true);
+              }}
+              className="ds-btn-primary flex items-center gap-2 py-2 px-4 text-xs font-semibold shadow-lg shadow-blue-600/25"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t.createFacility || 'Yeni Depo Tanımla'}</span>
+            </button>
+          )}
 
           {activeTab === 'picklists' && (
             <button
@@ -502,7 +680,56 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
       </div>
 
       {/* KPI Cards (Dynamic according to Active Tab) */}
-      {activeTab === 'picklists' ? (
+      {activeTab === 'physical-inventory' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.totalCounts || 'Toplam Sayım / Varyans'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">
+              {physicalInventories.length}
+            </p>
+          </div>
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.negativeVariances || 'Eksik Çıkan (Negatif)'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-rose-500 mt-1 font-mono">
+              {physicalInventories.filter(p => (p.quantityOnHandVar || 0) < 0).length}
+            </p>
+          </div>
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.positiveVariances || 'Fazla Çıkan (Pozitif)'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-500 mt-1 font-mono">
+              {physicalInventories.filter(p => (p.quantityOnHandVar || 0) > 0).length}
+            </p>
+          </div>
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.netVarianceQty || 'Net Varyans Adedi'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-cyan-500 mt-1 font-mono">
+              {physicalInventories.reduce((acc, p) => acc + (p.quantityOnHandVar || 0), 0) > 0 ? '+' : ''}
+              {physicalInventories.reduce((acc, p) => acc + (p.quantityOnHandVar || 0), 0)}
+            </p>
+          </div>
+        </div>
+      ) : activeTab === 'facilities' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.totalFacilities || 'Toplam Depo & Tesis'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">
+              {facilityList.length}
+            </p>
+          </div>
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.totalLocationsCount || 'Tanımlı Raf / Lokasyon'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-blue-500 mt-1 font-mono">
+              {facilityList.reduce((acc, f) => acc + (f.locationCount || 0), 0)}
+            </p>
+          </div>
+          <div className="ds-stat-card">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t.totalActiveStockItems || 'Toplam Stok Kalemi'}</span>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-500 mt-1 font-mono">
+              {facilityList.reduce((acc, f) => acc + (f.inventoryCount || 0), 0)}
+            </p>
+          </div>
+        </div>
+      ) : activeTab === 'picklists' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           <div className="ds-stat-card">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Toplam Liste</span>
@@ -612,6 +839,8 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
       <div className="ds-tab-bar">
         {[
           { id: 'inventory', label: t.inventoryTab, icon: <Boxes size={15} />, count: inventoryItems.length },
+          { id: 'physical-inventory', label: t.physicalInventoryTab || 'Fiziksel Sayım & Varyans', icon: <ClipboardCheck size={15} />, count: physicalInventories.length },
+          { id: 'facilities', label: t.facilitiesTab || 'Depo & Tesisler', icon: <Building2 size={15} />, count: facilityList.length },
           { id: 'picklists', label: t.picklistsTab || 'Toplama (WMS)', icon: <ShoppingCart size={15} />, count: picklists.length },
           { id: 'lots', label: t.lotsTab || 'Lot & SKT', icon: <Tag size={15} />, count: lots.length },
           { id: 'transfers', label: t.transfersTab, icon: <ArrowRightLeft size={15} />, count: transfers.length },
@@ -747,6 +976,17 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
                           </button>
                           <button
                             type="button"
+                            onClick={() => {
+                              setPreselectedItemForAdjustment(item);
+                              setIsPhysicalCountModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            title={t.quickAdjustment || "Fiziksel Sayım & Varyans Düzelt"}
+                          >
+                            <ClipboardCheck className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setItemForVariance(item)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                             title={t.adjustStock}
@@ -772,6 +1012,251 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
                   <tr>
                     <td colSpan={8} className="ds-empty">
                       {t.noInventoryFound}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: PHYSICAL INVENTORY & VARIANCE */}
+      {activeTab === 'physical-inventory' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex flex-1 flex-col sm:flex-row items-center gap-3 w-full">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder={t.searchPhysicalInventoryPlaceholder || 'Sayım No, ürün veya depo ile ara...'}
+                  value={searchPhysicalInventory}
+                  onChange={(e) => setSearchPhysicalInventory(e.target.value)}
+                  className="ds-input pl-10"
+                />
+              </div>
+
+              <select
+                value={selectedPhysicalFacilityFilter}
+                onChange={(e) => setSelectedPhysicalFacilityFilter(e.target.value)}
+                className="ds-select text-xs w-full sm:w-52"
+              >
+                <option value="">Tüm Depolar ({metadata?.facilities?.length || 0})</option>
+                {metadata?.facilities?.map((f) => (
+                  <option key={f.facilityId} value={f.facilityId}>
+                    {f.facilityName || f.facilityId}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedVarianceReasonFilter}
+                onChange={(e) => setSelectedVarianceReasonFilter(e.target.value)}
+                className="ds-select text-xs w-full sm:w-52"
+              >
+                <option value="">Tüm Varyans Nedenleri</option>
+                {varianceReasons.map((r) => (
+                  <option key={r.varianceReasonId} value={r.varianceReasonId}>
+                    {r.description || r.varianceReasonId}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {filteredPhysicalInventories.length} {t.physicalInventoryTab || 'Sayım'} listelendi
+            </span>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 shadow-xs">
+            <table className="ds-table">
+              <thead>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">{t.sheetId || 'Sayım No'}</th>
+                  <th className="ds-th">{t.countDate || 'Sayım Tarihi'}</th>
+                  <th className="ds-th">{t.product || 'Ürün'}</th>
+                  <th className="ds-th">{t.facility || 'Depo / Tesis'}</th>
+                  <th className="ds-th">{t.inventoryItemId || 'Stok Kalemi'}</th>
+                  <th className="ds-th">{t.varianceReason || 'Varyans Nedeni'}</th>
+                  <th className="ds-th-right">{t.qohVar || 'QOH Varyansı'}</th>
+                  <th className="ds-th-right">{t.atpVar || 'ATP Varyansı'}</th>
+                  <th className="ds-th">{t.comments || 'Açıklama'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPhysicalInventories.length > 0 ? (
+                  filteredPhysicalInventories.map((item) => (
+                    <tr key={item.physicalInventoryId} className="ds-tbody-row">
+                      <td className="ds-td-mono font-bold text-emerald-500 dark:text-emerald-400">
+                        #{item.physicalInventoryId}
+                      </td>
+                      <td className="ds-td text-xs text-slate-600 dark:text-slate-400 font-mono">
+                        {item.physicalInventoryDate ? new Date(item.physicalInventoryDate).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="ds-td">
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {item.productName || item.productId || '-'}
+                        </div>
+                        {item.productId && (
+                          <div className="text-[11px] font-mono text-slate-400">
+                            {item.productId}
+                          </div>
+                        )}
+                      </td>
+                      <td className="ds-td">
+                        {item.facilityName || item.facilityId || '-'}
+                      </td>
+                      <td className="ds-td-mono text-amber-500 dark:text-amber-400">
+                        {item.inventoryItemId ? `#${item.inventoryItemId}` : '-'}
+                      </td>
+                      <td className="ds-td">
+                        <span className="ds-badge ds-badge-neutral text-[11px]">
+                          {item.varianceReasonDesc || item.varianceReasonId || '-'}
+                        </span>
+                      </td>
+                      <td className="ds-td-right">
+                        <span className={`inline-flex items-center font-bold font-mono px-2 py-0.5 rounded text-xs ${
+                          (item.quantityOnHandVar || 0) < 0
+                            ? 'bg-rose-500/10 text-rose-500'
+                            : (item.quantityOnHandVar || 0) > 0
+                            ? 'bg-emerald-500/10 text-emerald-500'
+                            : 'bg-slate-500/10 text-slate-400'
+                        }`}>
+                          {(item.quantityOnHandVar || 0) > 0 ? `+${item.quantityOnHandVar}` : item.quantityOnHandVar}
+                        </span>
+                      </td>
+                      <td className="ds-td-right">
+                        <span className={`inline-flex items-center font-semibold font-mono text-xs ${
+                          (item.availableToPromiseVar || 0) < 0
+                            ? 'text-rose-400'
+                            : (item.availableToPromiseVar || 0) > 0
+                            ? 'text-emerald-400'
+                            : 'text-slate-400'
+                        }`}>
+                          {(item.availableToPromiseVar || 0) > 0 ? `+${item.availableToPromiseVar}` : item.availableToPromiseVar}
+                        </span>
+                      </td>
+                      <td className="ds-td text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate" title={item.comments || ''}>
+                        {item.comments || '-'}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="ds-empty">
+                      {t.noPhysicalInventoriesFound || 'Kayıtlı fiziksel sayım veya varyans düzeltmesi bulunamadı.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: FACILITIES */}
+      {activeTab === 'facilities' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex flex-1 flex-col sm:flex-row items-center gap-3 w-full">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder={t.searchFacilityPlaceholder || 'Tesis ID, tesis adı veya türü ile ara...'}
+                  value={searchFacility}
+                  onChange={(e) => setSearchFacility(e.target.value)}
+                  className="ds-input pl-10"
+                />
+              </div>
+
+              <select
+                value={selectedFacilityTypeFilter}
+                onChange={(e) => setSelectedFacilityTypeFilter(e.target.value)}
+                className="ds-select text-xs w-full sm:w-60"
+              >
+                <option value="">Tüm Tesis Türleri</option>
+                {facilityTypes.map((ft) => (
+                  <option key={ft.facilityTypeId} value={ft.facilityTypeId}>
+                    {ft.description || ft.facilityTypeId}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {filteredFacilityList.length} {t.facilitiesTab || 'Depo & Tesis'} listelendi
+            </span>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 shadow-xs">
+            <table className="ds-table">
+              <thead>
+                <tr className="ds-thead-row">
+                  <th className="ds-th">{t.facilityId || 'Tesis Kodu'}</th>
+                  <th className="ds-th">{t.facilityName || 'Depo / Tesis Adı'}</th>
+                  <th className="ds-th">{t.facilityType || 'Tesis Türü'}</th>
+                  <th className="ds-th">{t.ownerPartyId || 'Tesis Sahibi'}</th>
+                  <th className="ds-th-right">{t.facilitySize || 'Kapasite / Alan'}</th>
+                  <th className="ds-th-right">{t.locationCount || 'Lokasyonlar'}</th>
+                  <th className="ds-th-right">{t.inventoryCount || 'Stok Kalemleri'}</th>
+                  <th className="ds-th-right">{common.actions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFacilityList.length > 0 ? (
+                  filteredFacilityList.map((f) => (
+                    <tr key={f.facilityId} className="ds-tbody-row">
+                      <td className="ds-td-mono font-bold text-blue-500 dark:text-blue-400">
+                        {f.facilityId}
+                      </td>
+                      <td className="ds-td font-semibold text-slate-900 dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-slate-400" />
+                          <span>{f.facilityName || f.facilityId}</span>
+                        </div>
+                      </td>
+                      <td className="ds-td">
+                        <span className="ds-badge ds-badge-info text-[11px]">
+                          {f.facilityTypeDesc || f.facilityTypeId || '-'}
+                        </span>
+                      </td>
+                      <td className="ds-td-mono text-xs text-slate-600 dark:text-slate-400">
+                        {f.ownerPartyId || 'Company'}
+                      </td>
+                      <td className="ds-td-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                        {f.facilitySize ? `${f.facilitySize} ${f.facilitySizeUomId || 'm²'}` : '-'}
+                      </td>
+                      <td className="ds-td-right">
+                        <span className="ds-badge ds-badge-neutral font-mono text-xs">
+                          {f.locationCount || 0}
+                        </span>
+                      </td>
+                      <td className="ds-td-right">
+                        <span className="ds-badge ds-badge-success font-mono text-xs">
+                          {f.inventoryCount || 0}
+                        </span>
+                      </td>
+                      <td className="ds-td-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFacilityToEdit(f);
+                              setIsFacilityModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            title={common.edit}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="ds-empty">
+                      {t.noFacilitiesFound || 'Tanımlı tesis veya depo bulunamadı.'}
                     </td>
                   </tr>
                 )}
@@ -1391,6 +1876,59 @@ export const AdvancedInventoryManagement: React.FC<AdvancedInventoryManagementPr
             showToast('Stok takip bilgileri güncellendi');
             loadInventory();
           }}
+        />
+      )}
+
+      {/* 11. Create Physical Inventory Modal */}
+      {isPhysicalCountModalOpen && (
+        <CreatePhysicalInventoryModal
+          isOpen={isPhysicalCountModalOpen}
+          onClose={() => {
+            setIsPhysicalCountModalOpen(false);
+            setPreselectedItemForAdjustment(null);
+          }}
+          onSuccess={() => {
+            showToast(t.physicalCountSuccess || 'Fiziksel sayım ve varyans düzeltmesi kaydedildi');
+            loadInventory();
+            loadPhysicalInventories();
+          }}
+          preselectedItem={preselectedItemForAdjustment}
+          inventoryItems={inventoryItems}
+          varianceReasons={varianceReasons}
+        />
+      )}
+
+      {/* 12. Receive Direct Inventory Modal */}
+      {isDirectReceiveModalOpen && (
+        <ReceiveDirectInventoryModal
+          isOpen={isDirectReceiveModalOpen}
+          onClose={() => setIsDirectReceiveModalOpen(false)}
+          onSuccess={() => {
+            showToast(t.directReceiveSuccess || 'Stok kabulü başarıyla tamamlandı');
+            loadInventory();
+            loadMetadata();
+          }}
+          products={metadata?.products || []}
+          facilities={metadata?.facilities || []}
+          locations={metadata?.locations || []}
+        />
+      )}
+
+      {/* 13. Facility Create / Edit Modal */}
+      {isFacilityModalOpen && (
+        <FacilityModal
+          isOpen={isFacilityModalOpen}
+          onClose={() => {
+            setIsFacilityModalOpen(false);
+            setFacilityToEdit(null);
+          }}
+          onSuccess={() => {
+            showToast(facilityToEdit ? (t.facilityUpdatedSuccess || 'Depo bilgileri güncellendi') : (t.facilityCreatedSuccess || 'Yeni depo tanımlandı'));
+            loadFacilities();
+            loadMetadata();
+          }}
+          facilityToEdit={facilityToEdit}
+          facilityTypes={facilityTypes}
         />
       )}
     </div>

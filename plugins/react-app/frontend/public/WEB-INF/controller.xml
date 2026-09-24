@@ -2873,6 +2873,58 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Faz 3+: Fiziksel Stok Sayımı, Doğrudan Stok Kabulü & Depo Yönetimi  -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <request-map uri="getPhysicalInventoryList">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="getPhysicalInventoryList"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getVarianceReasons">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="getVarianceReasons"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createStockAdjustment">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="createStockAdjustment"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="receiveDirectInventory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="receiveDirectInventory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getFacilityList">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="getFacilityList"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createFacility">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="createFacility"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateFacility">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="updateFacility"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getFacilityTypes">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/FacilityInventoryEvents.groovy" invoke="getFacilityTypes"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>
