@@ -98,12 +98,49 @@ export interface OrderStatusRecord {
   changeReason?: string;
 }
 
+export interface OrderLinkedInvoice {
+  invoiceId: string;
+  invoiceTypeId: string;
+  invoiceTypeDesc?: string;
+  statusId: string;
+  statusDesc?: string;
+  invoiceDate?: string;
+  totalAmount: number;
+}
+
+export interface OrderLinkedShipment {
+  shipmentId: string;
+  shipmentTypeId: string;
+  shipmentTypeDesc?: string;
+  statusId: string;
+  statusDesc?: string;
+  estimatedShipDate?: string;
+  createdDate?: string;
+  carrierPartyId?: string;
+  trackingIdNumber?: string;
+}
+
+export interface OrderLinkedReceipt {
+  receiptId: string;
+  orderItemSeqId: string;
+  productId: string;
+  productName?: string;
+  quantityAccepted: number;
+  quantityRejected: number;
+  datetimeReceived?: string;
+  inventoryItemId?: string;
+  facilityId?: string;
+}
+
 export interface OrderDetailResponse {
   orderHeader: OrderHeaderItem;
   orderItems: OrderItemRecord[];
   orderAdjustments: OrderAdjustmentRecord[];
   orderRoles: OrderRoleRecord[];
   orderStatuses: OrderStatusRecord[];
+  orderInvoices?: OrderLinkedInvoice[];
+  orderShipments?: OrderLinkedShipment[];
+  orderReceipts?: OrderLinkedReceipt[];
 }
 
 export async function fetchOrderMetadata(): Promise<OrderMetadata> {

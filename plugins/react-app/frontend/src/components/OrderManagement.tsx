@@ -16,6 +16,7 @@ import {
   Plus,
   FileCheck,
   RotateCcw,
+  Truck,
 } from 'lucide-react';
 import {
   OrderListItem,
@@ -40,10 +41,11 @@ import { CreateQuoteModal } from './CreateQuoteModal';
 import { QuoteDetailModal } from './QuoteDetailModal';
 import { CreateReturnModal } from './CreateReturnModal';
 import { ReturnDetailModal } from './ReturnDetailModal';
+import { ShipmentManagement } from './ShipmentManagement';
 
-type MainTab = 'orders' | 'quotes' | 'returns';
+type MainTab = 'orders' | 'quotes' | 'returns' | 'shipments';
 type OrderSubTab = 'all' | 'sales' | 'purchase';
-export type OrderTabOption = OrderSubTab | 'quotes' | 'returns';
+export type OrderTabOption = OrderSubTab | 'quotes' | 'returns' | 'shipments';
 
 interface OrderManagementProps {
   initialTab?: OrderTabOption;
@@ -52,6 +54,7 @@ interface OrderManagementProps {
 
 export const OrderManagement: React.FC<OrderManagementProps> = ({
   initialTab = 'all',
+  onNavigate,
 }) => {
   const { translations, locale } = useTranslation();
   const t = translations.orders;
@@ -61,6 +64,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
   const [mainTab, setMainTab] = useState<MainTab>(() => {
     if (initialTab === 'quotes') return 'quotes';
     if (initialTab === 'returns') return 'returns';
+    if (initialTab === 'shipments') return 'shipments';
     return 'orders';
   });
 
@@ -78,6 +82,9 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       setViewIndex(0);
     } else if (initialTab === 'returns') {
       setMainTab('returns');
+      setViewIndex(0);
+    } else if (initialTab === 'shipments') {
+      setMainTab('shipments');
       setViewIndex(0);
     } else if (initialTab === 'sales') {
       setMainTab('orders');
@@ -417,7 +424,22 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           <RotateCcw className="w-4 h-4 inline mr-2 text-amber-400" />
           {t.returnsTab}
         </button>
+
+        <button
+          onClick={() => handleMainTabChange('shipments')}
+          className={`ds-tab ${mainTab === 'shipments' ? 'ds-tab-active' : ''}`}
+        >
+          <Truck className="w-4 h-4 inline mr-2 text-emerald-400" />
+          {translations.shipments.title || 'Sevkiyat & İrsaliyeler'}
+        </button>
       </div>
+
+      {mainTab === 'shipments' && (
+        <ShipmentManagement onNavigate={onNavigate} embedded={true} />
+      )}
+
+      {mainTab !== 'shipments' && (
+        <>
 
       {/* KPI Cards based on mainTab */}
       {mainTab === 'orders' && (
@@ -1033,6 +1055,8 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* ─── MODALS ─── */}
 
@@ -1062,6 +1086,11 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           }}
           orderId={selectedOrderId}
           onOrderChanged={loadOrders}
+          onViewInvoice={(invoiceId) => onNavigate?.('invoice-detail', invoiceId)}
+          onViewShipment={() => {
+            setIsOrderDetailOpen(false);
+            setMainTab('shipments');
+          }}
         />
       )}
 

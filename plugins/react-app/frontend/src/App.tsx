@@ -45,6 +45,7 @@ const VariantAssocManagement = lazy(() => import('./components/VariantAssocManag
 const PricePromoStoreManagement = lazy(() => import('./components/PricePromoStoreManagement').then(m => ({ default: m.PricePromoStoreManagement })))
 const AdvancedInventoryManagement = lazy(() => import('./components/AdvancedInventoryManagement').then(m => ({ default: m.AdvancedInventoryManagement })))
 const OrderManagement = lazy(() => import('./components/OrderManagement').then(m => ({ default: m.OrderManagement })))
+const ShipmentManagement = lazy(() => import('./components/ShipmentManagement').then(m => ({ default: m.ShipmentManagement })))
 
 export type ViewType = 
   | 'dashboard' 
@@ -83,6 +84,7 @@ export type ViewType =
   | 'purchase-orders'
   | 'order-quotes'
   | 'order-returns'
+  | 'shipments'
   | 'manufacturing'
   | 'inventory'
   | 'parties'
@@ -269,6 +271,9 @@ function AppContent() {
 
       case 'order-returns':
         return <OrderManagement initialTab="returns" onNavigate={handleNavigate} />;
+
+      case 'shipments':
+        return <ShipmentManagement onNavigate={handleNavigate} />;
 
       case 'manufacturing':
         return <ModulePlaceholder moduleKey="manufacturing" onNavigate={handleNavigate} />;

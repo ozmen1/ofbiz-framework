@@ -16,6 +16,7 @@ import {
   DollarSign,
   FileText,
   Truck,
+  Plus,
 } from 'lucide-react';
 import {
   OrderDetailResponse,
@@ -24,12 +25,18 @@ import {
   quickCreateInvoiceForOrder,
   quickCreateShipmentForOrder,
 } from '../services/orderService';
+import { quickShipOrder } from '../services/shipmentService';
+import { ReceiveInventoryModal } from './ReceiveInventoryModal';
+import { ShipmentDetailModal } from './ShipmentDetailModal';
+import { ArrowDownToLine } from 'lucide-react';
 
 interface OrderDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   orderId: string | null;
   onOrderChanged?: () => void;
+  onViewInvoice?: (invoiceId: string) => void;
+  onViewShipment?: (shipmentId: string) => void;
 }
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
@@ -37,18 +44,26 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onClose,
   orderId,
   onOrderChanged,
+  onViewInvoice,
+  onViewShipment,
 }) => {
   const { translations, locale } = useTranslation();
   const t = translations.orders;
+  const sTrans = translations.shipments;
   const common = translations.common;
 
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
-  const [activeTab, setActiveTab] = useState<'items' | 'adjustments' | 'roles' | 'history'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'adjustments' | 'roles' | 'history' | 'documents'>('items');
   const [changeReason, setChangeReason] = useState('');
   const [quickSuccess, setQuickSuccess] = useState<string | null>(null);
+
+  // Phase 1 Modals
+  const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  const [selectedShipmentId, setSelectedShipmentId] = useState<string | null>(null);
+  const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
 
   const loadDetail = useCallback(async () => {
     if (!orderId) return;
@@ -153,6 +168,23 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       setQuickSuccess(null);
       const res = await quickCreateShipmentForOrder(orderId);
       setQuickSuccess(res.successMessage || t.shipmentCreatedSuccess);
+      onOrderChanged?.();
+      await loadDetail();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : common.error);
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
+  const handleQuickShipOrderAction = async () => {
+    if (!orderId || !window.confirm(sTrans.fulfillShipConfirm || 'Bu siparişi depodan sevk edip stoktan düşmek ve tamamlamak istiyor musunuz?')) return;
+    try {
+      setIsChangingStatus(true);
+      setError(null);
+      setQuickSuccess(null);
+      const res = await quickShipOrder({ orderId });
+      setQuickSuccess(res.successMessage || 'Sipariş sevk edildi.');
       onOrderChanged?.();
       await loadDetail();
     } catch (err: unknown) {
@@ -372,6 +404,33 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
                   <div className="h-6 w-px bg-slate-700 mx-1 hidden md:block" />
 
+                  {/* Purchase Order: Mal Kabul Butonu */}
+                  {header?.orderTypeId === 'PURCHASE_ORDER' && (currentStatusId === 'ORDER_APPROVED' || currentStatusId === 'ORDER_CREATED') && (
+                    <button
+                      type="button"
+                      onClick={() => setIsReceiveModalOpen(true)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 cursor-pointer"
+                    >
+                      <ArrowDownToLine className="w-4 h-4" />
+                      <span>{sTrans.receiveGoodsBtn || 'Depoya Mal Kabul Et'}</span>
+                    </button>
+                  )}
+
+                  {/* Sales Order: Hızlı Sevk Et & Stoktan Düş */}
+                  {header?.orderTypeId === 'SALES_ORDER' && currentStatusId === 'ORDER_APPROVED' && (
+                    <button
+                      type="button"
+                      disabled={isChangingStatus}
+                      onClick={handleQuickShipOrderAction}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center space-x-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
+                    >
+                      <Truck className="w-4 h-4" />
+                      <span>{sTrans.fulfillShipBtn || 'Hızlı Sevk Et & Stoktan Düş'}</span>
+                    </button>
+                  )}
+
+                  <div className="h-6 w-px bg-slate-700 mx-1 hidden md:block" />
+
                   {/* Quick Action: Fatura Oluştur */}
                   <button
                     type="button"
@@ -407,6 +466,19 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 >
                   <Package className="w-4 h-4" />
                   <span>{t.items} ({detail?.orderItems?.length || 0})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('documents')}
+                  className={`ds-tab ${activeTab === 'documents' ? 'ds-tab-active' : ''}`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>
+                    {sTrans.linkedDocuments || 'Faturalar & Sevkiyat'} (
+                    {(detail?.orderInvoices?.length || 0) + (detail?.orderShipments?.length || 0)}
+                    )
+                  </span>
                 </button>
 
                 <button
@@ -493,6 +565,213 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+
+              {/* Tab: Linked Invoices & Shipments */}
+              {activeTab === 'documents' && (
+                <div className="space-y-6">
+                  {/* Linked Invoices Section */}
+                  <div className="ds-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          {sTrans.linkedInvoices || 'İlişkili Faturalar'} ({detail?.orderInvoices?.length || 0})
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleQuickInvoice}
+                        className="ds-btn-ghost text-xs !py-1 !px-2.5 text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={13} />
+                        <span>{t.createInvoiceQuick}</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto border border-slate-200 dark:border-slate-700/60 rounded-xl">
+                      <table className="ds-table text-xs">
+                        <thead>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">{sTrans.invoiceId || 'Fatura No'}</th>
+                            <th className="ds-th">{t.type}</th>
+                            <th className="ds-th">{sTrans.invoiceDate || 'Tarih'}</th>
+                            <th className="ds-th-right">{sTrans.invoiceTotal || 'Tutar'}</th>
+                            <th className="ds-th">{t.status}</th>
+                            <th className="ds-th-right">İşlem</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail?.orderInvoices && detail.orderInvoices.length > 0 ? (
+                            detail.orderInvoices.map(inv => (
+                              <tr key={inv.invoiceId} className="ds-tbody-row">
+                                <td className="ds-td-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                  {inv.invoiceId}
+                                </td>
+                                <td className="ds-td text-slate-700 dark:text-slate-300">
+                                  {inv.invoiceTypeDesc || inv.invoiceTypeId}
+                                </td>
+                                <td className="ds-td text-slate-500 dark:text-slate-400">
+                                  {formatDate(inv.invoiceDate)}
+                                </td>
+                                <td className="ds-td-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                  {formatCurrency(inv.totalAmount, header?.currencyUom)}
+                                </td>
+                                <td className="ds-td">
+                                  {getStatusBadge(inv.statusId, inv.statusDesc)}
+                                </td>
+                                <td className="ds-td-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onClose();
+                                      onViewInvoice?.(inv.invoiceId);
+                                    }}
+                                    className="ds-btn-secondary text-xs !py-1 !px-2.5 cursor-pointer"
+                                  >
+                                    {sTrans.viewInvoice || 'Görüntüle'}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-6 text-center text-slate-500 italic">
+                                {sTrans.noLinkedInvoices || 'Bu sipariş için henüz fatura oluşturulmamış.'}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Linked Shipments Section */}
+                  <div className="ds-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          {sTrans.linkedShipments || 'İlişkili Sevkiyat & İrsaliyeler'} ({detail?.orderShipments?.length || 0})
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleQuickShipment}
+                        className="ds-btn-ghost text-xs !py-1 !px-2.5 text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={13} />
+                        <span>{t.createShipmentQuick}</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto border border-slate-200 dark:border-slate-700/60 rounded-xl">
+                      <table className="ds-table text-xs">
+                        <thead>
+                          <tr className="ds-thead-row">
+                            <th className="ds-th">{sTrans.shipmentId || 'İrsaliye No'}</th>
+                            <th className="ds-th">{t.type}</th>
+                            <th className="ds-th">{sTrans.carrierTracking || 'Kargo / Takip'}</th>
+                            <th className="ds-th">{sTrans.shipDate || 'Sevk Tarihi'}</th>
+                            <th className="ds-th">{t.status}</th>
+                            <th className="ds-th-right">İşlem</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail?.orderShipments && detail.orderShipments.length > 0 ? (
+                            detail.orderShipments.map(s => (
+                              <tr key={s.shipmentId} className="ds-tbody-row">
+                                <td className="ds-td-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                  {s.shipmentId}
+                                </td>
+                                <td className="ds-td text-slate-700 dark:text-slate-300">
+                                  {s.shipmentTypeDesc || s.shipmentTypeId}
+                                </td>
+                                <td className="ds-td">
+                                  {s.carrierPartyId ? (
+                                    <div className="text-xs">
+                                      <span className="font-semibold text-slate-900 dark:text-white">{s.carrierPartyId}</span>
+                                      {s.trackingIdNumber && <span className="text-amber-600 dark:text-amber-400 ml-1 font-mono">({s.trackingIdNumber})</span>}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 dark:text-slate-500">-</span>
+                                  )}
+                                </td>
+                                <td className="ds-td text-slate-500 dark:text-slate-400">
+                                  {formatDate(s.estimatedShipDate || s.createdDate)}
+                                </td>
+                                <td className="ds-td">
+                                  {getStatusBadge(s.statusId, s.statusDesc)}
+                                </td>
+                                <td className="ds-td-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (onViewShipment) {
+                                        onViewShipment(s.shipmentId);
+                                      } else {
+                                        setSelectedShipmentId(s.shipmentId);
+                                        setIsShipmentModalOpen(true);
+                                      }
+                                    }}
+                                    className="ds-btn-secondary text-xs !py-1 !px-2.5 cursor-pointer"
+                                  >
+                                    {sTrans.viewShipment || 'İncele'}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-6 text-center text-slate-500 italic">
+                                {sTrans.noLinkedShipments || 'Bu sipariş için henüz sevkiyat kaydı bulunmuyor.'}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Goods Receipts Section (if PO) */}
+                  {header?.orderTypeId === 'PURCHASE_ORDER' && detail?.orderReceipts && detail.orderReceipts.length > 0 && (
+                    <div className="ds-card p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          {sTrans.shipmentReceipts || 'Depo Mal Kabul Kayıtları'} ({detail.orderReceipts.length})
+                        </h3>
+                      </div>
+
+                      <div className="overflow-x-auto border border-slate-200 dark:border-slate-700/60 rounded-xl">
+                        <table className="ds-table text-xs">
+                          <thead>
+                            <tr className="ds-thead-row">
+                              <th className="ds-th">{sTrans.receiptId || 'Kabul No'}</th>
+                              <th className="ds-th">Kalem #</th>
+                              <th className="ds-th">{t.product}</th>
+                              <th className="ds-th-right">{sTrans.acceptedQty || 'Kabul'}</th>
+                              <th className="ds-th-right">{sTrans.rejectedQty || 'Red'}</th>
+                              <th className="ds-th">{sTrans.receiptDate || 'Tarih'}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.orderReceipts.map(rc => (
+                              <tr key={rc.receiptId} className="ds-tbody-row">
+                                <td className="ds-td-mono font-bold text-indigo-600 dark:text-indigo-400">{rc.receiptId}</td>
+                                <td className="ds-td-mono text-slate-500 dark:text-slate-400">{rc.orderItemSeqId}</td>
+                                <td className="ds-td text-slate-900 dark:text-white">{rc.productName || rc.productId}</td>
+                                <td className="ds-td-right font-bold text-emerald-600 dark:text-emerald-400">{rc.quantityAccepted}</td>
+                                <td className="ds-td-right font-medium text-rose-600 dark:text-rose-400">{rc.quantityRejected}</td>
+                                <td className="ds-td text-slate-500 dark:text-slate-400">{formatDate(rc.datetimeReceived)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -639,6 +918,34 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Phase 1 Modals */}
+      {isReceiveModalOpen && (
+        <ReceiveInventoryModal
+          isOpen={isReceiveModalOpen}
+          onClose={() => setIsReceiveModalOpen(false)}
+          orderId={orderId}
+          items={detail?.orderItems || []}
+          receipts={detail?.orderReceipts || []}
+          originFacilityId={detail?.orderHeader?.originFacilityId}
+          onSuccess={() => {
+            loadDetail();
+            onOrderChanged?.();
+          }}
+        />
+      )}
+
+      {isShipmentModalOpen && (
+        <ShipmentDetailModal
+          isOpen={isShipmentModalOpen}
+          onClose={() => setIsShipmentModalOpen(false)}
+          shipmentId={selectedShipmentId}
+          onShipmentUpdated={() => {
+            loadDetail();
+            onOrderChanged?.();
+          }}
+        />
+      )}
     </div>
   );
 };

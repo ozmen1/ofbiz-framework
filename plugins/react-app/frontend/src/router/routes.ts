@@ -217,6 +217,16 @@ export const ROUTES: RouteDefinition[] = [
     buildPath: () => '/orders/returns'
   },
   {
+    pattern: /^(?:\/app)?\/orders\/shipments\/?$/,
+    view: 'shipments',
+    buildPath: () => '/orders/shipments'
+  },
+  {
+    pattern: /^(?:\/app)?\/shipments\/?$/,
+    view: 'shipments',
+    buildPath: () => '/shipments'
+  },
+  {
     pattern: /^(?:\/app)?\/orders\/([^/?#]+)\/?$/,
     view: 'orders',
     hasId: true,

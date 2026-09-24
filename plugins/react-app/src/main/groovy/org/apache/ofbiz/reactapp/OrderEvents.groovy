@@ -473,11 +473,79 @@ String getOrderDetail() {
             createdBy: orderHeader.getString("createdBy")
         ]
 
+        // Linked Invoices (İlişkili Faturalar)
+        List<GenericValue> billings = EntityQuery.use(delegator).from("OrderItemBilling").where("orderId", orderId).queryList()
+        Set<String> invoiceIds = billings.collect { it.getString("invoiceId") }.findAll { it != null } as Set
+        List<Map<String, Object>> invoiceList = []
+        for (String invId : invoiceIds) {
+            GenericValue inv = EntityQuery.use(delegator).from("Invoice").where("invoiceId", invId).queryOne()
+            if (inv) {
+                GenericValue statusItem = EntityQuery.use(delegator).from("StatusItem").where("statusId", inv.getString("statusId")).queryOne()
+                GenericValue invType = EntityQuery.use(delegator).from("InvoiceType").where("invoiceTypeId", inv.getString("invoiceTypeId")).queryOne()
+                invoiceList.add([
+                    invoiceId: invId,
+                    invoiceTypeId: inv.getString("invoiceTypeId"),
+                    invoiceTypeDesc: invType?.getString("description") ?: inv.getString("invoiceTypeId"),
+                    statusId: inv.getString("statusId"),
+                    statusDesc: statusItem?.getString("description") ?: inv.getString("statusId"),
+                    invoiceDate: inv.getTimestamp("invoiceDate")?.toString() ?: inv.getTimestamp("createdStamp")?.toString(),
+                    totalAmount: org.apache.ofbiz.accounting.invoice.InvoiceWorker.getInvoiceTotal(inv) ?: BigDecimal.ZERO
+                ])
+            }
+        }
+
+        // Linked Shipments (İlişkili Sevkiyat / İrsaliyeler)
+        List<GenericValue> shipments1 = EntityQuery.use(delegator).from("Shipment").where("primaryOrderId", orderId).queryList()
+        List<GenericValue> orderShpmts = EntityQuery.use(delegator).from("OrderShipment").where("orderId", orderId).queryList()
+        Set<String> shipmentIds = (shipments1.collect { it.getString("shipmentId") } + orderShpmts.collect { it.getString("shipmentId") }).findAll { it != null } as Set
+        List<Map<String, Object>> shipmentList = []
+        for (String shpId : shipmentIds) {
+            GenericValue s = EntityQuery.use(delegator).from("Shipment").where("shipmentId", shpId).queryOne()
+            if (s) {
+                GenericValue sStatus = EntityQuery.use(delegator).from("StatusItem").where("statusId", s.getString("statusId")).queryOne()
+                GenericValue sType = EntityQuery.use(delegator).from("ShipmentType").where("shipmentTypeId", s.getString("shipmentTypeId")).queryOne()
+                GenericValue routeSeg = EntityQuery.use(delegator).from("ShipmentRouteSegment").where("shipmentId", shpId).queryFirst()
+                shipmentList.add([
+                    shipmentId: shpId,
+                    shipmentTypeId: s.getString("shipmentTypeId"),
+                    shipmentTypeDesc: sType?.getString("description") ?: s.getString("shipmentTypeId"),
+                    statusId: s.getString("statusId"),
+                    statusDesc: sStatus?.getString("description") ?: s.getString("statusId"),
+                    estimatedShipDate: s.getTimestamp("estimatedShipDate")?.toString(),
+                    createdDate: s.getTimestamp("createdDate")?.toString() ?: s.getTimestamp("createdStamp")?.toString(),
+                    carrierPartyId: routeSeg?.getString("carrierPartyId") ?: "",
+                    trackingIdNumber: routeSeg?.getString("trackingIdNumber") ?: ""
+                ])
+            }
+        }
+
+        // Linked Receipts (Mal Kabul Kayıtları)
+        List<GenericValue> receipts = EntityQuery.use(delegator).from("ShipmentReceipt").where("orderId", orderId).orderBy("-datetimeReceived").queryList()
+        List<Map<String, Object>> receiptList = []
+        for (GenericValue rc : receipts) {
+            String pId = rc.getString("productId")
+            GenericValue pr = pId ? EntityQuery.use(delegator).from("Product").where("productId", pId).queryOne() : null
+            receiptList.add([
+                receiptId: rc.getString("receiptId"),
+                orderItemSeqId: rc.getString("orderItemSeqId"),
+                productId: pId,
+                productName: pr?.getString("productName") ?: pr?.getString("internalName") ?: pId,
+                quantityAccepted: rc.getBigDecimal("quantityAccepted") ?: BigDecimal.ZERO,
+                quantityRejected: rc.getBigDecimal("quantityRejected") ?: BigDecimal.ZERO,
+                datetimeReceived: rc.getTimestamp("datetimeReceived")?.toString(),
+                inventoryItemId: rc.getString("inventoryItemId"),
+                facilityId: rc.getString("facilityId")
+            ])
+        }
+
         request.setAttribute("orderHeader", headerMap)
         request.setAttribute("orderItems", itemList)
         request.setAttribute("orderAdjustments", adjList)
         request.setAttribute("orderRoles", roleList)
         request.setAttribute("orderStatuses", statusHistory)
+        request.setAttribute("orderInvoices", invoiceList)
+        request.setAttribute("orderShipments", shipmentList)
+        request.setAttribute("orderReceipts", receiptList)
 
         return "success"
     } catch (Exception e) {

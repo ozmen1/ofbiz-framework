@@ -6,7 +6,7 @@ import {
   ShieldCheck, FileCheck, BadgePercent, ChevronDown, ChevronRight,
   ShoppingCart, Factory, Warehouse, Calculator, Sparkles, Users,
   Key, User, Shield, Share2, Check, Package, FolderTree, GitFork, Store,
-  Boxes, Cpu
+  Boxes, Cpu, Truck
 } from 'lucide-react';
 import { ViewType } from '../App';
 import { useTranslation } from '../i18n';
@@ -57,6 +57,7 @@ const isOrderView = (view: ViewType): boolean => {
     'purchase-orders',
     'order-quotes',
     'order-returns',
+    'shipments',
   ].includes(view);
 };
 
@@ -103,6 +104,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
   // Accordion state for expandable modules
   const [expandedModules, setExpandedModules] = useState<{ [key: string]: boolean }>({
     products: true,
+    orders: true,
     accounting: true,
     manufacturing: false,
     inventory: false,
@@ -146,6 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'purchase-orders':        translations.pages.purchaseOrders,
     'order-quotes':           translations.pages.orderQuotes,
     'order-returns':          translations.pages.orderReturns,
+    'shipments':              translations.pages.shipments,
     'manufacturing':          translations.pages.manufacturing,
     'inventory':              translations.pages.inventory,
     'parties':                translations.pages.parties,
@@ -586,11 +589,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               )}
             </div>
 
-            {/* ── MODÜL: SİPARİŞ YÖNETİMİ (Order Management - Kompakt & Minimal) ── */}
+            {/* ── MODÜL: SİPARİŞ YÖNETİMİ (Order Management) ── */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/40 overflow-hidden shadow-xs">
               <button
                 type="button"
-                onClick={() => handleNavClick('orders')}
+                onClick={() => {
+                  toggleModule('orders');
+                  handleNavClick('orders');
+                }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
                   isOrderView(currentView)
                     ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-500/30'
@@ -603,10 +609,47 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   </div>
                   <span>{translations.nav.orderManagement}</span>
                 </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/25">
-                  {translations.nav.activeModule}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/25">
+                    {translations.nav.activeModule}
+                  </span>
+                  {expandedModules.orders ? (
+                    <ChevronDown size={16} className="text-slate-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-slate-400" />
+                  )}
+                </div>
               </button>
+
+              {expandedModules.orders && (
+                <div className="px-2 py-2 space-y-0.5 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('orders')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'orders' || currentView === 'sales-orders' || currentView === 'purchase-orders' || currentView === 'order-quotes' || currentView === 'order-returns'
+                        ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 dark:border-amber-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <ShoppingCart size={14} className={['orders', 'sales-orders', 'purchase-orders', 'order-quotes', 'order-returns'].includes(currentView) ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.orderManagement}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick('shipments')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
+                      currentView === 'shipments'
+                        ? 'bg-amber-100/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-medium border-l-2 border-amber-500 dark:border-amber-400 pl-2'
+                        : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/40 border border-transparent'
+                    }`}
+                  >
+                    <Truck size={14} className={currentView === 'shipments' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'} />
+                    <span className="truncate">{translations.nav.shipments}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ── MODÜL 3: ÜRETİM YÖNETİMİ (Manufacturing) ── */}

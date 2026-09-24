@@ -2687,6 +2687,56 @@
         <response name="error" type="request" value="json"/>
     </request-map>
 
+    <!-- SHIPMENT & LOGISTICS / MAL KABUL & SEVKİYAT -->
+    <request-map uri="getShipmentMetadata">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="getShipmentMetadata"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="findShipments">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="findShipments"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="getShipmentDetail">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="getShipmentDetail"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="createShipment">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="createShipment"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateShipmentStatus">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="updateShipmentStatus"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="updateShipmentRoute">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="updateShipmentRoute"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="receivePOInventory">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="receivePOInventory"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+    <request-map uri="quickShipOrder">
+        <security https="false" auth="false"/>
+        <event type="groovy" path="component://react-app/src/main/groovy/org/apache/ofbiz/reactapp/ShipmentEvents.groovy" invoke="quickShipOrder"/>
+        <response name="success" type="request" value="json"/>
+        <response name="error" type="request" value="json"/>
+    </request-map>
+
     <!-- View Mappings -->
     <view-map name="main" type="screen" page="component://react-app/widget/React-appScreens.xml#main"/>
 </site-conf>
