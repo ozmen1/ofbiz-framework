@@ -87,6 +87,10 @@ export type ViewType =
   | 'shipments'
   | 'manufacturing'
   | 'inventory'
+  | 'picklists'
+  | 'lots'
+  | 'inventory-transfers'
+  | 'facility-locations'
   | 'parties'
   | 'users'
   | 'system-admin';
@@ -252,7 +256,20 @@ function AppContent() {
         return <PricePromoStoreManagement initialTab="stores" />;
 
       case 'advanced-inventory':
+      case 'inventory':
         return <AdvancedInventoryManagement initialTab="inventory" />;
+
+      case 'picklists':
+        return <AdvancedInventoryManagement initialTab="picklists" />;
+
+      case 'lots':
+        return <AdvancedInventoryManagement initialTab="lots" />;
+
+      case 'inventory-transfers':
+        return <AdvancedInventoryManagement initialTab="transfers" />;
+
+      case 'facility-locations':
+        return <AdvancedInventoryManagement initialTab="locations" />;
 
       case 'config-items':
         return <AdvancedInventoryManagement initialTab="config" />;
@@ -277,9 +294,6 @@ function AppContent() {
 
       case 'manufacturing':
         return <ManufacturingManagement onNavigate={handleNavigate} />;
-
-      case 'inventory':
-        return <AdvancedInventoryManagement initialTab="inventory" />;
 
       default:
         return <AccountingDashboard />;

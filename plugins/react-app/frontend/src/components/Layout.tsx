@@ -160,6 +160,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
     'pricing-promos':         translations.pages.pricingAndPromos,
     'stores':                 translations.pages.stores,
     'advanced-inventory':     translations.pages.advancedInventory,
+    'picklists':              { title: translations.inventoryMediaConfig.picklistsTab || 'Toplama Listeleri', subtitle: 'WMS Sipariş Toplama & Paketleme' },
+    'lots':                   { title: translations.inventoryMediaConfig.lotsTab || 'Lot & SKT Takibi', subtitle: 'Parti, Seri Numarası ve Raf Ömrü' },
+    'inventory-transfers':    { title: translations.nav.inventoryTransfers || 'Stok Transferleri', subtitle: 'Depolar ve Lokasyonlar Arası Transfer' },
+    'facility-locations':     { title: translations.inventoryMediaConfig.locationsTab || 'Depo Lokasyonları', subtitle: 'Koridor, Raf ve Göz Yönetimi' },
     'config-items':           translations.pages.configItems,
   }), [translations]);
 
@@ -711,7 +715,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   handleNavClick('advanced-inventory');
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
-                  currentView === 'inventory' || currentView === 'advanced-inventory'
+                  ['inventory', 'advanced-inventory', 'picklists', 'lots', 'inventory-transfers', 'facility-locations'].includes(currentView)
                     ? 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/10'
                     : 'bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
@@ -737,17 +741,23 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
               {expandedModules.inventory && (
                 <div className="px-2 py-2 space-y-0.5 bg-slate-50/80 dark:bg-slate-950/30 border-t border-slate-200 dark:border-slate-800/60">
                   {[
-                    { label: translations.nav.facilities, view: 'advanced-inventory' as ViewType },
-                    { label: translations.nav.inventoryTransfers, view: 'advanced-inventory' as ViewType },
-                    { label: translations.nav.physicalInventory, view: 'advanced-inventory' as ViewType },
+                    { label: translations.nav.facilities || 'Stok Kalemleri & Depo', view: 'advanced-inventory' as ViewType },
+                    { label: translations.inventoryMediaConfig.picklistsTab || 'Toplama & Paketleme (WMS)', view: 'picklists' as ViewType },
+                    { label: translations.inventoryMediaConfig.lotsTab || 'Lot, Seri & SKT', view: 'lots' as ViewType },
+                    { label: translations.nav.inventoryTransfers || 'Stok Transferleri', view: 'inventory-transfers' as ViewType },
+                    { label: translations.inventoryMediaConfig.locationsTab || 'Depo Raf Lokasyonları', view: 'facility-locations' as ViewType },
                   ].map(sub => (
                     <button
                       key={sub.label}
                       type="button"
                       onClick={() => handleNavClick(sub.view)}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs bg-transparent text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-left transition-all cursor-pointer"
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-left transition-all cursor-pointer ${
+                        currentView === sub.view
+                          ? 'bg-cyan-100/80 dark:bg-cyan-950/50 text-cyan-800 dark:text-cyan-300 font-medium border-l-2 border-cyan-500 pl-2'
+                          : 'bg-transparent text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 border border-transparent'
+                      }`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500/60"></span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${currentView === sub.view ? 'bg-cyan-500' : 'bg-cyan-500/60'}`}></span>
                       <span className="truncate">{sub.label}</span>
                     </button>
                   ))}
