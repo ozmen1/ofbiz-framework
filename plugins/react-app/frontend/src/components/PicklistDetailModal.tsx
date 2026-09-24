@@ -137,13 +137,18 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
     }
   };
 
+  const totalItems = data?.items?.length || 0;
+  const pickedItems = data?.items?.filter(it => it.itemStatusId === 'PICKITEM_COMPLETED').length || 0;
+  const pendingItems = Math.max(0, totalItems - pickedItems);
+  const binsCount = data?.bins?.length || 0;
+
   return (
-    <div className="fixed inset-0 ds-overlay flex items-center justify-center p-4 z-[80]">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 ds-overlay flex items-center justify-center p-3 sm:p-4 z-[80]">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 border border-indigo-500/20">
               <Boxes size={22} />
             </div>
             <div>
@@ -165,129 +170,14 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Action Bar (Status Transitions) */}
-        {picklist && (
-          <div className="px-6 py-2.5 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-            <div className="text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{t.actions || 'Aksiyonlar'}:</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {!isCancelled && !isPicked && (
-                <>
-                  {picklist.statusId === 'PICKLIST_INPUT' && (
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => handleStatusChange('PICKLIST_ASSIGNED')}
-                      className="ds-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
-                    >
-                      <UserCheck size={14} className="text-indigo-500" />
-                      <span>{t.markAssigned || 'Atandı Yap'}</span>
-                    </button>
-                  )}
-
-                  {(picklist.statusId === 'PICKLIST_INPUT' || picklist.statusId === 'PICKLIST_ASSIGNED') && (
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => handleStatusChange('PICKLIST_PRINTED')}
-                      className="ds-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
-                    >
-                      <Printer size={14} className="text-amber-500" />
-                      <span>{t.markPrinted || 'Yazdırıldı'}</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    disabled={isUpdating}
-                    onClick={() => handleStatusChange('PICKLIST_PICKED')}
-                    className="ds-btn-primary px-3 py-1.5 text-xs flex items-center gap-1.5"
-                  >
-                    <CheckCircle2 size={14} />
-                    <span>{t.markAllPicked || 'Tümünü Toplandı Yap'}</span>
-                  </button>
-                </>
-              )}
-
-              {!isCancelled && !isPicked && (
-                <button
-                  type="button"
-                  disabled={isUpdating}
-                  onClick={() => handleStatusChange('PICKLIST_CANCELLED')}
-                  className="ds-btn-danger px-3 py-1.5 text-xs flex items-center gap-1.5"
-                >
-                  <Ban size={14} />
-                  <span>{common?.cancel || 'İptal Et'}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 px-6 border-b border-slate-200 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab('items')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'items'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <Boxes size={14} />
-            <span>{t.pickItems || 'Toplama Kalemleri'} ({data?.items?.length || 0})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('bins')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'bins'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <Layers size={14} />
-            <span>{t.binsAndOrders || 'Sepetler / Siparişler'} ({data?.bins?.length || 0})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('history')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'history'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <Clock size={14} />
-            <span>{t.statusHistory || 'Durum Geçmişi'} ({data?.statusHistory?.length || 0})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('print')}
-            className={`py-3 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'print'
-                ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <Printer size={14} />
-            <span>{t.printSheet || 'Toplama Fişi'}</span>
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Content Body - Single Unified Vertical Scroll */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {toast && (
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
               <CheckCircle2 size={16} />
@@ -301,6 +191,177 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
               <span>{error}</span>
             </div>
           )}
+
+          {/* Action Toolbar (Scrollable Tab / Pill format) */}
+          {picklist && (
+            <div className="ds-card p-3.5 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {t.actions || 'Aksiyonlar'}:
+                </span>
+                <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${getStatusBadgeClass(picklist.statusId)}`}>
+                  {picklist.statusDescription || picklist.statusId}
+                </span>
+              </div>
+
+              {/* Kaydırılabilir Tab / Buton Formatında Aksiyon Çubuğu */}
+              <div className="overflow-x-auto pb-1 md:pb-0 scrollbar-none -mx-1 px-1">
+                <div className="flex items-center gap-2 min-w-max">
+                  {!isCancelled && !isPicked && (
+                    <>
+                      {picklist.statusId === 'PICKLIST_INPUT' && (
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange('PICKLIST_ASSIGNED')}
+                          className="ds-btn-secondary text-xs !py-1.5 !px-3 font-semibold text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          <UserCheck size={14} />
+                          <span>{t.markAssigned || 'Atandı Yap'}</span>
+                        </button>
+                      )}
+
+                      {(picklist.statusId === 'PICKLIST_INPUT' || picklist.statusId === 'PICKLIST_ASSIGNED') && (
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange('PICKLIST_PRINTED')}
+                          className="ds-btn-secondary text-xs !py-1.5 !px-3 font-semibold text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          <Printer size={14} />
+                          <span>{t.markPrinted || 'Yazdırıldı'}</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={isUpdating}
+                        onClick={() => handleStatusChange('PICKLIST_PICKED')}
+                        className="ds-btn-primary text-xs !py-1.5 !px-3 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      >
+                        <CheckCircle2 size={14} />
+                        <span>{t.markAllPicked || 'Tümünü Toplandı Yap'}</span>
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('print')}
+                    className="ds-btn-secondary text-xs !py-1.5 !px-3 font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  >
+                    <Printer size={14} className="text-indigo-500 dark:text-indigo-400" />
+                    <span>{t.printSheet || 'Toplama Fişi'}</span>
+                  </button>
+
+                  {!isCancelled && !isPicked && (
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => handleStatusChange('PICKLIST_CANCELLED')}
+                      className="ds-btn-danger text-xs !py-1.5 !px-3 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                    >
+                      <Ban size={14} />
+                      <span>{common?.cancel || 'İptal Et'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* KPI / Summary Cards */}
+          {picklist && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="ds-card p-3.5 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Boxes size={14} className="text-indigo-500" />
+                  <span>{t.totalItems}</span>
+                </div>
+                <div className="text-xl font-bold text-slate-900 dark:text-white font-mono">
+                  {totalItems}
+                </div>
+              </div>
+
+              <div className="ds-card p-3.5 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  <span>{t.pickedItems}</span>
+                </div>
+                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {pickedItems}
+                </div>
+              </div>
+
+              <div className="ds-card p-3.5 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock size={14} className="text-amber-500" />
+                  <span>{t.pendingItems}</span>
+                </div>
+                <div className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono">
+                  {pendingItems}
+                </div>
+              </div>
+
+              <div className="ds-card p-3.5 space-y-1">
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers size={14} className="text-purple-500" />
+                  <span>{t.binsCount}</span>
+                </div>
+                <div className="text-xl font-bold text-purple-600 dark:text-purple-400 font-mono">
+                  {binsCount}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Tabs (Scrollable with ds-tab-bar) */}
+          <div className="ds-tab-bar mb-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab('items')}
+              className={`ds-tab ${activeTab === 'items' ? 'ds-tab-active' : ''}`}
+            >
+              <Boxes size={15} />
+              <span>{t.pickItems || 'Toplama Kalemleri'}</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-slate-700/60 font-mono">
+                {totalItems}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('bins')}
+              className={`ds-tab ${activeTab === 'bins' ? 'ds-tab-active' : ''}`}
+            >
+              <Layers size={15} />
+              <span>{t.binsAndOrders || 'Sepetler / Siparişler'}</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-slate-700/60 font-mono">
+                {binsCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('history')}
+              className={`ds-tab ${activeTab === 'history' ? 'ds-tab-active' : ''}`}
+            >
+              <Clock size={15} />
+              <span>{t.statusHistory || 'Durum Geçmişi'}</span>
+              <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-slate-700/60 font-mono">
+                {data?.statusHistory?.length || 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('print')}
+              className={`ds-tab ${activeTab === 'print' ? 'ds-tab-active' : ''}`}
+            >
+              <Printer size={15} />
+              <span>{t.printSheet || 'Toplama Fişi'}</span>
+            </button>
+          </div>
 
           {isLoading ? (
             <div className="py-12 text-center text-xs text-slate-500">
@@ -355,7 +416,7 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
                                 <td className="ds-td text-xs">
                                   {item.locationSeqId ? (
                                     <div className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
-                                      <MapPin size={13} className="text-cyan-500" />
+                                      <MapPin size={13} className="text-indigo-500" />
                                       <span>{item.locationSeqId}</span>
                                       {(item.aisleId || item.sectionId) && (
                                         <span className="text-[10px] text-slate-400">
@@ -442,7 +503,7 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
                           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                             Sepet #{b.binLocationNumber} (ID: {b.picklistBinId})
                           </span>
-                          <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400">
+                          <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400">
                             Sipariş: #{b.primaryOrderId}
                           </span>
                         </div>
@@ -466,7 +527,7 @@ export const PicklistDetailModal: React.FC<PicklistDetailModalProps> = ({
                     <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
                       {data.statusHistory.map((h, i) => (
                         <div key={i} className="relative">
-                          <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-cyan-500 border-2 border-white dark:border-slate-900" />
+                          <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-white dark:border-slate-900" />
                           <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                             {h.fromDescription} ➔ {h.toDescription}
                           </div>

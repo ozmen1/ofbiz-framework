@@ -2640,6 +2640,10 @@ export interface Translations {
     markAssigned: string;
     markPrinted: string;
     markAllPicked: string;
+    totalItems: string;
+    pickedItems: string;
+    pendingItems: string;
+    binsCount: string;
     noItemsInPicklist: string;
     noBinsDefined: string;
     noHistory: string;
