@@ -35,7 +35,6 @@ const PaymentGateways = lazy(() => import('./components/PaymentGateways').then(m
 const CheckRun = lazy(() => import('./components/CheckRun').then(m => ({ default: m.CheckRun })))
 const CommissionRun = lazy(() => import('./components/CommissionRun').then(m => ({ default: m.CommissionRun })))
 const TestPage = lazy(() => import('./components/TestPage'))
-const ModulePlaceholder = lazy(() => import('./components/ModulePlaceholder'))
 const PartyManagement = lazy(() => import('./components/PartyManagement').then(m => ({ default: m.PartyManagement })))
 const UserManagement = lazy(() => import('./components/UserManagement'))
 const SystemAdministration = lazy(() => import('./components/SystemAdministration'))
@@ -46,6 +45,7 @@ const PricePromoStoreManagement = lazy(() => import('./components/PricePromoStor
 const AdvancedInventoryManagement = lazy(() => import('./components/AdvancedInventoryManagement').then(m => ({ default: m.AdvancedInventoryManagement })))
 const OrderManagement = lazy(() => import('./components/OrderManagement').then(m => ({ default: m.OrderManagement })))
 const ShipmentManagement = lazy(() => import('./components/ShipmentManagement').then(m => ({ default: m.ShipmentManagement })))
+const ManufacturingManagement = lazy(() => import('./components/ManufacturingManagement').then(m => ({ default: m.ManufacturingManagement })))
 
 export type ViewType = 
   | 'dashboard' 
@@ -276,7 +276,7 @@ function AppContent() {
         return <ShipmentManagement onNavigate={handleNavigate} />;
 
       case 'manufacturing':
-        return <ModulePlaceholder moduleKey="manufacturing" onNavigate={handleNavigate} />;
+        return <ManufacturingManagement onNavigate={handleNavigate} />;
 
       case 'inventory':
         return <AdvancedInventoryManagement initialTab="inventory" />;

@@ -673,9 +673,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, isPe
                   <span>{translations.nav.manufacturing}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    {translations.nav.comingSoon}
-                  </span>
                   {expandedModules.manufacturing ? (
                     <ChevronDown size={16} className="text-slate-400" />
                   ) : (
